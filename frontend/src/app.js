@@ -17,9 +17,8 @@ const homeUserNameText = document.getElementById('homeUserNameText');
 const homeUserEmailText = document.getElementById('homeUserEmailText');
 const btnHomeContinue = document.getElementById('btnHomeContinue');
 const btnHomeContinueAnother = document.getElementById('btnHomeContinueAnother');
-const btnHomeGoogleLogin = document.getElementById('btnHomeGoogleLogin');
-const btnHomeTryImport = document.getElementById('btnHomeTryImport');
-const btnHomeTryBlank = document.getElementById('btnHomeTryBlank');
+const btnHomeFirstLogin = document.getElementById('btnHomeFirstLogin');
+const btnHomeFirstSignup = document.getElementById('btnHomeFirstSignup');
 const btnBackFromUploadToHome = document.getElementById('btnBackFromUploadToHome');
 
 const uploadView = document.getElementById('uploadView');
@@ -1951,20 +1950,42 @@ function openImportPage() {
   if (window.lucide) lucide.createIcons();
 }
 
+function getLastLoggedOutUser() {
+  try {
+    const raw = localStorage.getItem('canva_last_logged_out_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
 function renderHomeAuthCard() {
-  const user = getCurrentUser();
-  if (user) {
+  const currentUser = getCurrentUser();
+  const isLoggedOut = localStorage.getItem('canva_is_logged_out') === 'true';
+  const lastUser = getLastLoggedOutUser();
+
+  // 1. Nếu đang có phiên đăng nhập active và đang mở trang chủ, tự động chuyển vào trang dự án
+  if (currentUser) {
+    if (homeView && !homeView.classList.contains('hidden')) {
+      openProjectsPage('home');
+      return;
+    }
+  }
+
+  // 2. PHẦN NÀY CHỈ SHOW KHI NGƯỜI DÙNG LOGOUT RA THÔI:
+  // Hiển thị card "Jump back in!" với thông tin tài khoản vừa logout
+  if (isLoggedOut && lastUser) {
     if (homeAuthBlock) homeAuthBlock.classList.remove('hidden');
     if (homeGuestBlock) homeGuestBlock.classList.add('hidden');
 
-    if (homeUserNameText) homeUserNameText.textContent = user.name || 'Người dùng';
-    if (homeUserEmailText) homeUserEmailText.textContent = user.email || '';
+    if (homeUserNameText) homeUserNameText.textContent = lastUser.name || 'Người dùng';
+    if (homeUserEmailText) homeUserEmailText.textContent = lastUser.email || '';
 
-    const initial = (user.name || user.email || 'T').trim().charAt(0).toUpperCase();
+    const initial = (lastUser.name || lastUser.email || 'T').trim().charAt(0).toUpperCase();
     if (homeUserAvatarLetter) homeUserAvatarLetter.textContent = initial;
 
-    if (user.picture && homeUserAvatarImg) {
-      homeUserAvatarImg.src = user.picture;
+    if (lastUser.picture && homeUserAvatarImg) {
+      homeUserAvatarImg.src = lastUser.picture;
       homeUserAvatarImg.classList.remove('hidden');
       if (homeUserAvatarLetter) homeUserAvatarLetter.classList.add('hidden');
     } else {
@@ -1972,9 +1993,13 @@ function renderHomeAuthCard() {
       if (homeUserAvatarLetter) homeUserAvatarLetter.classList.remove('hidden');
     }
   } else {
+    // 3. KHI LẦN ĐẦU VÀO (CHƯA TỪNG ĐĂNG NHẬP / CHƯA LOGOUT):
+    // Cụ thể: logo ở trên, dưới là 1 dòng mô tả ngắn, dưới nữa là nút login, cuối cùng là nút đăng ký
     if (homeAuthBlock) homeAuthBlock.classList.add('hidden');
     if (homeGuestBlock) homeGuestBlock.classList.remove('hidden');
   }
+
+  if (window.lucide) lucide.createIcons();
 }
 
 deckTitleInput.addEventListener('change', () => {
@@ -2361,6 +2386,8 @@ function getCurrentUser() {
 function setCurrentUser(user) {
   if (user) {
     localStorage.setItem('google_auth_user', JSON.stringify(user));
+    localStorage.setItem('canva_last_logged_out_user', JSON.stringify(user));
+    localStorage.removeItem('canva_is_logged_out');
   } else {
     localStorage.removeItem('google_auth_user');
   }
@@ -2368,13 +2395,18 @@ function setCurrentUser(user) {
 }
 
 function logoutGoogle() {
+  const prevUser = getCurrentUser();
+  if (prevUser) {
+    localStorage.setItem('canva_last_logged_out_user', JSON.stringify(prevUser));
+  }
+  localStorage.setItem('canva_is_logged_out', 'true');
   setCurrentUser(null);
   if (uploadUserDropdownMenu) uploadUserDropdownMenu.classList.add('hidden');
   if (userDropdownMenu) userDropdownMenu.classList.add('hidden');
   if (accountPageView && !accountPageView.classList.contains('hidden')) {
     closeAccountPage();
   }
-  renderHomeAuthCard();
+  openHomePage();
   showToast("Đã đăng xuất tài khoản Google");
 }
 
@@ -3956,10 +3988,10 @@ if (selectProjectsSort) {
 }
 
 // --- 19. HOME VIEW EVENT LISTENERS ---
-// Nút "Continue" trên thẻ Jump back in (dẫn thẳng vào danh sách dự án của người dùng)
+// Nút "Continue" trên thẻ Jump back in (khi đã logout, bấm Continue để đăng nhập lại)
 if (btnHomeContinue) {
   btnHomeContinue.addEventListener('click', () => {
-    openProjectsPage('home');
+    loginWithGoogle();
   });
 }
 
@@ -3970,25 +4002,17 @@ if (btnHomeContinueAnother) {
   });
 }
 
-// Nút đăng nhập Google trên thẻ khách
-if (btnHomeGoogleLogin) {
-  btnHomeGoogleLogin.addEventListener('click', () => {
+// Nút Login trên card lần đầu vào
+if (btnHomeFirstLogin) {
+  btnHomeFirstLogin.addEventListener('click', () => {
     loginWithGoogle();
   });
 }
 
-// Nút chuyển sang trang nạp file PPTX (/import)
-if (btnHomeTryImport) {
-  btnHomeTryImport.addEventListener('click', () => {
-    openImportPage();
-  });
-}
-
-// Nút tạo slide mới từ trang chủ
-if (btnHomeTryBlank) {
-  btnHomeTryBlank.addEventListener('click', () => {
-    openHomePage();
-    createNewBlankPresentation();
+// Nút Đăng ký trên card lần đầu vào
+if (btnHomeFirstSignup) {
+  btnHomeFirstSignup.addEventListener('click', () => {
+    loginWithGoogle();
   });
 }
 

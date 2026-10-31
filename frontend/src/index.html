@@ -117,71 +117,67 @@
         <!-- Dark Overlay -->
         <div class="absolute inset-0 bg-[#090b10]/75 backdrop-blur-[1.5px] pointer-events-none z-10"></div>
 
-        <!-- Center Jump Back In Card (Modal y hệt ảnh người dùng chụp) -->
+        <!-- Center Auth / Welcome Card Container -->
         <div class="flex-1 flex items-center justify-center p-4 relative z-20">
-          <div class="w-full max-w-[430px] bg-[#18191b] border border-slate-800/90 rounded-3xl p-8 sm:p-9 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
-            <!-- Jump back in Title -->
-            <h2 class="text-xl font-bold text-white mb-6 text-left">Jump back in!</h2>
+          <div class="w-full max-w-[420px] bg-[#18191b] border border-slate-800/90 rounded-3xl p-8 sm:p-9 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            
+            <!-- VIEW A: JUMP BACK IN (Chỉ hiển thị khi người dùng logout ra) -->
+            <div id="homeAuthBlock" class="hidden flex flex-col">
+              <!-- Jump back in Title -->
+              <h2 class="text-xl font-bold text-white mb-6 text-left">Jump back in!</h2>
 
-            <!-- Authenticated Profile View (Khi đã đăng nhập hoặc có thông tin user) -->
-            <div id="homeAuthBlock" class="flex flex-col items-center">
-              <!-- Avatar Circle -->
-              <div id="homeUserAvatarContainer" class="w-16 h-16 rounded-full bg-[#a27863] text-white text-2xl font-semibold flex items-center justify-center shadow-lg border-2 border-white/10 mb-3 overflow-hidden">
-                <span id="homeUserAvatarLetter">T</span>
-                <img id="homeUserAvatarImg" src="" alt="Avatar" class="w-full h-full object-cover hidden" />
+              <div class="flex flex-col items-center">
+                <!-- Avatar Circle -->
+                <div id="homeUserAvatarContainer" class="w-16 h-16 rounded-full bg-[#a27863] text-white text-2xl font-semibold flex items-center justify-center shadow-lg border-2 border-white/10 mb-3 overflow-hidden">
+                  <span id="homeUserAvatarLetter">T</span>
+                  <img id="homeUserAvatarImg" src="" alt="Avatar" class="w-full h-full object-cover hidden" />
+                </div>
+
+                <!-- Name & Email -->
+                <h3 id="homeUserNameText" class="text-sm font-semibold text-white tracking-wide">Tvirus Acma</h3>
+                <p id="homeUserEmailText" class="text-xs text-slate-400 mt-0.5 mb-6">acmatvjrus@gmail.com</p>
+
+                <!-- Main CTA: Continue (Tím Canva) -->
+                <button id="btnHomeContinue" class="w-full py-3 bg-[#7c3aed] hover:bg-[#6d28d9] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition shadow-lg shadow-purple-900/40 cursor-pointer flex items-center justify-center gap-2">
+                  <span>Continue</span>
+                </button>
+
+                <!-- Divider OR -->
+                <div class="w-full flex items-center my-4">
+                  <div class="flex-1 h-px bg-slate-800"></div>
+                  <span class="px-3 text-[11px] font-medium text-slate-500 uppercase">OR</span>
+                  <div class="flex-1 h-px bg-slate-800"></div>
+                </div>
+
+                <!-- Secondary CTA: Continue with another account -->
+                <button id="btnHomeContinueAnother" class="w-full py-2.5 bg-transparent hover:bg-slate-800/80 active:scale-[0.99] text-slate-200 hover:text-white font-semibold text-xs rounded-xl border border-slate-700/80 transition cursor-pointer">
+                  Continue with another account
+                </button>
               </div>
-
-              <!-- Name & Email -->
-              <h3 id="homeUserNameText" class="text-sm font-semibold text-white tracking-wide">Tvirus Acma</h3>
-              <p id="homeUserEmailText" class="text-xs text-slate-400 mt-0.5 mb-6">acmatvjrus@gmail.com</p>
-
-              <!-- Main CTA: Continue (Tím Canva) -->
-              <button id="btnHomeContinue" class="w-full py-3 bg-[#7c3aed] hover:bg-[#6d28d9] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition shadow-lg shadow-purple-900/40 cursor-pointer flex items-center justify-center gap-2">
-                <span>Continue</span>
-              </button>
-
-              <!-- Divider OR -->
-              <div class="w-full flex items-center my-4">
-                <div class="flex-1 h-px bg-slate-800"></div>
-                <span class="px-3 text-[11px] font-medium text-slate-500 uppercase">OR</span>
-                <div class="flex-1 h-px bg-slate-800"></div>
-              </div>
-
-              <!-- Secondary CTA: Continue with another account -->
-              <button id="btnHomeContinueAnother" class="w-full py-2.5 bg-transparent hover:bg-slate-800/80 active:scale-[0.99] text-slate-200 hover:text-white font-semibold text-xs rounded-xl border border-slate-700/80 transition cursor-pointer">
-                Continue with another account
-              </button>
             </div>
 
-            <!-- Guest View (Khi chưa từng đăng nhập) -->
-            <div id="homeGuestBlock" class="hidden flex flex-col items-center">
-              <div class="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-4 shadow-inner">
-                <i data-lucide="sparkles" class="w-8 h-8"></i>
+            <!-- VIEW B: FIRST-TIME WELCOME (Khi lần đầu vào: Logo trên, 1 dòng mô tả ngắn, nút Login, nút Đăng ký) -->
+            <div id="homeGuestBlock" class="flex flex-col items-center text-center">
+              <!-- 1. Logo ở trên -->
+              <div class="flex items-center justify-center gap-2 mb-3">
+                <span class="font-serif italic font-bold text-4xl text-white tracking-wider">Canva</span>
+                <span class="text-xs px-2 py-0.5 rounded-md bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30">PPT</span>
               </div>
-              <h3 class="text-base font-bold text-white mb-1">Bắt đầu sáng tạo slide</h3>
-              <p class="text-xs text-slate-400 mb-6 text-center">Đăng nhập tài khoản Google để lưu trữ bài thuyết trình trên đám mây</p>
 
-              <button id="btnHomeGoogleLogin" class="w-full py-3 bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs rounded-xl transition shadow flex items-center justify-center gap-2.5 cursor-pointer">
-                <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                <span>Tiếp tục với Google</span>
+              <!-- 2. Dưới là 1 dòng mô tả ngắn -->
+              <p class="text-xs sm:text-sm text-slate-400 mb-8 max-w-[320px] leading-relaxed">
+                Thiết kế và biên tập bài thuyết trình chuyên nghiệp, nhanh chóng và dễ dàng.
+              </p>
+
+              <!-- 3. Dưới nữa là nút Login -->
+              <button id="btnHomeFirstLogin" class="w-full py-3.5 bg-[#7c3aed] hover:bg-[#6d28d9] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition shadow-lg shadow-purple-900/40 cursor-pointer flex items-center justify-center gap-2">
+                <span>Đăng nhập</span>
               </button>
 
-              <div class="w-full flex items-center my-4">
-                <div class="flex-1 h-px bg-slate-800"></div>
-                <span class="px-3 text-[11px] font-medium text-slate-500 uppercase">HOẶC</span>
-                <div class="flex-1 h-px bg-slate-800"></div>
-              </div>
-
-              <div class="w-full flex gap-2.5">
-                <button id="btnHomeTryImport" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer">
-                  <i data-lucide="upload" class="w-3.5 h-3.5 text-cyan-400"></i>
-                  <span>Nạp file .PPTX</span>
-                </button>
-                <button id="btnHomeTryBlank" class="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl transition shadow flex items-center justify-center gap-1.5 cursor-pointer">
-                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                  <span>Tạo bản mới</span>
-                </button>
-              </div>
+              <!-- 4. Cuối cùng là nút Đăng ký -->
+              <button id="btnHomeFirstSignup" class="w-full mt-3 py-3.5 bg-slate-800/90 hover:bg-slate-700/90 active:scale-[0.99] text-slate-200 hover:text-white font-semibold text-sm rounded-xl border border-slate-700/80 transition cursor-pointer flex items-center justify-center gap-2">
+                <span>Đăng ký</span>
+              </button>
             </div>
 
           </div>
@@ -1664,6 +1660,6 @@
       <span id="toastMsg">Thành công!</span>
     </div>
 
-    <script src="/app.js?v=20261031_home_clean_terms"></script>
+    <script src="/app.js?v=20261031_home_auth_states_v2"></script>
   </body>
 </html>
