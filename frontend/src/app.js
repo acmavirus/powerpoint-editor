@@ -508,9 +508,6 @@ function setupCanvaNavRail() {
   initSystemTemplatesLibrary();
 }
 
-// Khởi chạy sớm ngay khi nạp file để các tab và kho mẫu luôn sẵn sàng
-setupCanvaNavRail();
-
 function toggleDrawer() {
   if (canvaDrawer.classList.contains('w-0')) {
     expandDrawer();
@@ -4876,6 +4873,9 @@ if (btnBackFromUploadToHome) {
     openHomePage();
   });
 }
+
+// Khởi tạo Canva Nav Rail và kho mẫu slide khi toàn bộ định nghĩa đã sẵn sàng
+setupCanvaNavRail();
 
 // Khởi chạy kiểm tra định tuyến URL ban đầu khi toàn bộ DOM & Modules đã sẵn sàng
 initAppRouting();
