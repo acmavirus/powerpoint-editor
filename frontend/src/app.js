@@ -1907,7 +1907,11 @@ if (btnCreateBlankDeck) {
 
 if (btnHome) {
   btnHome.addEventListener('click', () => {
-    openHomePage();
+    if (getCurrentUser()) {
+      openProjectsPage('editor');
+    } else {
+      openHomePage();
+    }
   });
 }
 
@@ -3748,8 +3752,6 @@ function renderProjectsGrid() {
 
 // Mở một bài thiết kế cụ thể từ Projects Grid
 async function openSpecificProject(d) {
-  closeProjectsPage();
-
   if (d.deckObj) {
     setupDeck(d.deckObj, true, `Đã mở: ${d.title}`);
     return;
@@ -3915,8 +3917,7 @@ if (btnProjectsRefresh) {
 
 // Nút Tạo bài mới trên Projects Page
 function triggerCreateNewFromProjects() {
-  closeProjectsPage();
-  createNewBlankDeck();
+  createNewBlankPresentation();
 }
 
 if (btnProjectsCreateNew) {
@@ -3926,10 +3927,12 @@ if (btnEmptyCreateNew) {
   btnEmptyCreateNew.addEventListener('click', triggerCreateNewFromProjects);
 }
 
-// Nút Nạp PPTX trên Projects Page
+// Nút Nạp PPTX trên Projects Page: Mở hộp thoại chọn file nạp thẳng vào Editor mà không nhảy trang
 function triggerImportPPTXFromProjects() {
-  closeProjectsPage();
-  if (fileInput) fileInput.click();
+  if (fileInput) {
+    fileInput.value = '';
+    fileInput.click();
+  }
 }
 
 if (btnProjectsImportPPTX) {
@@ -3937,6 +3940,24 @@ if (btnProjectsImportPPTX) {
 }
 if (btnEmptyImportPPTX) {
   btnEmptyImportPPTX.addEventListener('click', triggerImportPPTXFromProjects);
+}
+
+// Hỗ trợ kéo thả trực tiếp tệp .pptx lên trang Dự án
+if (projectsPageView) {
+  projectsPageView.addEventListener('dragover', (e) => {
+    e.preventDefault();
+  });
+  projectsPageView.addEventListener('drop', (e) => {
+    e.preventDefault();
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      if (file.name.match(/\.(pptx|ppt)$/i)) {
+        uploadPPTX(file);
+      } else {
+        showToast("Vui lòng tải lên tệp PowerPoint (.pptx)", true);
+      }
+    }
+  });
 }
 
 // Tìm kiếm dự án (Debounced)
