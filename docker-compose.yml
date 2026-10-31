@@ -1,0 +1,28 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ppt_import_api
+    ports:
+      - "${PORT_API:-9031}:9031"
+    environment:
+      - STORAGE_DIR=/app/storage
+    volumes:
+      - ppt_storage:/app/storage
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ppt_import_web
+    ports:
+      - "${PORT_WEB:-9030}:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  ppt_storage:
+

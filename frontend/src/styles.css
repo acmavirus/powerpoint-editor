@@ -1,0 +1,40 @@
+/* Custom Scrollbars (Canva Clean Theme) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Fabric.js Canvas Custom Selection Handles */
+.canvas-container {
+  outline: none;
+}
+
+/* Slide Thumbnail Card Hover Effect */
+.slide-thumb-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.slide-thumb-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.slide-thumb-card.active-slide {
+  border-color: #7d2ae8 !important;
+  background-color: #f3e8ff !important;
+  box-shadow: 0 0 0 2px rgba(125, 42, 232, 0.25) !important;
+}
+
+/* Toast Animation */
+.toast-visible {
+  transform: translateY(0) !important;
+  opacity: 1 !important;
+}

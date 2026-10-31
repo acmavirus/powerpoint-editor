@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="vi" class="h-full bg-slate-900 text-slate-800">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <title>Canva Style PowerPoint Editor - SlideCraft</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Fabric.js Canvas Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
+
+    <!-- PptxGenJS Export Engine -->
+    <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600;700&family=Great+Vibes&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Merriweather:ital,wght@0,300;0,700;1,300&family=Montserrat:wght@400;600;700;800&family=Oswald:wght@500;700&family=Playfair+Display:ital,wght@0,600;0,800;1,400&family=Poppins:wght@400;500;600;700&family=Roboto:wght@300;400;500;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      .canva-shadow {
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+      }
+      .canva-tab-active {
+        background-color: #ffffff !important;
+        color: #0e7490 !important;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body
+    class="h-full flex flex-col overflow-hidden select-none bg-[#0e131f] text-slate-100"
+  >
+    <!-- ================= TOP HEADER (CANVA TEAL GRADIENT) ================= -->
+    <header
+      class="h-13 bg-gradient-to-r from-[#00c4cc] via-[#0e7490] to-[#7d2ae8] text-white flex items-center justify-between px-3.5 shrink-0 z-40 shadow-sm"
+    >
+      <!-- Left: Home, File, Resize, Undo/Redo, Saved status -->
+      <div class="flex items-center gap-3">
+        <button
+          class="p-1.5 hover:bg-white/10 rounded-lg transition"
+          title="Trang chủ"
+        >
+          <i data-lucide="home" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Tệp (File) Dropdown -->
+        <div class="relative group">
+          <button
+            class="px-2.5 py-1 text-xs font-medium hover:bg-white/15 rounded-md transition flex items-center gap-1"
+          >
+            <span>Tệp</span>
+          </button>
+          <div
+            class="absolute left-0 mt-1 w-52 bg-white text-slate-800 rounded-lg shadow-2xl border border-slate-200 py-1.5 hidden group-hover:block z-50 text-xs"
+          >
+            <button
+              id="menuCreateNew"
+              class="w-full text-left px-3 py-2 hover:bg-slate-100 flex items-center gap-2"
+            >
+              <i
+                data-lucide="plus-circle"
+                class="w-3.5 h-3.5 text-purple-600"
+              ></i>
+              <span>Tạo bản thiết kế mới</span>
+            </button>
+            <label
+              class="px-3 py-2 hover:bg-slate-100 cursor-pointer flex items-center gap-2"
+            >
+              <i data-lucide="upload" class="w-3.5 h-3.5 text-blue-600"></i>
+              <span>Mở file PPTX khác...</span>
+              <input
+                type="file"
+                id="menuFileInput"
+                accept=".pptx,.ppt"
+                class="hidden"
+              />
+            </label>
+            <button
+              id="menuSaveJson"
+              class="w-full text-left px-3 py-2 hover:bg-slate-100 flex items-center gap-2"
+            >
+              <i data-lucide="save" class="w-3.5 h-3.5 text-emerald-600"></i>
+              <span>Lưu bản thiết kế</span>
+            </button>
+            <div class="border-t border-slate-100 my-1"></div>
+            <button
+              id="menuDownloadPPTX"
+              class="w-full text-left px-3 py-2 hover:bg-slate-100 flex items-center gap-2"
+            >
+              <i data-lucide="download" class="w-3.5 h-3.5 text-purple-600"></i>
+              <span>Tải về file PowerPoint (.pptx)</span>
+            </button>
+          </div>
+        </div>
+
+        <button
+          class="px-2 py-1 text-xs font-medium hover:bg-white/15 rounded-md transition opacity-80 hover:opacity-100 flex items-center gap-1"
+        >
+          <span>Đổi cỡ</span>
+        </button>
+
+        <!-- Undo / Redo -->
+        <div class="flex items-center gap-0.5 ml-1">
+          <button
+            id="btnUndo"
+            class="p-1 hover:bg-white/15 rounded transition opacity-90 hover:opacity-100"
+            title="Hoàn tác (Ctrl+Z)"
+          >
+            <i data-lucide="undo" class="w-3.5 h-3.5"></i>
+          </button>
+          <button
+            id="btnRedo"
+            class="p-1 hover:bg-white/15 rounded transition opacity-90 hover:opacity-100"
+            title="Làm lại (Ctrl+Y)"
+          >
+            <i data-lucide="redo" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+
+        <!-- Cloud status -->
+        <div class="flex items-center gap-1 text-[11px] opacity-80 ml-2">
+          <i data-lucide="cloud-check" class="w-3.5 h-3.5"></i>
+          <span id="saveStatus">Đã lưu</span>
+        </div>
+      </div>
+
+      <!-- Center: Editable Presentation Title -->
+      <div class="flex-1 flex justify-center max-w-md mx-4">
+        <input
+          id="deckTitleInput"
+          type="text"
+          value="Thiết kế không tên - Bài thuyết trình"
+          class="bg-transparent hover:bg-white/10 focus:bg-white/20 text-center text-xs font-semibold text-white px-3 py-1 rounded-md border border-transparent focus:border-white/40 outline-none transition w-full truncate"
+        />
+      </div>
+
+      <!-- Right: User, Present button, Share/Download button -->
+      <div class="flex items-center gap-2.5">
+        <!-- Sao chép link bài thiết kế Canva -->
+        <button
+          id="btnCopyDesignLink"
+          class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-medium rounded-md border border-white/25 transition"
+          title="Sao chép liên kết bài thiết kế"
+        >
+          <i data-lucide="link" class="w-3.5 h-3.5"></i>
+          <span>Sao chép link</span>
+        </button>
+
+        <div
+          class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold border border-white/30"
+        >
+          T
+        </div>
+
+        <!-- Thuyết trình (Presentation) Button -->
+        <button
+          id="btnPresent"
+          class="flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold rounded-md border border-white/25 transition shadow-sm"
+        >
+          <i data-lucide="play" class="w-3.5 h-3.5 fill-white"></i>
+          <span>Thuyết trình</span>
+        </button>
+
+        <!-- Chia sẻ / Xuất PPTX Button -->
+        <button
+          id="btnExportPPTX"
+          class="flex items-center gap-1.5 px-4 py-1.5 bg-white hover:bg-slate-100 text-[#0e7490] text-xs font-bold rounded-md shadow-md transition"
+        >
+          <i data-lucide="download" class="w-3.5 h-3.5"></i>
+          <span>Xuất File PPTX</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- ================= MAIN WORKSPACE BODY ================= -->
+    <main class="flex-1 flex overflow-hidden relative">
+      <!-- STATE 1: UPLOAD DROPZONE (Displayed when no deck loaded) -->
+      <div
+        id="uploadView"
+        class="flex-1 flex items-center justify-center p-6 bg-[#0f172a]"
+      >
+        <div
+          class="max-w-xl w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl text-center"
+        >
+          <div
+            class="w-16 h-16 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 rounded-2xl flex items-center justify-center mx-auto mb-4"
+          >
+            <i data-lucide="presentation" class="w-8 h-8"></i>
+          </div>
+
+          <h2 class="text-xl font-bold text-white mb-2">
+            Web PowerPoint Editor
+          </h2>
+          <p class="text-xs text-slate-400 mb-6 leading-relaxed">
+            Kéo thả tệp PowerPoint (.pptx) bất kỳ vào đây. Hệ thống tự động giải
+            mã font nhúng, giữ nguyên 100% hình ảnh vector không bị tẩy trắng,
+            và mở ra giao diện Canva đầy đủ tính năng.
+          </p>
+
+          <!-- Drop Zone -->
+          <div
+            id="dropZone"
+            class="border-2 border-dashed border-slate-700 hover:border-cyan-400 rounded-xl p-8 transition cursor-pointer bg-slate-950/60 mb-6 group"
+          >
+            <input
+              type="file"
+              id="fileInput"
+              accept=".pptx,.ppt"
+              class="hidden"
+            />
+            <p
+              class="text-sm font-medium text-slate-300 group-hover:text-cyan-400 transition"
+            >
+              Nhấn để chọn tệp hoặc kéo thả file
+              <span class="text-cyan-400 font-semibold">.pptx</span> vào đây
+            </p>
+            <p class="text-xs text-slate-500 mt-1">Hỗ trợ tối đa 100MB</p>
+          </div>
+
+          <div class="flex items-center justify-center gap-3">
+            <button
+              id="btnCreateBlankDeck"
+              class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition flex items-center gap-2 shadow-sm"
+            >
+              <i data-lucide="plus-circle" class="w-4 h-4 text-cyan-400"></i>
+              Tạo Bản Mới Trống
+            </button>
+            <span class="text-xs text-slate-500">Hoặc</span>
+            <button
+              id="btnLoadSample"
+              class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white text-xs font-semibold rounded-lg shadow-lg shadow-purple-500/20 transition flex items-center gap-2"
+            >
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              Thử Ngay Với Slide Mẫu Đã Nạp
+            </button>
+          </div>
+
+          <!-- Loader -->
+          <div id="uploadLoader" class="hidden mt-6 text-center">
+            <div
+              class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-cyan-500 border-t-transparent mb-2"
+            ></div>
+            <p id="loaderText" class="text-xs text-cyan-400 font-medium">
+              Đang xử lý và trích xuất font...
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- STATE 2: CANVA EDITOR WORKSPACE -->
+      <div id="editorView" class="hidden flex-1 flex overflow-hidden">
+        <!-- 1. LEFT VERTICAL ICON DOCK (CANVA RAIL) -->
+        <nav
+          class="w-18 bg-[#0c101c] border-r border-slate-800/80 flex flex-col items-center py-3 shrink-0 z-20 space-y-2 select-none"
+        >
+          <!-- Tab 1: Mẫu (Slide Deck) -->
+          <button
+            class="nav-tab-btn flex flex-col items-center justify-center w-14 h-14 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
+            data-tab="tab-slides"
+            title="Danh sách Slide"
+          >
+            <i data-lucide="layout-grid" class="w-5 h-5 mb-1 text-cyan-400"></i>
+            <span>Mẫu</span>
+          </button>
+
+          <!-- Tab 2: Thành phần (Elements & Shapes) -->
+          <button
+            class="nav-tab-btn flex flex-col items-center justify-center w-14 h-14 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
+            data-tab="tab-elements"
+            title="Thành phần"
+          >
+            <i data-lucide="shapes" class="w-5 h-5 mb-1 text-emerald-400"></i>
+            <span>Thành phần</span>
+          </button>
+
+          <!-- Tab 3: Văn bản (Text) -->
+          <button
+            class="nav-tab-btn flex flex-col items-center justify-center w-14 h-14 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
+            data-tab="tab-text"
+            title="Văn bản"
+          >
+            <i data-lucide="type" class="w-5 h-5 mb-1 text-blue-400"></i>
+            <span>Văn bản</span>
+          </button>
+
+          <!-- Tab 4: Tải lên (Uploads) -->
+          <button
+            class="nav-tab-btn flex flex-col items-center justify-center w-14 h-14 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
+            data-tab="tab-uploads"
+            title="Tải lên"
+          >
+            <i
+              data-lucide="cloud-upload"
+              class="w-5 h-5 mb-1 text-purple-400"
+            ></i>
+            <span>Tải lên</span>
+          </button>
+
+          <!-- Tab 5: Nền (Background) -->
+          <button
+            class="nav-tab-btn flex flex-col items-center justify-center w-14 h-14 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
+            data-tab="tab-background"
+            title="Nền Slide"
+          >
+            <i
+              data-lucide="paint-bucket"
+              class="w-5 h-5 mb-1 text-amber-400"
+            ></i>
+            <span>Nền</span>
+          </button>
+
+          <!-- Tab 6: Vẽ / Công cụ -->
+          <button
+            class="nav-tab-btn flex flex-col items-center justify-center w-14 h-14 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
+            data-tab="tab-draw"
+            title="Công cụ"
+          >
+            <i data-lucide="pen-tool" class="w-5 h-5 mb-1 text-pink-400"></i>
+            <span>Công cụ</span>
+          </button>
+        </nav>
+
+        <!-- 2. SECONDARY FLYOUT DRAWER (CANVA DRAWER) -->
+        <aside
+          id="canvaDrawer"
+          class="w-80 bg-[#141b2d] border-r border-slate-800 flex flex-col shrink-0 relative transition-all duration-200 z-10"
+        >
+          <!-- Drawer Header with Search Input -->
+          <div
+            class="p-3.5 border-b border-slate-800/80 flex items-center justify-between"
+          >
+            <div class="relative flex-1">
+              <i
+                data-lucide="search"
+                class="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-slate-400"
+              ></i>
+              <input
+                id="drawerSearchInput"
+                type="text"
+                placeholder="Tìm kiếm mẫu, thành phần..."
+                class="w-full bg-slate-900/90 border border-slate-700/80 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-400 outline-none focus:border-cyan-500 transition"
+              />
+            </div>
+            <!-- Collapse Drawer Arrow Button -->
+            <button
+              id="btnCollapseDrawer"
+              class="ml-2 p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-md transition"
+              title="Thu gọn ngăn kéo"
+            >
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+          </div>
+
+          <!-- Drawer Content Panes -->
+          <div class="flex-1 overflow-y-auto p-4 custom-scrollbar text-xs">
+            <!-- TAB PANE 1: MẪU / SLIDE DECK (Thumbnails) -->
+            <div id="pane-slides" class="tab-pane space-y-4">
+              <div class="flex items-center justify-between text-slate-300">
+                <span class="font-semibold text-xs text-slate-200"
+                  >Trang trong thiết kế này</span
+                >
+                <span
+                  id="slideTotalBadge"
+                  class="bg-cyan-950 text-cyan-400 border border-cyan-800/50 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                  >0</span
+                >
+              </div>
+
+              <!-- Slide Thumbnail Cards Grid (Canva Style) -->
+              <div id="thumbnailContainer" class="grid grid-cols-2 gap-2.5">
+                <!-- Dynamically populated thumbnails -->
+              </div>
+
+              <!-- Add Page Button -->
+              <button
+                id="btnAddSlide"
+                class="w-full py-2.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 transition flex items-center justify-center gap-2 shadow-sm"
+              >
+                <i data-lucide="plus-circle" class="w-4 h-4 text-cyan-400"></i>
+                <span>Thêm Trang Mới</span>
+              </button>
+            </div>
+
+            <!-- TAB PANE 2: THÀNH PHẦN (Shapes & Elements) -->
+            <div id="pane-elements" class="tab-pane space-y-4 hidden">
+              <h3 class="font-semibold text-xs text-slate-200">
+                Hình dạng cơ bản
+              </h3>
+              <div class="grid grid-cols-3 gap-2">
+                <button
+                  id="btnAddRect"
+                  class="p-3 bg-slate-800/60 hover:bg-slate-700/80 rounded-lg flex flex-col items-center justify-center gap-1 border border-slate-700/50 transition"
+                >
+                  <i data-lucide="square" class="w-6 h-6 text-cyan-400"></i>
+                  <span class="text-[10px] text-slate-300">Chữ nhật</span>
+                </button>
+                <button
+                  id="btnAddCircle"
+                  class="p-3 bg-slate-800/60 hover:bg-slate-700/80 rounded-lg flex flex-col items-center justify-center gap-1 border border-slate-700/50 transition"
+                >
+                  <i data-lucide="circle" class="w-6 h-6 text-emerald-400"></i>
+                  <span class="text-[10px] text-slate-300">Hình tròn</span>
+                </button>
+                <button
+                  id="btnAddTriangle"
+                  class="p-3 bg-slate-800/60 hover:bg-slate-700/80 rounded-lg flex flex-col items-center justify-center gap-1 border border-slate-700/50 transition"
+                >
+                  <i data-lucide="triangle" class="w-6 h-6 text-amber-400"></i>
+                  <span class="text-[10px] text-slate-300">Tam giác</span>
+                </button>
+                <button
+                  id="btnAddStar"
+                  class="p-3 bg-slate-800/60 hover:bg-slate-700/80 rounded-lg flex flex-col items-center justify-center gap-1 border border-slate-700/50 transition"
+                >
+                  <i data-lucide="star" class="w-6 h-6 text-yellow-400"></i>
+                  <span class="text-[10px] text-slate-300">Ngôi sao</span>
+                </button>
+                <button
+                  id="btnAddLine"
+                  class="p-3 bg-slate-800/60 hover:bg-slate-700/80 rounded-lg flex flex-col items-center justify-center gap-1 border border-slate-700/50 transition"
+                >
+                  <i data-lucide="minus" class="w-6 h-6 text-purple-400"></i>
+                  <span class="text-[10px] text-slate-300">Đường kẻ</span>
+                </button>
+                <button
+                  id="btnAddTable"
+                  class="p-3 bg-slate-800/60 hover:bg-slate-700/80 rounded-lg flex flex-col items-center justify-center gap-1 border border-slate-700/50 transition"
+                >
+                  <i data-lucide="table" class="w-6 h-6 text-cyan-400"></i>
+                  <span class="text-[10px] text-slate-300">Bảng dữ liệu</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- TAB PANE 3: VĂN BẢN (Text Styles) -->
+            <div id="pane-text" class="tab-pane space-y-3 hidden">
+              <h3 class="font-semibold text-xs text-slate-200">
+                Thêm hộp văn bản
+              </h3>
+              <button
+                id="btnAddHeading"
+                class="w-full py-3.5 px-4 bg-slate-800 hover:bg-slate-700 text-left rounded-lg text-base font-extrabold text-white border border-slate-700/80 transition flex items-center justify-between"
+              >
+                <span>Thêm tiêu đề lớn</span>
+                <span class="text-xs text-slate-400 font-normal">H1</span>
+              </button>
+              <button
+                id="btnAddSubheading"
+                class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-left rounded-lg text-sm font-semibold text-slate-200 border border-slate-700/80 transition flex items-center justify-between"
+              >
+                <span>Thêm tiêu đề phụ</span>
+                <span class="text-xs text-slate-400 font-normal">H2</span>
+              </button>
+              <button
+                id="btnAddBody"
+                class="w-full py-2 px-4 bg-slate-800 hover:bg-slate-700 text-left rounded-lg text-xs text-slate-300 border border-slate-700/80 transition flex items-center justify-between"
+              >
+                <span>Thêm một chút nội dung văn bản</span>
+                <span class="text-[10px] text-slate-400 font-normal">P</span>
+              </button>
+            </div>
+
+            <!-- TAB PANE 4: TẢI LÊN (Upload Media) -->
+            <div id="pane-uploads" class="tab-pane space-y-4 hidden">
+              <label
+                class="w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-semibold rounded-lg text-xs cursor-pointer flex items-center justify-center gap-2 shadow-md transition"
+              >
+                <i data-lucide="upload" class="w-4 h-4"></i>
+                <span>Tải lên tệp hình ảnh</span>
+                <input
+                  type="file"
+                  id="imageUploaderInput"
+                  accept="image/*"
+                  class="hidden"
+                />
+              </label>
+              <p class="text-[11px] text-slate-400 leading-relaxed text-center">
+                Hỗ trợ PNG, JPG, SVG, WebP. Kéo thả trực tiếp lên canvas hoặc
+                nhấp nút tải lên.
+              </p>
+            </div>
+
+            <!-- TAB PANE 5: NỀN (Background Color & Image) -->
+            <div id="pane-background" class="tab-pane space-y-4 hidden">
+              <h3 class="font-semibold text-xs text-slate-200">
+                Tùy chỉnh nền Slide
+              </h3>
+              <button
+                id="btnRestoreOriginalBg"
+                class="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 rounded-lg border border-slate-700 transition flex items-center justify-center gap-2"
+              >
+                <i
+                  data-lucide="refresh-cw"
+                  class="w-3.5 h-3.5 text-cyan-400"
+                ></i>
+                <span>Khôi Phục Nền Gốc 100%</span>
+              </button>
+              <div class="pt-2">
+                <span class="block text-[11px] text-slate-400 mb-2 font-medium"
+                  >Bảng màu đơn sắc:</span
+                >
+                <div class="grid grid-cols-5 gap-2">
+                  <button
+                    class="w-10 h-10 rounded-md border border-slate-600 bg-white"
+                    data-color="#ffffff"
+                    title="Trắng"
+                  ></button>
+                  <button
+                    class="w-10 h-10 rounded-md border border-slate-600 bg-slate-900"
+                    data-color="#0f172a"
+                    title="Đen Slate"
+                  ></button>
+                  <button
+                    class="w-10 h-10 rounded-md border border-slate-600 bg-[#172554]"
+                    data-color="#172554"
+                    title="Xanh Đậm"
+                  ></button>
+                  <button
+                    class="w-10 h-10 rounded-md border border-slate-600 bg-[#022c22]"
+                    data-color="#022c22"
+                    title="Xanh Rêu"
+                  ></button>
+                  <input
+                    id="slideCustomBg"
+                    type="color"
+                    value="#ffffff"
+                    class="w-10 h-10 rounded-md border border-slate-600 cursor-pointer bg-transparent"
+                    title="Tự chọn màu"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <!-- TAB PANE 6: CÔNG CỤ (Tools & Info) -->
+            <div
+              id="pane-draw"
+              class="tab-pane space-y-3 hidden text-slate-300"
+            >
+              <h3 class="font-semibold text-xs text-slate-200">
+                Thông tin slide
+              </h3>
+              <div
+                class="bg-slate-800/40 p-3 rounded-lg border border-slate-700/50 space-y-1.5 text-[11px]"
+              >
+                <p>
+                  📐 Tỷ lệ:
+                  <span class="text-white font-medium">16:9 Widescreen</span>
+                </p>
+                <p>
+                  🎯 Độ phân giải:
+                  <span class="text-white font-medium">1920 × 1080 px</span>
+                </p>
+                <p>
+                  ✨ Công nghệ:
+                  <span class="text-cyan-400 font-medium"
+                    >Canva Canvas Architecture</span
+                  >
+                </p>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- 3. CENTER STAGE (CANVAS WORKSPACE) -->
+        <section
+          class="flex-1 flex flex-col bg-[#0b0f19] overflow-hidden relative"
+        >
+          <!-- CANVA FLOATING CONTEXTUAL TOOLBAR (Just above Canvas) -->
+          <div
+            id="floatingContextToolbar"
+            class="h-11 bg-[#161f36] border-b border-slate-800/90 px-4 flex items-center justify-between text-xs text-slate-300 shadow-sm z-20"
+          >
+            <!-- Dynamic Controls based on selected element -->
+            <div class="flex items-center gap-2">
+              <!-- Default when nothing is selected -->
+              <div id="ctxCanvasGroup" class="flex items-center gap-3">
+                <span class="text-[11px] text-slate-400"
+                  >Trang:
+                  <strong id="activeSlideTitleText" class="text-slate-200"
+                    >Trang 1</strong
+                  ></span
+                >
+                <span class="text-slate-600">|</span>
+                <button
+                  id="btnToggleEditOverlay"
+                  class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-xs flex items-center gap-1.5 border border-slate-700 transition"
+                >
+                  <i data-lucide="edit-3" class="w-3.5 h-3.5 text-cyan-400"></i>
+                  <span id="toggleEditText">Bật Sửa Chữ Trên Slide</span>
+                </button>
+              </div>
+
+              <!-- When Text is selected -->
+              <div id="ctxTextGroup" class="hidden items-center gap-2">
+                <select
+                  id="fontFamilySelect"
+                  class="bg-slate-900 border border-slate-700 rounded px-2 py-1 text-xs text-white outline-none"
+                >
+                  <optgroup
+                    label="Font Nhúng Trong Slide"
+                    id="customFontsGroup"
+                  ></optgroup>
+                  <optgroup label="Font Phổ Biến">
+                    <option value="Inter">Inter</option>
+                    <option value="Poppins">Poppins</option>
+                    <option value="Roboto">Roboto</option>
+                    <option value="Montserrat">Montserrat</option>
+                    <option value="Playfair Display">Playfair Display</option>
+                    <option value="Dancing Script">Dancing Script</option>
+                    <option value="Great Vibes">Great Vibes</option>
+                    <option value="Arial">Arial</option>
+                  </optgroup>
+                </select>
+
+                <div
+                  class="flex items-center bg-slate-900 rounded border border-slate-700"
+                >
+                  <button id="btnFontDec" class="px-2 py-1 hover:text-white">
+                    -
+                  </button>
+                  <input
+                    id="fontSizeInput"
+                    type="number"
+                    value="24"
+                    class="w-12 text-center bg-transparent text-xs text-white outline-none"
+                  />
+                  <button id="btnFontInc" class="px-2 py-1 hover:text-white">
+                    +
+                  </button>
+                </div>
+
+                <div class="flex items-center gap-1">
+                  <input
+                    id="textColorInput"
+                    type="color"
+                    value="#0f172a"
+                    class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
+                    title="Màu chữ"
+                  />
+                  <button
+                    id="btnBold"
+                    class="w-7 h-7 flex items-center justify-center font-bold hover:bg-slate-800 rounded text-slate-300"
+                  >
+                    B
+                  </button>
+                  <button
+                    id="btnItalic"
+                    class="w-7 h-7 flex items-center justify-center italic hover:bg-slate-800 rounded text-slate-300"
+                  >
+                    I
+                  </button>
+                  <button
+                    id="btnUnderline"
+                    class="w-7 h-7 flex items-center justify-center underline hover:bg-slate-800 rounded text-slate-300"
+                  >
+                    U
+                  </button>
+                  <button
+                    id="btnAlignLeft"
+                    class="w-7 h-7 flex items-center justify-center hover:bg-slate-800 rounded text-slate-300"
+                  >
+                    <i data-lucide="align-left" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- When Shape is selected -->
+              <div id="ctxShapeGroup" class="hidden items-center gap-2">
+                <span class="text-[11px] text-slate-400">Màu tô:</span>
+                <input
+                  id="shapeFillInput"
+                  type="color"
+                  value="#3b82f6"
+                  class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
+                />
+                <span class="text-[11px] text-slate-400 ml-2">Viền:</span>
+                <input
+                  id="shapeStrokeInput"
+                  type="color"
+                  value="#1d4ed8"
+                  class="w-6 h-6 rounded cursor-pointer border-0 bg-transparent"
+                />
+                <input
+                  id="shapeStrokeWidth"
+                  type="number"
+                  min="0"
+                  max="20"
+                  value="0"
+                  class="w-12 bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-xs text-center text-white"
+                />
+              </div>
+
+              <!-- When Image is selected -->
+              <div id="ctxImageGroup" class="hidden items-center gap-2">
+                <span class="text-[11px] text-slate-400">Độ mờ:</span>
+                <input
+                  id="imageOpacityInput"
+                  type="range"
+                  min="10"
+                  max="100"
+                  value="100"
+                  class="w-24 accent-cyan-500"
+                />
+              </div>
+            </div>
+
+            <!-- Right Universal Tools: Position/Layer & Delete -->
+            <div id="ctxUniversalGroup" class="hidden items-center gap-1.5">
+              <button
+                id="btnBringForward"
+                class="px-2 py-1 bg-slate-900 hover:bg-slate-800 rounded border border-slate-700 text-slate-300 text-[11px] flex items-center gap-1"
+              >
+                <i data-lucide="layers" class="w-3.5 h-3.5"></i> Lớp
+              </button>
+              <button
+                id="btnDuplicateObj"
+                class="p-1.5 hover:bg-slate-800 text-slate-300 rounded"
+                title="Nhân bản (Ctrl+D)"
+              >
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              </button>
+              <button
+                id="btnDeleteObj"
+                class="p-1.5 hover:bg-red-900/60 text-red-400 rounded"
+                title="Xóa (Delete)"
+              >
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Canvas Viewport -->
+          <div
+            id="canvasViewport"
+            class="flex-1 overflow-auto flex items-center justify-center p-8 relative bg-[#0e131f]/90"
+          >
+            <div
+              id="canvasWrapper"
+              class="relative rounded overflow-hidden canva-shadow border border-slate-800 transition-transform duration-100"
+            >
+              <canvas id="fabricCanvas" width="960" height="540"></canvas>
+            </div>
+          </div>
+
+          <!-- CANVA BOTTOM FOOTER BAR -->
+          <footer
+            class="h-9 bg-[#0c101c] border-t border-slate-800/80 px-4 flex items-center justify-between text-xs text-slate-400 z-20"
+          >
+            <!-- Left: Notes & Timer -->
+            <div class="flex items-center gap-4">
+              <button
+                class="hover:text-white flex items-center gap-1 text-[11px]"
+              >
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Ghi chú
+              </button>
+              <button
+                class="hover:text-white flex items-center gap-1 text-[11px]"
+              >
+                <i data-lucide="clock" class="w-3.5 h-3.5"></i> Đếm ngược
+              </button>
+            </div>
+
+            <!-- Center: Quick Slide Pager -->
+            <div class="flex items-center gap-2">
+              <button
+                id="btnPrevSlideBottom"
+                class="p-1 hover:text-white text-slate-400"
+              >
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <span id="bottomSlideCounter" class="font-medium text-slate-200"
+                >1 / 10</span
+              >
+              <button
+                id="btnNextSlideBottom"
+                class="p-1 hover:text-white text-slate-400"
+              >
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+              <button
+                id="btnAddSlideBottom"
+                class="p-1 hover:text-cyan-400 text-slate-400 ml-1"
+                title="Thêm trang mới"
+              >
+                <i data-lucide="plus" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <!-- Right: Zoom Slider & View Options -->
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-1.5">
+                <input
+                  id="zoomSlider"
+                  type="range"
+                  min="40"
+                  max="150"
+                  value="100"
+                  class="w-24 accent-cyan-500 h-1 bg-slate-700 rounded-lg cursor-pointer"
+                />
+                <span
+                  id="zoomLevelText"
+                  class="font-mono text-[11px] w-9 text-right text-slate-300"
+                  >100%</span
+                >
+              </div>
+              <button
+                id="btnGridToggle"
+                class="p-1 hover:text-white"
+                title="Xem dạng lưới"
+              >
+                <i data-lucide="grid" class="w-3.5 h-3.5"></i>
+              </button>
+              <button
+                id="btnFullscreenBottom"
+                class="p-1 hover:text-white"
+                title="Trình chiếu toàn màn hình (F5)"
+              >
+                <i data-lucide="maximize" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </footer>
+        </section>
+      </div>
+    </main>
+
+    <!-- FULLSCREEN PRESENTATION MODE (F5) -->
+    <div
+      id="presentModal"
+      class="fixed inset-0 bg-black z-50 hidden flex flex-col items-center justify-center select-none"
+    >
+      <div
+        class="absolute top-4 right-4 flex items-center gap-3 text-white/80 z-20"
+      >
+        <span
+          id="presentCounter"
+          class="text-sm font-mono bg-black/50 px-3 py-1 rounded"
+          >1 / 10</span
+        >
+        <button
+          id="btnClosePresent"
+          class="p-2 hover:bg-white/10 rounded-full transition"
+          title="Thoát trình chiếu (Esc)"
+        >
+          <i data-lucide="x" class="w-6 h-6"></i>
+        </button>
+      </div>
+      <div
+        class="relative max-w-full max-h-full flex items-center justify-center"
+      >
+        <img
+          id="presentImg"
+          src=""
+          alt="Slide Presentation"
+          class="max-w-[95vw] max-h-[95vh] object-contain shadow-2xl"
+        />
+      </div>
+      <div
+        class="absolute bottom-6 flex items-center gap-4 bg-slate-900/80 px-4 py-2 rounded-full border border-slate-800 backdrop-blur z-20"
+      >
+        <button
+          id="btnPresentPrev"
+          class="p-1.5 hover:bg-white/10 rounded-full text-white transition"
+        >
+          <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </button>
+        <span class="text-xs text-slate-400 font-medium"
+          >&larr; &rarr; hoặc Phím cách</span
+        >
+        <button
+          id="btnPresentNext"
+          class="p-1.5 hover:bg-white/10 rounded-full text-white transition"
+        >
+          <i data-lucide="arrow-right" class="w-5 h-5"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div
+      id="toast"
+      class="fixed bottom-12 right-6 bg-slate-900 border border-slate-700 text-white px-4 py-2.5 rounded-lg shadow-2xl text-xs flex items-center gap-2 transition-all transform translate-y-16 opacity-0 z-50"
+    >
+      <i data-lucide="check-circle" class="w-4 h-4 text-emerald-400"></i>
+      <span id="toastMsg">Thành công!</span>
+    </div>
+
+    <script src="/app.js"></script>
+  </body>
+</html>

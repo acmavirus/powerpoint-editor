@@ -1,0 +1,25 @@
+# Environment variables
+.env
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+
+# Storage & temp outputs
+backend/storage/uploads/*
+backend/storage/outputs/*
+!backend/storage/uploads/.gitkeep
+!backend/storage/outputs/.gitkeep
+!backend/storage/samples/.gitkeep
+
+# OS generated
+.DS_Store
+Thumbs.db
+
