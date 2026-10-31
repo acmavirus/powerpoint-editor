@@ -761,8 +761,7 @@ function setupDeck(deck, updateUrl = true, toastMsgText = null) {
 
   loadCustomFonts(deck.customFonts || []);
 
-  uploadView.classList.add('hidden');
-  editorView.classList.remove('hidden');
+  switchMainView('editor');
 
   renderSlideThumbnails();
   loadSlideToCanvas(0);
@@ -1912,24 +1911,47 @@ if (btnHome) {
   });
 }
 
-// --- 14.1 HOME & IMPORT VIEW CONTROLLERS ---
+// --- 14.1 VIEW SWITCHER & NAVIGATION CONTROLLERS ---
+// Quản lý chuyển đổi view tập trung - Đảm bảo chỉ duy nhất 1 view được hiển thị tại 1 thời điểm
+function switchMainView(activeViewName) {
+  // activeViewName: 'home' | 'upload' | 'editor' | 'projects' | 'account'
+  const views = {
+    home: homeView,
+    upload: uploadView,
+    editor: editorView,
+    projects: projectsPageView,
+    account: accountPageView
+  };
+
+  Object.entries(views).forEach(([name, el]) => {
+    if (!el) return;
+    if (name === activeViewName) {
+      el.classList.remove('hidden');
+    } else {
+      el.classList.add('hidden');
+    }
+  });
+
+  // Đóng các dropdown menu nếu đang mở
+  if (uploadUserDropdownMenu) uploadUserDropdownMenu.classList.add('hidden');
+  if (userDropdownMenu) userDropdownMenu.classList.add('hidden');
+
+  if (window.lucide) lucide.createIcons();
+}
+
 function openHomePage() {
   if (editorView && !editorView.classList.contains('hidden')) {
     saveCurrentSlideState();
     stopPresenceHeartbeat();
   }
-  if (uploadView) uploadView.classList.add('hidden');
-  if (editorView) editorView.classList.add('hidden');
-  if (accountPageView) accountPageView.classList.add('hidden');
-  if (projectsPageView) projectsPageView.classList.add('hidden');
-  if (homeView) homeView.classList.remove('hidden');
+  
+  switchMainView('home');
 
   if (window.location.pathname !== '/') {
     window.history.pushState({ page: 'home' }, '', '/');
   }
 
   renderHomeAuthCard();
-  if (window.lucide) lucide.createIcons();
 }
 
 function openImportPage() {
@@ -1937,17 +1959,12 @@ function openImportPage() {
     saveCurrentSlideState();
     stopPresenceHeartbeat();
   }
-  if (homeView) homeView.classList.add('hidden');
-  if (editorView) editorView.classList.add('hidden');
-  if (accountPageView) accountPageView.classList.add('hidden');
-  if (projectsPageView) projectsPageView.classList.add('hidden');
-  if (uploadView) uploadView.classList.remove('hidden');
+  
+  switchMainView('upload');
 
   if (window.location.pathname !== '/import') {
     window.history.pushState({ page: 'import' }, '', '/import');
   }
-
-  if (window.lucide) lucide.createIcons();
 }
 
 function getLastLoggedOutUser() {
@@ -1961,31 +1978,23 @@ function getLastLoggedOutUser() {
 
 function renderHomeAuthCard() {
   const currentUser = getCurrentUser();
-  const isLoggedOut = localStorage.getItem('canva_is_logged_out') === 'true';
   const lastUser = getLastLoggedOutUser();
+  const activeUser = currentUser || lastUser;
 
-  // 1. Nếu đang có phiên đăng nhập active và đang mở trang chủ, tự động chuyển vào trang dự án
-  if (currentUser) {
-    if (homeView && !homeView.classList.contains('hidden')) {
-      openProjectsPage('home');
-      return;
-    }
-  }
-
-  // 2. PHẦN NÀY CHỈ SHOW KHI NGƯỜI DÙNG LOGOUT RA THÔI:
-  // Hiển thị card "Jump back in!" với thông tin tài khoản vừa logout
-  if (isLoggedOut && lastUser) {
+  // Nếu có thông tin người dùng (đang đăng nhập hoặc đã logout có tài khoản lưu trước đó):
+  // Hiển thị card "Jump back in!"
+  if (activeUser) {
     if (homeAuthBlock) homeAuthBlock.classList.remove('hidden');
     if (homeGuestBlock) homeGuestBlock.classList.add('hidden');
 
-    if (homeUserNameText) homeUserNameText.textContent = lastUser.name || 'Người dùng';
-    if (homeUserEmailText) homeUserEmailText.textContent = lastUser.email || '';
+    if (homeUserNameText) homeUserNameText.textContent = activeUser.name || 'Người dùng';
+    if (homeUserEmailText) homeUserEmailText.textContent = activeUser.email || '';
 
-    const initial = (lastUser.name || lastUser.email || 'T').trim().charAt(0).toUpperCase();
+    const initial = (activeUser.name || activeUser.email || 'T').trim().charAt(0).toUpperCase();
     if (homeUserAvatarLetter) homeUserAvatarLetter.textContent = initial;
 
-    if (lastUser.picture && homeUserAvatarImg) {
-      homeUserAvatarImg.src = lastUser.picture;
+    if (activeUser.picture && homeUserAvatarImg) {
+      homeUserAvatarImg.src = activeUser.picture;
       homeUserAvatarImg.classList.remove('hidden');
       if (homeUserAvatarLetter) homeUserAvatarLetter.classList.add('hidden');
     } else {
@@ -1993,7 +2002,7 @@ function renderHomeAuthCard() {
       if (homeUserAvatarLetter) homeUserAvatarLetter.classList.remove('hidden');
     }
   } else {
-    // 3. KHI LẦN ĐẦU VÀO (CHƯA TỪNG ĐĂNG NHẬP / CHƯA LOGOUT):
+    // Khi lần đầu vào (chưa từng đăng nhập):
     // Cụ thể: logo ở trên, dưới là 1 dòng mô tả ngắn, dưới nữa là nút login, cuối cùng là nút đăng ký
     if (homeAuthBlock) homeAuthBlock.classList.add('hidden');
     if (homeGuestBlock) homeGuestBlock.classList.remove('hidden');
@@ -2031,16 +2040,20 @@ function openAccountPage(fromView) {
     return;
   }
 
-  previousViewBeforeAccount = fromView || (editorView && !editorView.classList.contains('hidden') ? 'editor' : 'upload');
-
-  // Đóng cả 2 dropdown popup nếu đang mở
-  if (uploadUserDropdownMenu) uploadUserDropdownMenu.classList.add('hidden');
-  if (userDropdownMenu) userDropdownMenu.classList.add('hidden');
+  if (fromView) {
+    previousViewBeforeAccount = fromView;
+  } else if (editorView && !editorView.classList.contains('hidden')) {
+    previousViewBeforeAccount = 'editor';
+  } else if (projectsPageView && !projectsPageView.classList.contains('hidden')) {
+    previousViewBeforeAccount = 'projects';
+  } else if (homeView && !homeView.classList.contains('hidden')) {
+    previousViewBeforeAccount = 'home';
+  } else {
+    previousViewBeforeAccount = 'upload';
+  }
 
   // Chuyển view
-  if (uploadView) uploadView.classList.add('hidden');
-  if (editorView) editorView.classList.add('hidden');
-  if (accountPageView) accountPageView.classList.remove('hidden');
+  switchMainView('account');
 
   // Điền thông tin người dùng Google
   const avatarUrl = user.picture || 'https://www.gravatar.com/avatar?d=mp';
@@ -2052,29 +2065,23 @@ function openAccountPage(fromView) {
   renderRecentDecksInAccountPage();
 
   // Đổi URL trên thanh địa chỉ sang /account
-  window.history.pushState({ page: 'account' }, '', '/account');
-
-  if (window.lucide) lucide.createIcons();
+  if (window.location.pathname !== '/account') {
+    window.history.pushState({ page: 'account' }, '', '/account');
+  }
 }
 
 // Đóng trang riêng Quản lý tài khoản và quay lại view trước đó
 function closeAccountPage() {
-  if (accountPageView) accountPageView.classList.add('hidden');
-
   if (previousViewBeforeAccount === 'editor' && currentDeck && currentDeck.designId) {
-    if (editorView) editorView.classList.remove('hidden');
+    switchMainView('editor');
     window.history.pushState({ designId: currentDeck.designId }, '', `/design/${currentDeck.designId}/${currentDeck.editToken}/edit`);
   } else if (previousViewBeforeAccount === 'projects') {
-    if (projectsPageView) projectsPageView.classList.remove('hidden');
-    window.history.pushState({ page: 'projects' }, '', '/projects');
+    openProjectsPage('account');
   } else if (previousViewBeforeAccount === 'import' || previousViewBeforeAccount === 'upload') {
-    if (uploadView) uploadView.classList.remove('hidden');
-    window.history.pushState({ page: 'import' }, '', '/import');
+    openImportPage();
   } else {
     openHomePage();
   }
-
-  if (window.lucide) lucide.createIcons();
 }
 
 // Hiển thị danh sách các bài trình chiếu trong trang quản lý tài khoản
@@ -3334,17 +3341,23 @@ function formatTimeAgoVi(dateInput) {
 
 // Mở trang Dự án
 function openProjectsPage(fromView) {
-  previousViewBeforeProjects = fromView || (editorView && !editorView.classList.contains('hidden') ? 'editor' : 'upload');
+  if (fromView) {
+    previousViewBeforeProjects = fromView;
+  } else if (editorView && !editorView.classList.contains('hidden')) {
+    previousViewBeforeProjects = 'editor';
+  } else if (homeView && !homeView.classList.contains('hidden')) {
+    previousViewBeforeProjects = 'home';
+  } else {
+    previousViewBeforeProjects = 'upload';
+  }
 
-  // Đóng các dropdown menu đang mở
-  if (uploadUserDropdownMenu) uploadUserDropdownMenu.classList.add('hidden');
-  if (userDropdownMenu) userDropdownMenu.classList.add('hidden');
-  if (accountPageView) accountPageView.classList.add('hidden');
+  if (editorView && !editorView.classList.contains('hidden')) {
+    saveCurrentSlideState();
+    stopPresenceHeartbeat();
+  }
 
-  // Chuyển view
-  if (uploadView) uploadView.classList.add('hidden');
-  if (editorView) editorView.classList.add('hidden');
-  if (projectsPageView) projectsPageView.classList.remove('hidden');
+  // Chuyển view sang projects và ẩn toàn bộ các view khác (kể cả homeView)
+  switchMainView('projects');
 
   // Cập nhật thông tin tài khoản trên header trang dự án
   const user = getCurrentUser();
@@ -3363,25 +3376,18 @@ function openProjectsPage(fromView) {
 
   // Nạp dữ liệu dự án từ máy chủ SQLite và local
   loadProjectsData();
-
-  if (window.lucide) lucide.createIcons();
 }
 
 // Đóng trang Dự án và quay lại view trước đó
 function closeProjectsPage() {
-  if (projectsPageView) projectsPageView.classList.add('hidden');
-
   if (previousViewBeforeProjects === 'editor' && currentDeck && currentDeck.designId) {
-    if (editorView) editorView.classList.remove('hidden');
-    if (uploadView) uploadView.classList.add('hidden');
+    switchMainView('editor');
     window.history.pushState({ designId: currentDeck.designId }, '', `/design/${currentDeck.designId}/${currentDeck.editToken}/edit`);
+  } else if (previousViewBeforeProjects === 'upload') {
+    openImportPage();
   } else {
-    if (uploadView) uploadView.classList.remove('hidden');
-    if (editorView) editorView.classList.add('hidden');
-    window.history.pushState({}, '', '/');
+    openHomePage();
   }
-
-  if (window.lucide) lucide.createIcons();
 }
 
 // Tải dữ liệu dự án từ SQLite server & LocalStorage
@@ -3988,10 +3994,14 @@ if (selectProjectsSort) {
 }
 
 // --- 19. HOME VIEW EVENT LISTENERS ---
-// Nút "Continue" trên thẻ Jump back in (khi đã logout, bấm Continue để đăng nhập lại)
+// Nút "Continue" trên thẻ Jump back in (nếu đang đăng nhập -> vào trang dự án; nếu đã logout -> đăng nhập lại)
 if (btnHomeContinue) {
   btnHomeContinue.addEventListener('click', () => {
-    loginWithGoogle();
+    if (getCurrentUser()) {
+      openProjectsPage('home');
+    } else {
+      loginWithGoogle();
+    }
   });
 }
 
