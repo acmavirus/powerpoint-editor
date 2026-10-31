@@ -44,155 +44,51 @@
   <body
     class="h-full flex flex-col overflow-hidden select-none bg-[#0e131f] text-slate-100"
   >
-    <!-- ================= TOP HEADER (CANVA TEAL GRADIENT) ================= -->
-    <header
-      class="h-13 bg-gradient-to-r from-[#00c4cc] via-[#0e7490] to-[#7d2ae8] text-white flex items-center justify-between px-3.5 shrink-0 z-40 shadow-sm"
-    >
-      <!-- Left: Home, File, Resize, Undo/Redo, Saved status -->
-      <div class="flex items-center gap-3">
-        <button
-          class="p-1.5 hover:bg-white/10 rounded-lg transition"
-          title="Trang chủ"
-        >
-          <i data-lucide="home" class="w-4 h-4"></i>
-        </button>
-
-        <!-- Tệp (File) Dropdown -->
-        <div class="relative group">
-          <button
-            class="px-2.5 py-1 text-xs font-medium hover:bg-white/15 rounded-md transition flex items-center gap-1"
-          >
-            <span>Tệp</span>
-          </button>
-          <div
-            class="absolute left-0 mt-1 w-52 bg-white text-slate-800 rounded-lg shadow-2xl border border-slate-200 py-1.5 hidden group-hover:block z-50 text-xs"
-          >
-            <button
-              id="menuCreateNew"
-              class="w-full text-left px-3 py-2 hover:bg-slate-100 flex items-center gap-2"
-            >
-              <i
-                data-lucide="plus-circle"
-                class="w-3.5 h-3.5 text-purple-600"
-              ></i>
-              <span>Tạo bản thiết kế mới</span>
-            </button>
-            <label
-              class="px-3 py-2 hover:bg-slate-100 cursor-pointer flex items-center gap-2"
-            >
-              <i data-lucide="upload" class="w-3.5 h-3.5 text-blue-600"></i>
-              <span>Mở file PPTX khác...</span>
-              <input
-                type="file"
-                id="menuFileInput"
-                accept=".pptx,.ppt"
-                class="hidden"
-              />
-            </label>
-            <button
-              id="menuSaveJson"
-              class="w-full text-left px-3 py-2 hover:bg-slate-100 flex items-center gap-2"
-            >
-              <i data-lucide="save" class="w-3.5 h-3.5 text-emerald-600"></i>
-              <span>Lưu bản thiết kế</span>
-            </button>
-            <div class="border-t border-slate-100 my-1"></div>
-            <button
-              id="menuDownloadPPTX"
-              class="w-full text-left px-3 py-2 hover:bg-slate-100 flex items-center gap-2"
-            >
-              <i data-lucide="download" class="w-3.5 h-3.5 text-purple-600"></i>
-              <span>Tải về file PowerPoint (.pptx)</span>
-            </button>
-          </div>
-        </div>
-
-        <button
-          class="px-2 py-1 text-xs font-medium hover:bg-white/15 rounded-md transition opacity-80 hover:opacity-100 flex items-center gap-1"
-        >
-          <span>Đổi cỡ</span>
-        </button>
-
-        <!-- Undo / Redo -->
-        <div class="flex items-center gap-0.5 ml-1">
-          <button
-            id="btnUndo"
-            class="p-1 hover:bg-white/15 rounded transition opacity-90 hover:opacity-100"
-            title="Hoàn tác (Ctrl+Z)"
-          >
-            <i data-lucide="undo" class="w-3.5 h-3.5"></i>
-          </button>
-          <button
-            id="btnRedo"
-            class="p-1 hover:bg-white/15 rounded transition opacity-90 hover:opacity-100"
-            title="Làm lại (Ctrl+Y)"
-          >
-            <i data-lucide="redo" class="w-3.5 h-3.5"></i>
-          </button>
-        </div>
-
-        <!-- Cloud status -->
-        <div class="flex items-center gap-1 text-[11px] opacity-80 ml-2">
-          <i data-lucide="cloud-check" class="w-3.5 h-3.5"></i>
-          <span id="saveStatus">Đã lưu</span>
-        </div>
-      </div>
-
-      <!-- Center: Editable Presentation Title -->
-      <div class="flex-1 flex justify-center max-w-md mx-4">
-        <input
-          id="deckTitleInput"
-          type="text"
-          value="Thiết kế không tên - Bài thuyết trình"
-          class="bg-transparent hover:bg-white/10 focus:bg-white/20 text-center text-xs font-semibold text-white px-3 py-1 rounded-md border border-transparent focus:border-white/40 outline-none transition w-full truncate"
-        />
-      </div>
-
-      <!-- Right: User, Present button, Share/Download button -->
-      <div class="flex items-center gap-2.5">
-        <!-- Sao chép link bài thiết kế Canva -->
-        <button
-          id="btnCopyDesignLink"
-          class="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-medium rounded-md border border-white/25 transition"
-          title="Sao chép liên kết bài thiết kế"
-        >
-          <i data-lucide="link" class="w-3.5 h-3.5"></i>
-          <span>Sao chép link</span>
-        </button>
-
-        <div
-          class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-white text-xs font-bold border border-white/30"
-        >
-          T
-        </div>
-
-        <!-- Thuyết trình (Presentation) Button -->
-        <button
-          id="btnPresent"
-          class="flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold rounded-md border border-white/25 transition shadow-sm"
-        >
-          <i data-lucide="play" class="w-3.5 h-3.5 fill-white"></i>
-          <span>Thuyết trình</span>
-        </button>
-
-        <!-- Chia sẻ / Xuất PPTX Button -->
-        <button
-          id="btnExportPPTX"
-          class="flex items-center gap-1.5 px-4 py-1.5 bg-white hover:bg-slate-100 text-[#0e7490] text-xs font-bold rounded-md shadow-md transition"
-        >
-          <i data-lucide="download" class="w-3.5 h-3.5"></i>
-          <span>Xuất File PPTX</span>
-        </button>
-      </div>
-    </header>
-
     <!-- ================= MAIN WORKSPACE BODY ================= -->
     <main class="flex-1 flex overflow-hidden relative">
-      <!-- STATE 1: UPLOAD DROPZONE (Displayed when no deck loaded) -->
+      <!-- STATE 1: UPLOAD DROPZONE (Displayed when no deck loaded - NO HEADER) -->
       <div
         id="uploadView"
-        class="flex-1 flex items-center justify-center p-6 bg-[#0f172a]"
+        class="flex-1 flex items-center justify-center p-6 bg-[#0f172a] relative"
       >
+        <!-- Top Right Google Auth Button on Upload Screen -->
+        <div class="absolute top-4 right-4 z-30">
+          <div class="relative">
+            <button id="btnGoogleLoginUpload" class="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 shadow-md transition group">
+              <img id="uploadUserAvatar" src="" class="w-5 h-5 rounded-full object-cover hidden border border-cyan-400" />
+              <svg id="uploadGoogleIcon" class="w-4 h-4" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+              </svg>
+              <span id="googleBtnTextUpload">Đăng nhập Google</span>
+              <i id="uploadAccountChevron" data-lucide="chevron-down" class="w-3.5 h-3.5 text-slate-400 group-hover:text-white hidden transition"></i>
+            </button>
+
+            <!-- Upload Screen Account Dropdown Popup (Y như ảnh người dùng chụp!) -->
+            <div id="uploadUserDropdownMenu" class="absolute right-0 mt-2 w-72 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-100 py-2 hidden z-50 text-xs select-none">
+              <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
+                <img id="uploadDropdownAvatarImg" src="" class="w-11 h-11 rounded-full object-cover border border-slate-200 shadow-sm" />
+                <div class="overflow-hidden flex-1">
+                  <p id="uploadUserNameText" class="font-bold text-slate-800 text-sm truncate"></p>
+                  <p id="uploadUserEmailText" class="text-xs text-slate-500 truncate mt-0.5"></p>
+                </div>
+              </div>
+              <div class="p-1.5 space-y-0.5">
+                <button id="btnUploadGoToAccountPage" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 text-slate-700 rounded-xl flex items-center gap-3 font-semibold transition">
+                  <i data-lucide="user" class="w-4 h-4 text-purple-600"></i>
+                  <span>Quản lý tài khoản</span>
+                </button>
+                <div class="border-t border-slate-100 my-1"></div>
+                <button id="btnUploadLogout" class="w-full text-left px-3.5 py-2.5 hover:bg-red-50 text-red-600 rounded-xl flex items-center gap-3 font-semibold transition">
+                  <i data-lucide="log-out" class="w-4 h-4 text-red-500"></i>
+                  <span>Đăng xuất Google</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
         <div
           class="max-w-xl w-full bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-2xl text-center"
         >
@@ -261,15 +157,319 @@
         </div>
       </div>
 
-      <!-- STATE 2: CANVA EDITOR WORKSPACE -->
-      <div id="editorView" class="hidden flex-1 flex overflow-hidden">
+      <!-- STATE 2: CANVA EDITOR WORKSPACE (Bao gồm Header + Toolbar + Canvas - Chỉ hiện khi mở bản thiết kế) -->
+      <div id="editorView" class="hidden flex-1 flex flex-col overflow-hidden">
+        <!-- ================= TOP HEADER (CANVA SIGNATURE GRADIENT) ================= -->
+        <header
+          class="h-12 bg-gradient-to-r from-[#00c4cc] via-[#0e7490] to-[#7d2ae8] text-white flex items-center justify-between px-3.5 shrink-0 z-40 shadow-sm select-none"
+        >
+          <!-- Left: Home, File, Resize, Undo/Redo, Saved status -->
+          <div class="flex items-center gap-3">
+            <button
+              id="btnHome"
+              class="p-1.5 hover:bg-white/10 rounded-lg transition"
+              title="Trang chủ"
+            >
+              <i data-lucide="home" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Tệp (File) Dropdown -->
+            <div class="relative group">
+              <button
+                class="px-2.5 py-1 text-xs font-medium hover:bg-white/15 rounded-md transition flex items-center gap-1"
+              >
+                <span>Tệp</span>
+              </button>
+              <div
+                class="absolute left-0 mt-1 w-52 bg-white text-slate-800 rounded-lg shadow-2xl border border-slate-200 py-1.5 hidden group-hover:block z-50 text-xs"
+              >
+                <button
+                  id="menuCreateNew"
+                  class="w-full text-left px-3 py-2 hover:bg-slate-100 flex items-center gap-2"
+                >
+                  <i
+                    data-lucide="plus-circle"
+                    class="w-3.5 h-3.5 text-purple-600"
+                  ></i>
+                  <span>Tạo bản thiết kế mới</span>
+                </button>
+                <label
+                  class="px-3 py-2 hover:bg-slate-100 cursor-pointer flex items-center gap-2"
+                >
+                  <i data-lucide="upload" class="w-3.5 h-3.5 text-blue-600"></i>
+                  <span>Mở file PPTX khác...</span>
+                  <input
+                    type="file"
+                    id="menuFileInput"
+                    accept=".pptx,.ppt"
+                    class="hidden"
+                  />
+                </label>
+                <button
+                  id="menuSaveJson"
+                  class="w-full text-left px-3 py-2 hover:bg-slate-100 flex items-center gap-2"
+                >
+                  <i data-lucide="save" class="w-3.5 h-3.5 text-emerald-600"></i>
+                  <span>Lưu bản thiết kế</span>
+                </button>
+                <div class="border-t border-slate-100 my-1"></div>
+                <button
+                  id="menuDownloadPPTX"
+                  class="w-full text-left px-3 py-2 hover:bg-slate-100 flex items-center gap-2"
+                >
+                  <i data-lucide="download" class="w-3.5 h-3.5 text-purple-600"></i>
+                  <span>Tải về file PowerPoint (.pptx)</span>
+                </button>
+              </div>
+            </div>
+
+            <button
+              class="px-2 py-1 text-xs font-medium hover:bg-white/15 rounded-md transition opacity-80 hover:opacity-100 flex items-center gap-1"
+            >
+              <span>Đổi cỡ</span>
+            </button>
+
+            <!-- Undo / Redo -->
+            <div class="flex items-center gap-0.5 ml-1">
+              <button
+                id="btnUndo"
+                class="p-1 hover:bg-white/15 rounded transition opacity-90 hover:opacity-100"
+                title="Hoàn tác (Ctrl+Z)"
+              >
+                <i data-lucide="undo" class="w-3.5 h-3.5"></i>
+              </button>
+              <button
+                id="btnRedo"
+                class="p-1 hover:bg-white/15 rounded transition opacity-90 hover:opacity-100"
+                title="Làm lại (Ctrl+Y)"
+              >
+                <i data-lucide="redo" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <!-- Cloud status -->
+            <div class="flex items-center gap-1 text-[11px] opacity-80 ml-2">
+              <i data-lucide="cloud-check" class="w-3.5 h-3.5"></i>
+              <span id="saveStatus">Đã lưu</span>
+            </div>
+          </div>
+
+          <!-- Center: Editable Presentation Title -->
+          <div class="flex-1 flex justify-center max-w-md mx-4">
+            <input
+              id="deckTitleInput"
+              type="text"
+              value="Thiết kế không tên - Bài thuyết trình"
+              class="bg-transparent hover:bg-white/10 focus:bg-white/20 text-center text-xs font-semibold text-white px-3 py-1 rounded-md border border-transparent focus:border-white/40 outline-none transition w-full truncate"
+            />
+          </div>
+
+          <!-- Right: User, Insights, Comments, Present, Export, and Share Button -->
+          <div class="flex items-center gap-2">
+            <!-- Google Auth Profile Component (Header) -->
+            <div id="authProfileContainer" class="relative">
+              <!-- Nút Đăng nhập Google (khi chưa đăng nhập) -->
+              <button id="btnGoogleLoginHeader" class="flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-md shadow-sm transition border border-slate-200">
+                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                <span class="hidden sm:inline">Đăng nhập</span>
+              </button>
+
+              <!-- Avatar & Dropdown (khi đã đăng nhập) -->
+              <div id="userLoggedInMenu" class="hidden relative">
+                <button id="userAvatarBtn" class="flex items-center gap-1.5 focus:outline-none group" title="Tài khoản Google">
+                  <img id="userAvatarImg" src="" alt="Avatar" class="w-7 h-7 rounded-full object-cover border-2 border-white/60 shadow-sm" />
+                </button>
+                
+                <!-- Popup Dropdown chuẩn Canva y như ảnh của bạn -->
+                <div id="userDropdownMenu" class="absolute right-0 mt-2 w-72 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-100 py-2 hidden z-50 text-xs select-none">
+                  <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
+                    <img id="dropdownAvatarImg" src="" class="w-11 h-11 rounded-full object-cover border border-slate-200 shadow-sm" />
+                    <div class="overflow-hidden flex-1">
+                      <p id="userNameText" class="font-bold text-slate-800 text-sm truncate"></p>
+                      <p id="userEmailText" class="text-xs text-slate-500 truncate mt-0.5"></p>
+                    </div>
+                  </div>
+                  <div class="p-1.5 space-y-0.5">
+                    <button id="btnGoToAccountPage" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 text-slate-700 rounded-xl flex items-center gap-3 font-semibold transition">
+                      <i data-lucide="user" class="w-4 h-4 text-purple-600"></i>
+                      <span>Quản lý tài khoản</span>
+                    </button>
+                    <div class="border-t border-slate-100 my-1"></div>
+                    <button id="btnLogout" class="w-full text-left px-3.5 py-2.5 hover:bg-red-50 text-red-600 rounded-xl flex items-center gap-3 font-semibold transition">
+                      <i data-lucide="log-out" class="w-4 h-4 text-red-500"></i>
+                      <span>Đăng xuất Google</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Thống kê & Bình luận (Canva Header Icons) -->
+            <button class="hidden md:flex p-1.5 hover:bg-white/15 rounded-md text-white/90 hover:text-white transition" title="Thông tin chi tiết & Thống kê">
+              <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+            </button>
+            <button class="hidden md:flex p-1.5 hover:bg-white/15 rounded-md text-white/90 hover:text-white transition" title="Bình luận">
+              <i data-lucide="message-square" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Thuyết trình (Presentation) Button -->
+            <button
+              id="btnPresent"
+              class="flex items-center gap-1 px-3 py-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold rounded-md border border-white/25 transition shadow-sm"
+              title="Trình chiếu toàn màn hình (F5)"
+            >
+              <i data-lucide="play" class="w-3.5 h-3.5 fill-white"></i>
+              <span>Thuyết trình</span>
+              <i data-lucide="chevron-down" class="w-3 h-3 text-white/70"></i>
+            </button>
+
+            <!-- Xuất File PPTX Button -->
+            <button
+              id="btnExportPPTX"
+              class="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-white/15 hover:bg-white/25 text-white text-xs font-semibold rounded-md border border-white/25 transition shadow-sm"
+              title="Xuất file PowerPoint .pptx"
+            >
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>Xuất PPTX</span>
+            </button>
+
+            <!-- Nút CHIA SẺ & Dropdown Chia Sẻ Thiết Kế (Chuẩn Canva 100% y hệt ảnh) -->
+            <div class="relative">
+              <button
+                id="btnShareDesign"
+                class="flex items-center gap-1.5 px-4 py-1.5 bg-white hover:bg-slate-100 text-slate-800 text-xs font-bold rounded-lg shadow-md transition cursor-pointer"
+                title="Chia sẻ thiết kế này"
+              >
+                <span>Chia sẻ</span>
+              </button>
+
+              <!-- Popover Dropdown Chia Sẻ Thiết Kế -->
+              <div
+                id="shareDesignDropdown"
+                class="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-100 p-5 hidden z-50 select-none animate-in fade-in duration-150"
+              >
+                <!-- Header: Tiêu đề + Icon thống kê + Icon cài đặt -->
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-base font-bold text-slate-900">Chia sẻ thiết kế</h3>
+                  <div class="flex items-center gap-1 text-slate-500">
+                    <button class="p-1.5 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition" title="Thống kê">
+                      <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+                    </button>
+                    <button class="p-1.5 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition" title="Cài đặt liên kết">
+                      <i data-lucide="settings" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Phần 1: Thành viên có quyền truy cập -->
+                <div class="space-y-3 mb-4">
+                  <label class="block text-xs font-bold text-slate-800">Thành viên có quyền truy cập</label>
+                  
+                  <!-- Input tìm kiếm / thêm người -->
+                  <div class="relative">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-2.5 text-slate-400"></i>
+                    <input
+                      id="inputShareMemberEmail"
+                      type="text"
+                      placeholder="Thêm người"
+                      class="w-full bg-white border border-slate-200 focus:border-purple-500 rounded-xl pl-10 pr-14 py-2 text-xs text-slate-800 placeholder-slate-400 outline-none transition shadow-sm"
+                    />
+                    <button id="btnAddShareMember" class="absolute right-2.5 top-1.5 text-purple-600 hover:text-purple-700 text-xs font-bold px-2 py-0.5 hover:bg-purple-50 rounded-lg transition">
+                      Thêm
+                    </button>
+                  </div>
+
+                  <!-- Hàng Avatar danh sách thành viên có quyền truy cập -->
+                  <div id="shareMembersAvatarList" class="flex items-center gap-2 pt-1 flex-wrap">
+                    <!-- Avatar chủ sở hữu (Owner) -->
+                    <div id="shareOwnerAvatarContainer" class="w-8 h-8 rounded-full bg-amber-700 text-white font-bold text-xs flex items-center justify-center border-2 border-white shadow-sm overflow-hidden" title="Chủ sở hữu">
+                      <img id="shareOwnerAvatarImg" src="" class="w-full h-full object-cover hidden" />
+                      <span id="shareOwnerInitial">T</span>
+                    </div>
+                    
+                    <!-- Danh sách các thành viên được thêm thêm vào đây -->
+                    <div id="dynamicSharedMembers" class="flex items-center gap-1.5 flex-wrap"></div>
+
+                    <!-- Nút dấu + -->
+                    <button id="btnTriggerAddMember" class="w-8 h-8 rounded-full border border-dashed border-slate-300 hover:border-purple-400 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:bg-purple-50 transition" title="Mời thêm người">
+                      <i data-lucide="plus" class="w-4 h-4"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Phần 2: Cấp độ truy cập -->
+                <div class="space-y-2 mb-5">
+                  <label class="block text-xs font-bold text-slate-800">Cấp độ truy cập</label>
+                  <div class="relative">
+                    <div id="accessLevelSelector" class="flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl cursor-pointer transition">
+                      <div class="flex items-center gap-3">
+                        <div id="accessLevelIconWrapper" class="w-8 h-8 rounded-full bg-slate-200/70 flex items-center justify-center text-slate-700 shrink-0">
+                          <i id="accessLevelIcon" data-lucide="lock" class="w-4 h-4"></i>
+                        </div>
+                        <span id="accessLevelText" class="text-xs font-medium text-slate-800">Chỉ bạn mới có quyền truy cập</span>
+                      </div>
+                      <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                    </div>
+
+                    <!-- Dropdown menu chọn cấp độ -->
+                    <div id="accessLevelMenu" class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl py-1 hidden z-50 text-xs">
+                      <button class="access-level-option w-full text-left px-3.5 py-2.5 hover:bg-slate-50 flex items-center gap-3 font-medium text-slate-800 transition" data-level="private">
+                        <div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
+                          <i data-lucide="lock" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <div>
+                          <p class="font-semibold text-slate-800">Chỉ bạn mới có quyền truy cập</p>
+                          <p class="text-[11px] text-slate-400">Chỉ những người được mời mới có thể mở liên kết này</p>
+                        </div>
+                      </button>
+                      <button class="access-level-option w-full text-left px-3.5 py-2.5 hover:bg-slate-50 flex items-center gap-3 font-medium text-slate-800 transition" data-level="view">
+                        <div class="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+                          <i data-lucide="eye" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <div>
+                          <p class="font-semibold text-slate-800">Bất kỳ ai có liên kết đều có thể xem</p>
+                          <p class="text-[11px] text-slate-400">Không cần đăng nhập, chỉ xem chế độ trình chiếu</p>
+                        </div>
+                      </button>
+                      <button class="access-level-option w-full text-left px-3.5 py-2.5 hover:bg-slate-50 flex items-center gap-3 font-medium text-slate-800 transition" data-level="edit">
+                        <div class="w-7 h-7 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                          <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <div>
+                          <p class="font-semibold text-slate-800">Bất kỳ ai có liên kết đều có thể chỉnh sửa</p>
+                          <p class="text-[11px] text-slate-400">Mọi người có liên kết đều có toàn quyền sửa đổi</p>
+                        </div>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Phần 3: Nút Sao chép liên kết to màu tím chuẩn Canva -->
+                <button
+                  id="btnCopyShareLinkModal"
+                  class="w-full py-3 px-4 bg-[#7d2ae8] hover:bg-[#6c23cb] text-white font-bold text-xs rounded-xl shadow-lg shadow-purple-500/20 transition flex items-center justify-center gap-2 group cursor-pointer"
+                >
+                  <i id="btnCopyShareLinkIcon" data-lucide="link-2" class="w-4 h-4 group-hover:scale-110 transition"></i>
+                  <span id="btnCopyShareLinkText">Sao chép liên kết</span>
+                </button>
+              </div>
+            </div>
+        </header>
+
+        <!-- WORKSPACE INTERIOR (Nav rail + Drawer + Canvas) -->
+        <div class="flex-1 flex overflow-hidden relative">
         <!-- 1. LEFT VERTICAL ICON DOCK (CANVA RAIL) -->
         <nav
-          class="w-18 bg-[#0c101c] border-r border-slate-800/80 flex flex-col items-center py-3 shrink-0 z-20 space-y-2 select-none"
+          class="w-20 bg-[#0c101c] border-r border-slate-800/80 flex flex-col items-center py-3 px-2 shrink-0 z-20 space-y-2 select-none"
         >
           <!-- Tab 1: Mẫu (Slide Deck) -->
           <button
-            class="nav-tab-btn flex flex-col items-center justify-center w-14 h-14 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
+            class="nav-tab-btn flex flex-col items-center justify-center w-full h-[58px] rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
             data-tab="tab-slides"
             title="Danh sách Slide"
           >
@@ -279,7 +479,7 @@
 
           <!-- Tab 2: Thành phần (Elements & Shapes) -->
           <button
-            class="nav-tab-btn flex flex-col items-center justify-center w-14 h-14 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
+            class="nav-tab-btn flex flex-col items-center justify-center w-full h-[58px] rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
             data-tab="tab-elements"
             title="Thành phần"
           >
@@ -289,7 +489,7 @@
 
           <!-- Tab 3: Văn bản (Text) -->
           <button
-            class="nav-tab-btn flex flex-col items-center justify-center w-14 h-14 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
+            class="nav-tab-btn flex flex-col items-center justify-center w-full h-[58px] rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
             data-tab="tab-text"
             title="Văn bản"
           >
@@ -299,7 +499,7 @@
 
           <!-- Tab 4: Tải lên (Uploads) -->
           <button
-            class="nav-tab-btn flex flex-col items-center justify-center w-14 h-14 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
+            class="nav-tab-btn flex flex-col items-center justify-center w-full h-[58px] rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
             data-tab="tab-uploads"
             title="Tải lên"
           >
@@ -312,7 +512,7 @@
 
           <!-- Tab 5: Nền (Background) -->
           <button
-            class="nav-tab-btn flex flex-col items-center justify-center w-14 h-14 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
+            class="nav-tab-btn flex flex-col items-center justify-center w-full h-[58px] rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
             data-tab="tab-background"
             title="Nền Slide"
           >
@@ -325,7 +525,7 @@
 
           <!-- Tab 6: Vẽ / Công cụ -->
           <button
-            class="nav-tab-btn flex flex-col items-center justify-center w-14 h-14 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
+            class="nav-tab-btn flex flex-col items-center justify-center w-full h-[58px] rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/60 transition text-[10px]"
             data-tab="tab-draw"
             title="Công cụ"
           >
@@ -835,7 +1035,105 @@
           </footer>
         </section>
       </div>
-    </main>
+    </div>
+
+      <!-- STATE 3: TRANG RIÊNG QUẢN LÝ TÀI KHOẢN (DEDICATED ACCOUNT PAGE) -->
+      <div id="accountPageView" class="hidden flex-1 flex flex-col bg-[#f8fafc] text-slate-800 overflow-y-auto select-none">
+        <!-- Account Header -->
+        <header class="h-14 bg-white border-b border-slate-200 px-6 flex items-center justify-between shrink-0 shadow-sm">
+          <div class="flex items-center gap-3">
+            <button id="btnBackFromAccount" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              <span>Quay lại</span>
+            </button>
+            <div class="h-4 w-px bg-slate-200"></div>
+            <h1 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <i data-lucide="user" class="w-4 h-4 text-purple-600"></i>
+              <span>Quản Lý Tài Khoản</span>
+            </h1>
+          </div>
+
+          <button id="btnAccountPageLogout" class="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg text-xs font-semibold border border-red-200 transition">
+            <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+            <span>Đăng xuất Google</span>
+          </button>
+        </header>
+
+        <!-- Account Body Container -->
+        <div class="max-w-4xl w-full mx-auto p-6 space-y-6">
+          
+          <!-- Card 1: User Profile Overview -->
+          <div class="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex flex-col sm:flex-row items-center sm:items-start gap-6">
+            <img id="accPageAvatar" src="" class="w-24 h-24 rounded-full object-cover border-4 border-purple-100 shadow-md" />
+            <div class="flex-1 text-center sm:text-left space-y-2">
+              <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+                <h2 id="accPageName" class="text-xl font-bold text-slate-900"></h2>
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-100 text-emerald-700 rounded-full text-[11px] font-semibold w-fit mx-auto sm:mx-0">
+                  <i data-lucide="check-circle" class="w-3 h-3"></i> Đã xác thực Google
+                </span>
+              </div>
+              <p id="accPageEmail" class="text-xs text-slate-500 font-medium"></p>
+              <p class="text-xs text-slate-400">Đăng nhập an toàn qua giao thức Google OAuth 2.0</p>
+              
+              <div class="pt-2 flex flex-wrap gap-2">
+                <a href="https://myaccount.google.com/" target="_blank" rel="noopener noreferrer" 
+                  class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-medium rounded-lg border border-slate-200 transition">
+                  <i data-lucide="external-link" class="w-3.5 h-3.5 text-purple-600"></i>
+                  <span>Cài đặt bảo mật tài khoản Google</span>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 2: Cài đặt bài thuyết trình & Thống kê lưu trữ -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
+              <h3 class="text-xs font-bold text-slate-800 flex items-center gap-2">
+                <i data-lucide="sliders" class="w-4 h-4 text-purple-600"></i>
+                <span>Tùy Chọn Ứng Dụng</span>
+              </h3>
+              <div class="space-y-2.5 text-xs text-slate-600">
+                <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
+                  <div>
+                    <p class="font-medium text-slate-800">Tự động lưu bản thiết kế</p>
+                    <p class="text-[11px] text-slate-400">Tự động đồng bộ các thay đổi vào bộ nhớ</p>
+                  </div>
+                  <span class="text-emerald-600 font-bold text-xs">BẬT</span>
+                </div>
+                <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
+                  <div>
+                    <p class="font-medium text-slate-800">Độ phân giải kết xuất</p>
+                    <p class="text-[11px] text-slate-400">Chất lượng hình ảnh PowerPoint</p>
+                  </div>
+                  <span class="text-purple-600 font-bold text-xs">150 DPI Full HD</span>
+                </div>
+                <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl">
+                  <div>
+                    <p class="font-medium text-slate-800">Phiên đăng nhập</p>
+                    <p class="text-[11px] text-slate-400">Thời hạn token Google</p>
+                  </div>
+                  <span class="text-slate-700 font-medium text-xs">30 ngày</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-3">
+              <h3 class="text-xs font-bold text-slate-800 flex items-center gap-2">
+                <i data-lucide="folder-clock" class="w-4 h-4 text-cyan-600"></i>
+                <span>Bài Thiết Kế Gần Đây</span>
+              </h3>
+              <p class="text-xs text-slate-500">Các bài trình chiếu bạn đang làm việc:</p>
+              <div id="accountRecentDecksList" class="space-y-2 text-xs">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+  </main>
 
     <!-- FULLSCREEN PRESENTATION MODE (F5) -->
     <div
@@ -886,6 +1184,59 @@
         >
           <i data-lucide="arrow-right" class="w-5 h-5"></i>
         </button>
+      </div>
+    </div>
+
+    <!-- ACCOUNT MANAGEMENT MODAL -->
+    <div id="accountModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 select-none">
+      <div class="bg-slate-900 border border-slate-700/80 rounded-2xl max-w-md w-full shadow-2xl overflow-hidden transform transition-all text-slate-100">
+        
+        <!-- Modal Header -->
+        <div class="p-4 border-b border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24">
+              <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+              <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+              <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+              <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+            </svg>
+            <h3 class="text-xs font-bold text-slate-200">Quản Lý Tài Khoản</h3>
+          </div>
+          <button id="btnCloseAccountModal" class="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition" title="Đóng">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- User Profile Card -->
+        <div class="p-6 flex flex-col items-center text-center border-b border-slate-800 bg-slate-950/40">
+          <div class="relative mb-3">
+            <img id="modalUserAvatar" src="" alt="Avatar" class="w-20 h-20 rounded-full object-cover border-2 border-cyan-500/50 shadow-xl" />
+            <span class="absolute bottom-0 right-0 w-5 h-5 bg-emerald-500 border-2 border-slate-900 rounded-full flex items-center justify-center text-[10px] text-white" title="Đã xác thực">✓</span>
+          </div>
+          <h4 id="modalUserName" class="text-base font-bold text-white mb-0.5"></h4>
+          <p id="modalUserEmail" class="text-xs text-slate-400 mb-3"></p>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-950/60 border border-emerald-800/60 text-emerald-400 rounded-full text-[11px] font-semibold">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Tài khoản Google đã xác thực
+          </span>
+        </div>
+
+        <!-- Actions -->
+        <div class="p-4 space-y-2 text-xs">
+          <a href="https://myaccount.google.com/" target="_blank" rel="noopener noreferrer" 
+            class="w-full py-2.5 px-3.5 bg-slate-800/70 hover:bg-slate-800 text-slate-200 rounded-xl border border-slate-700/60 flex items-center justify-between transition">
+            <span class="flex items-center gap-2">
+              <i data-lucide="external-link" class="w-4 h-4 text-cyan-400"></i>
+              <span>Cài đặt bảo mật tài khoản Google</span>
+            </span>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5 text-slate-500"></i>
+          </a>
+
+          <button id="btnModalLogout" class="w-full py-2.5 px-3.5 bg-red-950/30 hover:bg-red-900/40 text-red-400 rounded-xl border border-red-900/40 flex items-center justify-center gap-2 font-semibold transition">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+            <span>Đăng xuất khỏi thiết bị này</span>
+          </button>
+        </div>
+
       </div>
     </div>
 

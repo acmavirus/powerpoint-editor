@@ -16,8 +16,55 @@ const btnLoadSample = document.getElementById('btnLoadSample');
 const btnCreateBlankDeck = document.getElementById('btnCreateBlankDeck');
 const menuCreateNew = document.getElementById('menuCreateNew');
 const btnCopyDesignLink = document.getElementById('btnCopyDesignLink');
+const btnHome = document.getElementById('btnHome');
 const uploadLoader = document.getElementById('uploadLoader');
 const loaderText = document.getElementById('loaderText');
+
+// Google Auth & Account Page References
+const btnGoogleLoginUpload = document.getElementById('btnGoogleLoginUpload');
+const uploadUserDropdownMenu = document.getElementById('uploadUserDropdownMenu');
+const uploadDropdownAvatarImg = document.getElementById('uploadDropdownAvatarImg');
+const uploadUserNameText = document.getElementById('uploadUserNameText');
+const uploadUserEmailText = document.getElementById('uploadUserEmailText');
+const btnUploadGoToAccountPage = document.getElementById('btnUploadGoToAccountPage');
+const btnUploadLogout = document.getElementById('btnUploadLogout');
+
+const btnGoogleLoginHeader = document.getElementById('btnGoogleLoginHeader');
+const userLoggedInMenu = document.getElementById('userLoggedInMenu');
+const userAvatarBtn = document.getElementById('userAvatarBtn');
+const userAvatarImg = document.getElementById('userAvatarImg');
+const userDropdownMenu = document.getElementById('userDropdownMenu');
+const dropdownAvatarImg = document.getElementById('dropdownAvatarImg');
+const userNameText = document.getElementById('userNameText');
+const userEmailText = document.getElementById('userEmailText');
+const btnGoToAccountPage = document.getElementById('btnGoToAccountPage');
+const btnLogout = document.getElementById('btnLogout');
+
+const accountPageView = document.getElementById('accountPageView');
+const btnBackFromAccount = document.getElementById('btnBackFromAccount');
+const btnAccountPageLogout = document.getElementById('btnAccountPageLogout');
+const accPageAvatar = document.getElementById('accPageAvatar');
+const accPageName = document.getElementById('accPageName');
+const accPageEmail = document.getElementById('accPageEmail');
+const accountRecentDecksList = document.getElementById('accountRecentDecksList');
+
+// Share Design Elements
+const btnShareDesign = document.getElementById('btnShareDesign');
+const shareDesignDropdown = document.getElementById('shareDesignDropdown');
+const inputShareMemberEmail = document.getElementById('inputShareMemberEmail');
+const btnAddShareMember = document.getElementById('btnAddShareMember');
+const btnTriggerAddMember = document.getElementById('btnTriggerAddMember');
+const shareOwnerAvatarContainer = document.getElementById('shareOwnerAvatarContainer');
+const shareOwnerAvatarImg = document.getElementById('shareOwnerAvatarImg');
+const shareOwnerInitial = document.getElementById('shareOwnerInitial');
+const dynamicSharedMembers = document.getElementById('dynamicSharedMembers');
+const accessLevelSelector = document.getElementById('accessLevelSelector');
+const accessLevelMenu = document.getElementById('accessLevelMenu');
+const accessLevelText = document.getElementById('accessLevelText');
+const accessLevelIcon = document.getElementById('accessLevelIcon');
+const btnCopyShareLinkModal = document.getElementById('btnCopyShareLinkModal');
+const btnCopyShareLinkText = document.getElementById('btnCopyShareLinkText');
+const btnCopyShareLinkIcon = document.getElementById('btnCopyShareLinkIcon');
 
 // --- CANVA URL & ID GENERATION UTILITIES ---
 // Sinh Canva Design ID: tiền tố 'DA' + 9 ký tự ngẫu nhiên (tổng 11 ký tự, e.g. DAHZkAweP4E)
@@ -231,8 +278,8 @@ function setupCanvaNavRail() {
       }
 
       // Highlight active tab
-      navTabBtns.forEach(b => b.classList.remove('canva-tab-active', 'bg-slate-800'));
-      btn.classList.add('bg-slate-800');
+      navTabBtns.forEach(b => b.classList.remove('bg-slate-800', 'text-white'));
+      btn.classList.add('bg-slate-800', 'text-white');
 
       // Switch pane
       tabPanes.forEach(pane => pane.classList.add('hidden'));
@@ -245,7 +292,7 @@ function setupCanvaNavRail() {
 
   // Activate first tab by default
   if (navTabBtns.length > 0) {
-    navTabBtns[0].classList.add('bg-slate-800');
+    navTabBtns[0].classList.add('bg-slate-800', 'text-white');
   }
 
   btnCollapseDrawer.addEventListener('click', toggleDrawer);
@@ -1346,6 +1393,31 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+// Helper: Chuyển đổi mọi đường dẫn ảnh (URL hoặc relative path) sang Base64 Data URL chuẩn cho PptxGenJS
+async function fetchImageAsBase64(url) {
+  if (!url) return null;
+  if (url.startsWith('data:image/')) return url;
+
+  try {
+    const fullUrl = url.startsWith('http') ? url : (window.location.origin + url);
+    const response = await fetch(fullUrl);
+    if (!response.ok) {
+      console.warn(`Lỗi khi tải ảnh ${fullUrl}: ${response.status}`);
+      return null;
+    }
+    const blob = await response.blob();
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch (err) {
+    console.error("Lỗi chuyển đổi ảnh sang Base64:", url, err);
+    return null;
+  }
+}
+
 // --- 12. EXPORT ENGINE: EXPORT TO NATIVE .PPTX ---
 btnExportPPTX.addEventListener('click', exportDeckToPPTX);
 menuDownloadPPTX.addEventListener('click', exportDeckToPPTX);
@@ -1357,7 +1429,8 @@ async function exportDeckToPPTX() {
   }
 
   saveCurrentSlideState();
-  showToast("Đang tạo file PowerPoint (.pptx)...");
+  const totalSlides = currentDeck.slides.length;
+  showToast(`Đang kết xuất ${totalSlides} slide sang PowerPoint...`);
 
   try {
     const pptx = new PptxGenJS();
@@ -1365,27 +1438,39 @@ async function exportDeckToPPTX() {
 
     const filename = (deckTitleInput.value.trim() || "SlideCraft_Presentation") + ".pptx";
 
-    for (let i = 0; i < currentDeck.slides.length; i++) {
+    for (let i = 0; i < totalSlides; i++) {
       const slide = currentDeck.slides[i];
       const pptxSlide = pptx.addSlide();
 
+      // 1. Kết xuất nền slide
       if (slide.useCustomColor && slide.customColor) {
         pptxSlide.background = { color: slide.customColor.replace('#', '') };
       } else {
-        let bgUrl = (slide.isEdited && slide.thumbnailUrl) ? slide.thumbnailUrl : slide.renderPngUrl;
-        if (bgUrl) {
-          pptxSlide.addImage({
-            data: bgUrl,
-            x: 0,
-            y: 0,
-            w: '100%',
-            h: '100%',
-          });
+        // Lấy URL ảnh nền: ưu tiên renderPngUrl gốc để đảm bảo độ nét 100%
+        let bgSourceUrl = slide.renderPngUrl;
+        if (slide.isEdited && slide.thumbnailUrl && slide.thumbnailUrl.startsWith('data:')) {
+          bgSourceUrl = slide.thumbnailUrl;
+        }
+
+        if (bgSourceUrl) {
+          const base64Bg = await fetchImageAsBase64(bgSourceUrl);
+          if (base64Bg) {
+            pptxSlide.addImage({
+              data: base64Bg,
+              x: 0,
+              y: 0,
+              w: '100%',
+              h: '100%',
+            });
+          }
         }
       }
 
-      if (slide.fabricJson && slide.fabricJson.objects) {
-        slide.fabricJson.objects.forEach(obj => {
+      // 2. Kết xuất các đối tượng người dùng thêm vào (Text, Shape, Image...)
+      if (slide.fabricJson && slide.fabricJson.objects && slide.fabricJson.objects.length > 0) {
+        for (const obj of slide.fabricJson.objects) {
+          if (obj.isExtractedOverlay) continue;
+
           if (obj.type === 'textbox' || obj.type === 'text') {
             const inchX = (obj.left / 960) * 13.333;
             const inchY = (obj.top / 540) * 7.5;
@@ -1405,13 +1490,24 @@ async function exportDeckToPPTX() {
               align: obj.textAlign || 'left',
               valign: 'middle',
             });
+          } else if (obj.type === 'image' && obj.src) {
+            const imgBase64 = await fetchImageAsBase64(obj.src);
+            if (imgBase64) {
+              pptxSlide.addImage({
+                data: imgBase64,
+                x: (obj.left / 960) * 13.333,
+                y: (obj.top / 540) * 7.5,
+                w: ((obj.width * (obj.scaleX || 1)) / 960) * 13.333,
+                h: ((obj.height * (obj.scaleY || 1)) / 540) * 7.5,
+              });
+            }
           }
-        });
+        }
       }
     }
 
     await pptx.writeFile({ fileName: filename });
-    showToast(`Xuất file "${filename}" thành công!`);
+    showToast(`Xuất trọn bộ ${totalSlides} slide sang file "${filename}" thành công!`);
   } catch (err) {
     console.error("Export error:", err);
     showToast("Lỗi khi xuất file PPTX: " + err.message, true);
@@ -1460,6 +1556,16 @@ if (btnCreateBlankDeck) {
   btnCreateBlankDeck.addEventListener('click', createNewBlankPresentation);
 }
 
+if (btnHome) {
+  btnHome.addEventListener('click', () => {
+    saveCurrentSlideState();
+    editorView.classList.add('hidden');
+    uploadView.classList.remove('hidden');
+    window.history.pushState({}, '', '/');
+    showToast("Đã quay về trang bắt đầu");
+  });
+}
+
 deckTitleInput.addEventListener('change', () => {
   if (currentDeck) {
     currentDeck.filename = deckTitleInput.value.trim() || "Thiết kế không tên - Bài thuyết trình";
@@ -1467,7 +1573,170 @@ deckTitleInput.addEventListener('change', () => {
   }
 });
 
+// Helper sanitize HTML
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Account page & dropdown state
+let previousViewBeforeAccount = 'upload';
+
+// Mở trang riêng Quản lý tài khoản
+function openAccountPage(fromView) {
+  const user = getCurrentUser();
+  if (!user) {
+    loginWithGoogle();
+    return;
+  }
+
+  previousViewBeforeAccount = fromView || (editorView && !editorView.classList.contains('hidden') ? 'editor' : 'upload');
+
+  // Đóng cả 2 dropdown popup nếu đang mở
+  if (uploadUserDropdownMenu) uploadUserDropdownMenu.classList.add('hidden');
+  if (userDropdownMenu) userDropdownMenu.classList.add('hidden');
+
+  // Chuyển view
+  if (uploadView) uploadView.classList.add('hidden');
+  if (editorView) editorView.classList.add('hidden');
+  if (accountPageView) accountPageView.classList.remove('hidden');
+
+  // Điền thông tin người dùng Google
+  const avatarUrl = user.picture || 'https://www.gravatar.com/avatar?d=mp';
+  if (accPageAvatar) accPageAvatar.src = avatarUrl;
+  if (accPageName) accPageName.textContent = user.name || 'Người dùng Google';
+  if (accPageEmail) accPageEmail.textContent = user.email || '';
+
+  // Render danh sách bài thiết kế gần đây
+  renderRecentDecksInAccountPage();
+
+  // Đổi URL trên thanh địa chỉ sang /account
+  window.history.pushState({ page: 'account' }, '', '/account');
+
+  if (window.lucide) lucide.createIcons();
+}
+
+// Đóng trang riêng Quản lý tài khoản và quay lại view trước đó
+function closeAccountPage() {
+  if (accountPageView) accountPageView.classList.add('hidden');
+
+  if (previousViewBeforeAccount === 'editor' && currentDeck && currentDeck.designId) {
+    if (editorView) editorView.classList.remove('hidden');
+    if (uploadView) uploadView.classList.add('hidden');
+    window.history.pushState({ designId: currentDeck.designId }, '', `/design/${currentDeck.designId}/${currentDeck.editToken}/edit`);
+  } else {
+    if (uploadView) uploadView.classList.remove('hidden');
+    if (editorView) editorView.classList.add('hidden');
+    window.history.pushState({}, '', '/');
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+// Hiển thị danh sách các bài trình chiếu trong trang quản lý tài khoản
+function renderRecentDecksInAccountPage() {
+  if (!accountRecentDecksList) return;
+  accountRecentDecksList.innerHTML = '';
+
+  const decks = [];
+
+  // 1. Bài hiện tại (nếu có)
+  if (currentDeck && currentDeck.designId) {
+    decks.push({
+      id: currentDeck.designId,
+      token: currentDeck.editToken || 'token',
+      title: currentDeck.filename || "Bài thuyết trình hiện tại",
+      slidesCount: (currentDeck.slides || []).length || 1,
+      badge: "Đang mở",
+      badgeColor: "bg-emerald-100 text-emerald-700",
+      deckObj: currentDeck
+    });
+  }
+
+  // 2. Quét từ LocalStorage
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('deck_') && !key.endsWith('_backup')) {
+      try {
+        const item = JSON.parse(localStorage.getItem(key));
+        if (item && item.designId && (!currentDeck || currentDeck.designId !== item.designId)) {
+          decks.push({
+            id: item.designId,
+            token: item.editToken || 'token',
+            title: item.filename || "Bài thuyết trình đã lưu",
+            slidesCount: (item.slides || []).length || 1,
+            badge: "Đã lưu",
+            badgeColor: "bg-slate-100 text-slate-600",
+            deckObj: item
+          });
+        }
+      } catch (e) {}
+    }
+  }
+
+  if (decks.length === 0) {
+    accountRecentDecksList.innerHTML = `
+      <div class="p-6 text-center text-slate-400 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+        <i data-lucide="folder-open" class="w-8 h-8 mx-auto mb-2 text-slate-300"></i>
+        <p class="font-semibold text-xs text-slate-600">Chưa có bài thiết kế nào</p>
+        <p class="text-[11px] text-slate-400 mt-1">Tạo bài mới hoặc nạp file PowerPoint để bắt đầu sáng tạo</p>
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  decks.forEach(d => {
+    const itemEl = document.createElement('div');
+    itemEl.className = "flex items-center justify-between p-3.5 bg-slate-50 hover:bg-purple-50/60 rounded-xl border border-slate-200 hover:border-purple-300 transition group cursor-pointer shadow-sm";
+    itemEl.innerHTML = `
+      <div class="flex items-center gap-3 overflow-hidden">
+        <div class="w-9 h-9 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition">
+          <i data-lucide="presentation" class="w-5 h-5"></i>
+        </div>
+        <div class="overflow-hidden">
+          <p class="font-bold text-slate-800 text-xs truncate group-hover:text-purple-700 transition">${escapeHtml(d.title)}</p>
+          <div class="flex items-center gap-2 mt-0.5">
+            <span class="text-[11px] text-slate-500">${d.slidesCount} slide</span>
+            <span class="text-slate-300">•</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-medium ${d.badgeColor}">${d.badge}</span>
+          </div>
+        </div>
+      </div>
+      <button class="px-3 py-1.5 text-xs font-semibold text-purple-600 hover:text-white hover:bg-purple-600 border border-purple-200 rounded-lg transition shrink-0 shadow-sm flex items-center gap-1.5">
+        <span>Mở bài</span>
+        <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+      </button>
+    `;
+    itemEl.addEventListener('click', () => {
+      closeAccountPage();
+      setupDeck(d.deckObj, false, `Đã mở: ${d.title}`);
+    });
+    accountRecentDecksList.appendChild(itemEl);
+  });
+
+  if (window.lucide) lucide.createIcons();
+}
+
 window.addEventListener('popstate', (e) => {
+  if (window.location.pathname === '/account' || window.location.pathname === '/account/') {
+    const user = getCurrentUser();
+    if (user) {
+      openAccountPage('upload');
+      return;
+    }
+  }
+
+  if (accountPageView && !accountPageView.classList.contains('hidden')) {
+    closeAccountPage();
+    return;
+  }
+
   if (e.state && e.state.designId) {
     const deck = getDeckFromLocalStorage(e.state.designId);
     if (deck) {
@@ -1479,7 +1748,19 @@ window.addEventListener('popstate', (e) => {
 // Auto-route on initial page load
 async function initAppRouting() {
   const path = window.location.pathname;
-  // Match /design/:designId/:editToken/edit
+
+  // 1. Kiểm tra route /account
+  if (path === '/account' || path === '/account/') {
+    const user = getCurrentUser();
+    if (user) {
+      openAccountPage('upload');
+      return;
+    } else {
+      window.history.replaceState({}, '', '/');
+    }
+  }
+
+  // 2. Match /design/:designId/:editToken/edit
   const match = path.match(/^\/design\/([A-Za-z0-9_-]+)\/([A-Za-z0-9_-]+)\/edit\/?$/);
 
   if (match) {
@@ -1516,3 +1797,475 @@ async function initAppRouting() {
 
 // Run routing check
 initAppRouting();
+
+// --- 15. GOOGLE AUTHENTICATION MODULE ---
+function loginWithGoogle() {
+  window.location.href = '/auth/google/login';
+}
+
+function getCurrentUser() {
+  try {
+    const raw = localStorage.getItem('google_auth_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function setCurrentUser(user) {
+  if (user) {
+    localStorage.setItem('google_auth_user', JSON.stringify(user));
+  } else {
+    localStorage.removeItem('google_auth_user');
+  }
+  renderAuthUI();
+}
+
+function logoutGoogle() {
+  setCurrentUser(null);
+  if (uploadUserDropdownMenu) uploadUserDropdownMenu.classList.add('hidden');
+  if (userDropdownMenu) userDropdownMenu.classList.add('hidden');
+  if (accountPageView && !accountPageView.classList.contains('hidden')) {
+    closeAccountPage();
+  }
+  showToast("Đã đăng xuất tài khoản Google");
+}
+
+function renderAuthUI() {
+  const user = getCurrentUser();
+  const uploadBtnText = document.getElementById('googleBtnTextUpload');
+  const uploadUserAvatar = document.getElementById('uploadUserAvatar');
+  const uploadGoogleIcon = document.getElementById('uploadGoogleIcon');
+  const uploadAccountChevron = document.getElementById('uploadAccountChevron');
+
+  if (user) {
+    const avatarUrl = user.picture || 'https://www.gravatar.com/avatar?d=mp';
+
+    // 1. Upload screen button
+    if (uploadBtnText) uploadBtnText.textContent = user.name || user.email;
+    if (uploadUserAvatar) {
+      uploadUserAvatar.src = avatarUrl;
+      uploadUserAvatar.classList.remove('hidden');
+    }
+    if (uploadGoogleIcon) uploadGoogleIcon.classList.add('hidden');
+    if (uploadAccountChevron) uploadAccountChevron.classList.remove('hidden');
+
+    // 2. Upload screen dropdown popup
+    if (uploadDropdownAvatarImg) uploadDropdownAvatarImg.src = avatarUrl;
+    if (uploadUserNameText) uploadUserNameText.textContent = user.name || 'Người dùng';
+    if (uploadUserEmailText) uploadUserEmailText.textContent = user.email || '';
+
+    // 3. Header button & avatar
+    if (btnGoogleLoginHeader) btnGoogleLoginHeader.classList.add('hidden');
+    if (userLoggedInMenu) userLoggedInMenu.classList.remove('hidden');
+    if (userAvatarImg) userAvatarImg.src = avatarUrl;
+
+    // 4. Header dropdown popup
+    if (dropdownAvatarImg) dropdownAvatarImg.src = avatarUrl;
+    if (userNameText) userNameText.textContent = user.name || 'Người dùng';
+    if (userEmailText) userEmailText.textContent = user.email || '';
+
+    // 5. Account page (nếu đang mở)
+    if (accPageAvatar) accPageAvatar.src = avatarUrl;
+    if (accPageName) accPageName.textContent = user.name || 'Người dùng';
+    if (accPageEmail) accPageEmail.textContent = user.email || '';
+  } else {
+    if (uploadBtnText) uploadBtnText.textContent = "Đăng nhập Google";
+    if (uploadUserAvatar) uploadUserAvatar.classList.add('hidden');
+    if (uploadGoogleIcon) uploadGoogleIcon.classList.remove('hidden');
+    if (uploadAccountChevron) uploadAccountChevron.classList.add('hidden');
+
+    if (btnGoogleLoginHeader) btnGoogleLoginHeader.classList.remove('hidden');
+    if (userLoggedInMenu) userLoggedInMenu.classList.add('hidden');
+    if (userDropdownMenu) userDropdownMenu.classList.add('hidden');
+    if (uploadUserDropdownMenu) uploadUserDropdownMenu.classList.add('hidden');
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function checkAuthCallback() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const authStatus = urlParams.get('auth_status');
+  const userRaw = urlParams.get('user');
+  const authError = urlParams.get('auth_error');
+
+  if (authStatus === 'success' && userRaw) {
+    try {
+      const user = JSON.parse(decodeURIComponent(userRaw));
+      setCurrentUser(user);
+      showToast(`Xin chào ${user.name}! Đăng nhập Google thành công.`);
+    } catch (e) {
+      console.error("Lỗi phân tích thông tin user Google:", e);
+    }
+    const cleanUrl = window.location.pathname;
+    window.history.replaceState({}, '', cleanUrl);
+  } else if (authError) {
+    showToast("Đăng nhập Google bị hủy hoặc thất bại", true);
+    const cleanUrl = window.location.pathname;
+    window.history.replaceState({}, '', cleanUrl);
+  }
+}
+
+// Click outside để đóng các Dropdown Menu
+window.addEventListener('click', (e) => {
+  if (uploadUserDropdownMenu && !uploadUserDropdownMenu.classList.contains('hidden')) {
+    if (!uploadUserDropdownMenu.contains(e.target) && !btnGoogleLoginUpload.contains(e.target)) {
+      uploadUserDropdownMenu.classList.add('hidden');
+    }
+  }
+  if (userDropdownMenu && !userDropdownMenu.classList.contains('hidden')) {
+    if (!userDropdownMenu.contains(e.target) && !userAvatarBtn.contains(e.target)) {
+      userDropdownMenu.classList.add('hidden');
+    }
+  }
+  if (shareDesignDropdown && !shareDesignDropdown.classList.contains('hidden')) {
+    if (!shareDesignDropdown.contains(e.target) && !btnShareDesign.contains(e.target)) {
+      shareDesignDropdown.classList.add('hidden');
+      if (accessLevelMenu) accessLevelMenu.classList.add('hidden');
+    }
+  }
+  if (accessLevelMenu && !accessLevelMenu.classList.contains('hidden')) {
+    if (!accessLevelMenu.contains(e.target) && !accessLevelSelector.contains(e.target)) {
+      accessLevelMenu.classList.add('hidden');
+    }
+  }
+});
+
+// Sự kiện click nút Auth trên màn hình khởi đầu (Upload)
+if (btnGoogleLoginUpload) {
+  btnGoogleLoginUpload.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const user = getCurrentUser();
+    if (user) {
+      // Đã đăng nhập: Toggle dropdown menu chuẩn popup Canva
+      if (uploadUserDropdownMenu) {
+        uploadUserDropdownMenu.classList.toggle('hidden');
+      }
+    } else {
+      // Chưa đăng nhập: Chuyển hướng sang Google Login
+      loginWithGoogle();
+    }
+  });
+}
+
+// Nút Đăng nhập trên Header (khi chưa đăng nhập)
+if (btnGoogleLoginHeader) {
+  btnGoogleLoginHeader.addEventListener('click', loginWithGoogle);
+}
+
+// Nút Avatar trên Header (khi đã đăng nhập): Toggle dropdown menu popup
+if (userAvatarBtn) {
+  userAvatarBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (userDropdownMenu) {
+      userDropdownMenu.classList.toggle('hidden');
+    }
+  });
+}
+
+// Sự kiện click "Quản lý tài khoản" trong dropdown popup
+if (btnUploadGoToAccountPage) {
+  btnUploadGoToAccountPage.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openAccountPage('upload');
+  });
+}
+
+if (btnGoToAccountPage) {
+  btnGoToAccountPage.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openAccountPage('editor');
+  });
+}
+
+// Nút "Quay lại" trên trang Quản lý tài khoản
+if (btnBackFromAccount) {
+  btnBackFromAccount.addEventListener('click', closeAccountPage);
+}
+
+// Các nút Đăng xuất Google
+if (btnUploadLogout) {
+  btnUploadLogout.addEventListener('click', (e) => {
+    e.stopPropagation();
+    logoutGoogle();
+  });
+}
+
+if (btnLogout) {
+  btnLogout.addEventListener('click', (e) => {
+    e.stopPropagation();
+    logoutGoogle();
+  });
+}
+
+if (btnAccountPageLogout) {
+  btnAccountPageLogout.addEventListener('click', (e) => {
+    e.stopPropagation();
+    logoutGoogle();
+  });
+}
+
+// Khởi chạy kiểm tra Auth
+checkAuthCallback();
+renderAuthUI();
+
+// --- 16. CHIA SẺ THIẾT KẾ (CANVA SHARE MODULE) ---
+function toggleShareDesignDropdown() {
+  if (!shareDesignDropdown) return;
+  const isHidden = shareDesignDropdown.classList.contains('hidden');
+
+  if (isHidden) {
+    // Đóng các dropdown khác nếu đang mở
+    if (userDropdownMenu) userDropdownMenu.classList.add('hidden');
+    if (uploadUserDropdownMenu) uploadUserDropdownMenu.classList.add('hidden');
+
+    // Cập nhật thông tin chủ sở hữu
+    renderShareOwnerInfo();
+    // Render danh sách thành viên đã mời
+    renderDynamicSharedMembers();
+    // Cập nhật hiển thị quyền hiện tại
+    const currentLevel = (currentDeck && currentDeck.shareAccessLevel) ? currentDeck.shareAccessLevel : 'private';
+    updateAccessLevelUI(currentLevel);
+
+    shareDesignDropdown.classList.remove('hidden');
+  } else {
+    shareDesignDropdown.classList.add('hidden');
+    if (accessLevelMenu) accessLevelMenu.classList.add('hidden');
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderShareOwnerInfo() {
+  const user = getCurrentUser();
+  if (user && user.picture) {
+    if (shareOwnerAvatarImg) {
+      shareOwnerAvatarImg.src = user.picture;
+      shareOwnerAvatarImg.classList.remove('hidden');
+    }
+    if (shareOwnerInitial) shareOwnerInitial.classList.add('hidden');
+    if (shareOwnerAvatarContainer) shareOwnerAvatarContainer.title = `Chủ sở hữu: ${user.name || user.email}`;
+  } else if (user && user.name) {
+    if (shareOwnerAvatarImg) shareOwnerAvatarImg.classList.add('hidden');
+    if (shareOwnerInitial) {
+      shareOwnerInitial.textContent = user.name.charAt(0).toUpperCase();
+      shareOwnerInitial.classList.remove('hidden');
+    }
+    if (shareOwnerAvatarContainer) shareOwnerAvatarContainer.title = `Chủ sở hữu: ${user.name}`;
+  } else {
+    if (shareOwnerAvatarImg) shareOwnerAvatarImg.classList.add('hidden');
+    if (shareOwnerInitial) {
+      shareOwnerInitial.textContent = 'T';
+      shareOwnerInitial.classList.remove('hidden');
+    }
+    if (shareOwnerAvatarContainer) shareOwnerAvatarContainer.title = "Chủ sở hữu";
+  }
+}
+
+function renderDynamicSharedMembers() {
+  if (!dynamicSharedMembers) return;
+  dynamicSharedMembers.innerHTML = '';
+
+  const members = (currentDeck && Array.isArray(currentDeck.sharedMembers)) ? currentDeck.sharedMembers : [];
+  const bgColors = ['bg-blue-600', 'bg-emerald-600', 'bg-purple-600', 'bg-pink-600', 'bg-orange-600', 'bg-cyan-600'];
+
+  members.forEach((m, idx) => {
+    const color = bgColors[idx % bgColors.length];
+    const initial = (m.name || m.email || '?').charAt(0).toUpperCase();
+
+    const div = document.createElement('div');
+    div.className = `relative group/member w-8 h-8 rounded-full ${color} text-white font-bold text-xs flex items-center justify-center border-2 border-white shadow-sm cursor-pointer select-none transition transform hover:scale-105`;
+    div.title = `${m.email || m.name} (Có quyền truy cập)`;
+    div.innerHTML = `
+      <span>${escapeHtml(initial)}</span>
+      <button class="remove-member-btn absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px] opacity-0 group-hover/member:opacity-100 transition shadow leading-none" title="Xóa quyền truy cập">
+        ×
+      </button>
+    `;
+
+    const removeBtn = div.querySelector('.remove-member-btn');
+    if (removeBtn) {
+      removeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeShareMember(idx);
+      });
+    }
+
+    dynamicSharedMembers.appendChild(div);
+  });
+}
+
+function addShareMemberFromInput() {
+  if (!inputShareMemberEmail) return;
+  const value = inputShareMemberEmail.value.trim();
+  if (!value) {
+    showToast("Vui lòng nhập email hoặc tên người muốn thêm", true);
+    inputShareMemberEmail.focus();
+    return;
+  }
+
+  if (!currentDeck) {
+    showToast("Vui lòng mở một bài thiết kế trước khi chia sẻ", true);
+    return;
+  }
+
+  currentDeck.sharedMembers = currentDeck.sharedMembers || [];
+
+  // Tránh thêm trùng
+  const exists = currentDeck.sharedMembers.some(m => m.email && m.email.toLowerCase() === value.toLowerCase());
+  if (exists) {
+    showToast(`Thành viên ${value} đã có trong danh sách!`, true);
+    return;
+  }
+
+  currentDeck.sharedMembers.push({
+    email: value,
+    name: value.split('@')[0],
+    role: 'editor',
+    addedAt: new Date().toISOString()
+  });
+
+  saveDeckToLocalStorage(currentDeck);
+  renderDynamicSharedMembers();
+  inputShareMemberEmail.value = '';
+  showToast(`Đã cấp quyền truy cập cho ${value}!`);
+}
+
+function removeShareMember(index) {
+  if (!currentDeck || !currentDeck.sharedMembers) return;
+  const removed = currentDeck.sharedMembers.splice(index, 1);
+  saveDeckToLocalStorage(currentDeck);
+  renderDynamicSharedMembers();
+  if (removed && removed[0]) {
+    showToast(`Đã thu hồi quyền truy cập của ${removed[0].email || removed[0].name}`);
+  }
+}
+
+function updateAccessLevelUI(level) {
+  if (!accessLevelText || !accessLevelIcon) return;
+
+  if (level === 'view') {
+    accessLevelText.textContent = "Bất kỳ ai có liên kết đều có thể xem";
+    accessLevelIcon.setAttribute('data-lucide', 'eye');
+  } else if (level === 'edit') {
+    accessLevelText.textContent = "Bất kỳ ai có liên kết đều có thể chỉnh sửa";
+    accessLevelIcon.setAttribute('data-lucide', 'edit-3');
+  } else {
+    accessLevelText.textContent = "Chỉ bạn mới có quyền truy cập";
+    accessLevelIcon.setAttribute('data-lucide', 'lock');
+  }
+  if (window.lucide) lucide.createIcons();
+}
+
+function setAccessLevel(level) {
+  if (currentDeck) {
+    currentDeck.shareAccessLevel = level;
+    saveDeckToLocalStorage(currentDeck);
+  }
+  updateAccessLevelUI(level);
+  if (accessLevelMenu) accessLevelMenu.classList.add('hidden');
+
+  const labels = {
+    'private': 'Chỉ bạn mới có quyền truy cập',
+    'view': 'Bất kỳ ai có liên kết đều có thể xem',
+    'edit': 'Bất kỳ ai có liên kết đều có thể chỉnh sửa'
+  };
+  showToast(`Cấp độ truy cập: ${labels[level] || level}`);
+}
+
+function copyShareLinkModal() {
+  if (!currentDeck || !currentDeck.designId) {
+    showToast("Chưa có bài thiết kế nào đang mở", true);
+    return;
+  }
+
+  const level = (currentDeck && currentDeck.shareAccessLevel) ? currentDeck.shareAccessLevel : 'private';
+  let shareUrl = `${window.location.origin}/design/${currentDeck.designId}/${currentDeck.editToken}/edit`;
+  if (level === 'view') {
+    shareUrl = `${window.location.origin}/design/${currentDeck.designId}/${currentDeck.editToken}/view`;
+  }
+
+  function triggerCopiedFeedback() {
+    if (btnCopyShareLinkModal) {
+      btnCopyShareLinkModal.classList.remove('bg-[#7d2ae8]', 'hover:bg-[#6c23cb]');
+      btnCopyShareLinkModal.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+    }
+    if (btnCopyShareLinkText) btnCopyShareLinkText.textContent = "✓ Đã sao chép liên kết";
+    if (btnCopyShareLinkIcon) btnCopyShareLinkIcon.setAttribute('data-lucide', 'check');
+    if (window.lucide) lucide.createIcons();
+    showToast("Đã sao chép liên kết chia sẻ!");
+
+    setTimeout(() => {
+      if (btnCopyShareLinkModal) {
+        btnCopyShareLinkModal.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+        btnCopyShareLinkModal.classList.add('bg-[#7d2ae8]', 'hover:bg-[#6c23cb]');
+      }
+      if (btnCopyShareLinkText) btnCopyShareLinkText.textContent = "Sao chép liên kết";
+      if (btnCopyShareLinkIcon) btnCopyShareLinkIcon.setAttribute('data-lucide', 'link-2');
+      if (window.lucide) lucide.createIcons();
+    }, 2000);
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(shareUrl).then(() => {
+      triggerCopiedFeedback();
+    }).catch(() => {
+      prompt("Sao chép liên kết chia sẻ bài thiết kế:", shareUrl);
+    });
+  } else {
+    prompt("Sao chép liên kết chia sẻ bài thiết kế:", shareUrl);
+  }
+}
+
+// Gắn sự kiện cho các thành phần Chia sẻ thiết kế
+if (btnShareDesign) {
+  btnShareDesign.addEventListener('click', (e) => {
+    e.stopPropagation();
+    toggleShareDesignDropdown();
+  });
+}
+
+if (btnAddShareMember) {
+  btnAddShareMember.addEventListener('click', (e) => {
+    e.stopPropagation();
+    addShareMemberFromInput();
+  });
+}
+
+if (inputShareMemberEmail) {
+  inputShareMemberEmail.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addShareMemberFromInput();
+    }
+  });
+}
+
+if (btnTriggerAddMember) {
+  btnTriggerAddMember.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (inputShareMemberEmail) inputShareMemberEmail.focus();
+  });
+}
+
+if (accessLevelSelector) {
+  accessLevelSelector.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (accessLevelMenu) accessLevelMenu.classList.toggle('hidden');
+  });
+}
+
+document.querySelectorAll('.access-level-option').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const level = btn.getAttribute('data-level');
+    setAccessLevel(level);
+  });
+});
+
+if (btnCopyShareLinkModal) {
+  btnCopyShareLinkModal.addEventListener('click', (e) => {
+    e.stopPropagation();
+    copyShareLinkModal();
+  });
+}

@@ -1,11 +1,19 @@
 import os
+import json
 import shutil
 import logging
+import urllib.parse
+from typing import Optional
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from importer import PPTXImporter
 from sample_generator import create_sample_deck
+from auth import (
+    get_google_login_url,
+    exchange_code_for_user_info,
+    GOOGLE_CLIENT_ID
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("pptx-api")
@@ -122,3 +130,40 @@ def get_slide_font(deck_id: str, font_name: str):
     elif font_name.endswith(".woff2"):
         media_type = "font/woff2"
     return FileResponse(path, media_type=media_type)
+
+# ================= GOOGLE AUTHENTICATION ENDPOINTS =================
+@app.get("/api/auth/config")
+def get_auth_config():
+    """Returns Google OAuth Client configuration."""
+    return {
+        "clientId": GOOGLE_CLIENT_ID,
+        "enabled": bool(GOOGLE_CLIENT_ID),
+        "loginUrl": "/auth/google/login"
+    }
+
+@app.get("/api/auth/google/login")
+def google_login(state: Optional[str] = None):
+    """Initiates Google OAuth login by redirecting to Google Consent Screen."""
+    url = get_google_login_url(state)
+    return RedirectResponse(url=url)
+
+@app.get("/api/auth/google/callback")
+def google_callback(code: Optional[str] = None, error: Optional[str] = None):
+    """
+    Receives authorization code from Google OAuth redirect,
+    exchanges code for user profile, and redirects back to frontend.
+    """
+    if error or not code:
+        logger.warning(f"Google OAuth cancelled or returned error: {error}")
+        return RedirectResponse(url="http://localhost:9030/?auth_error=cancelled")
+
+    try:
+        user_info = exchange_code_for_user_info(code)
+        user_json = json.dumps(user_info)
+        encoded_user = urllib.parse.quote(user_json)
+        logger.info(f"User authenticated successfully via Google: {user_info.get('email')}")
+        return RedirectResponse(url=f"http://localhost:9030/?auth_status=success&user={encoded_user}")
+    except Exception as e:
+        logger.exception(f"Google Auth callback error: {e}")
+        err_msg = urllib.parse.quote(str(e))
+        return RedirectResponse(url=f"http://localhost:9030/?auth_error={err_msg}")

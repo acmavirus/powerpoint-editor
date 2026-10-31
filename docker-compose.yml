@@ -8,6 +8,10 @@ services:
       - "${PORT_API:-9031}:9031"
     environment:
       - STORAGE_DIR=/app/storage
+      - APP_AUTH_CLIENTID=${APP_AUTH_CLIENTID}
+      - APP_AUTH_CLIENTSECRET=${APP_AUTH_CLIENTSECRET}
+      - APP_AUTH_CALLBACK=${APP_AUTH_CALLBACK}
+      - ENV=${ENV:-development}
     volumes:
       - ppt_storage:/app/storage
     restart: unless-stopped
