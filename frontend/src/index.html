@@ -49,17 +49,221 @@
   >
     <!-- ================= MAIN WORKSPACE BODY ================= -->
     <main class="flex-1 flex overflow-hidden relative">
-      <!-- STATE 1: UPLOAD DROPZONE (Displayed when no deck loaded - NO HEADER) -->
+      <!-- STATE 0: CANVA SIGNATURE WELCOME / LANDING PAGE (TRANG CHỦ MỚI) -->
+      <div id="homeView" class="flex-1 flex flex-col relative overflow-hidden bg-[#0c0e14] text-slate-100 select-none">
+        <!-- Background Mosaic Grid (Mô phỏng tường template thiết kế Canva đầy màu sắc y hệt ảnh người dùng tải lên) -->
+        <div class="absolute inset-0 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 p-4 opacity-40 scale-105 pointer-events-none overflow-hidden blur-[0.5px]">
+          <!-- Template Tiles -->
+          <div class="bg-gradient-to-br from-amber-700/60 to-orange-950/80 rounded-2xl p-4 border border-white/5 flex flex-col justify-between h-56">
+            <span class="text-[10px] uppercase font-bold tracking-wider text-amber-300">Design &amp; Branding</span>
+            <h4 class="text-xl font-serif font-black text-amber-100">STUDIO</h4>
+            <span class="text-[9px] text-amber-200/60">ESTD 1992</span>
+          </div>
+          <div class="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-2xl p-4 border border-white/5 flex flex-col justify-between h-56">
+            <span class="text-[10px] text-slate-400">Monthly</span>
+            <h4 class="text-sm font-bold text-white tracking-wide">PERFORMANCE REPORT</h4>
+            <div class="w-full bg-indigo-500/30 h-1.5 rounded-full"></div>
+          </div>
+          <div class="bg-gradient-to-br from-emerald-950 to-teal-900/60 rounded-2xl p-4 border border-white/5 flex flex-col justify-between h-56">
+            <span class="text-[10px] text-emerald-300">Strategy</span>
+            <h4 class="text-base font-bold text-emerald-100">Go-to-Market Plan</h4>
+            <div class="flex gap-1"><span class="w-2 h-2 rounded-full bg-emerald-400"></span><span class="w-2 h-2 rounded-full bg-teal-400"></span></div>
+          </div>
+          <div class="bg-gradient-to-br from-cyan-950 to-blue-900/60 rounded-2xl p-4 border border-white/5 flex flex-col justify-between h-56">
+            <span class="text-[10px] text-cyan-300">Proposal</span>
+            <h4 class="text-sm font-bold text-cyan-100">Digital Marketing Proposal</h4>
+            <span class="text-[10px] text-cyan-400 font-mono">Q1 2026</span>
+          </div>
+          <div class="bg-gradient-to-br from-blue-900/80 to-slate-900 rounded-2xl p-4 border border-white/5 flex flex-col justify-between h-56">
+            <span class="text-[10px] text-blue-200">Commerce</span>
+            <h4 class="text-lg font-black text-white">Pre-Order Now</h4>
+            <span class="text-[9px] text-blue-300">Limited Edition</span>
+          </div>
+          <div class="bg-gradient-to-br from-purple-950 to-fuchsia-950 rounded-2xl p-4 border border-white/5 flex flex-col justify-between h-56">
+            <span class="text-[10px] text-purple-300">Mission</span>
+            <h4 class="text-sm font-semibold text-purple-100 leading-tight">Create a better future for others.</h4>
+            <span class="text-[9px] text-purple-300/60">SlideCraft Studio</span>
+          </div>
+          <div class="bg-gradient-to-br from-teal-950 to-slate-900 rounded-2xl p-4 border border-white/5 flex flex-col justify-between h-56">
+            <h4 class="text-2xl font-black tracking-tighter text-teal-200">OUR SERVICES</h4>
+            <span class="text-[10px] text-teal-400">Web Design &bull; Branding &bull; SEO</span>
+          </div>
+          <div class="bg-gradient-to-br from-violet-950 to-slate-950 rounded-2xl p-4 border border-white/5 flex flex-col justify-between h-56">
+            <h4 class="text-3xl font-light text-slate-100">2040</h4>
+            <span class="text-xs font-semibold text-violet-300">Annual Report</span>
+          </div>
+          <div class="bg-gradient-to-br from-amber-950 to-stone-900 rounded-2xl p-4 border border-white/5 flex flex-col justify-between h-56">
+            <span class="text-[10px] text-amber-300">Tips</span>
+            <h4 class="text-lg font-black text-amber-100">DIGITAL MARKETING</h4>
+            <span class="text-[9px] text-amber-400">Action Plan</span>
+          </div>
+          <div class="bg-gradient-to-br from-green-950 to-emerald-950 rounded-2xl p-4 border border-white/5 flex flex-col justify-between h-56">
+            <span class="text-[10px] text-green-300">Campaign</span>
+            <h4 class="text-base font-bold text-green-100">STRATEGY</h4>
+            <span class="text-[9px] text-green-400">25% OFF</span>
+          </div>
+          <div class="bg-gradient-to-br from-rose-950 to-pink-950 rounded-2xl p-4 border border-white/5 flex flex-col justify-between h-56">
+            <span class="text-[10px] text-rose-300">Sales</span>
+            <h4 class="text-lg font-bold text-rose-100">Pitch Deck</h4>
+            <span class="text-[9px] text-rose-400">Investment Ready</span>
+          </div>
+          <div class="bg-gradient-to-br from-fuchsia-950 to-purple-900 rounded-2xl p-4 border border-white/5 flex flex-col justify-between h-56">
+            <span class="text-[10px] text-fuchsia-300">Agenda</span>
+            <h4 class="text-sm font-bold text-fuchsia-100">Schedule of Events</h4>
+            <span class="text-[9px] text-fuchsia-400">Live Conference</span>
+          </div>
+        </div>
+
+        <!-- Dark Overlay -->
+        <div class="absolute inset-0 bg-[#090b10]/75 backdrop-blur-[1.5px] pointer-events-none z-10"></div>
+
+        <!-- Top Header Navigation (Canva Style) -->
+        <header class="h-16 px-6 sm:px-8 flex items-center justify-between shrink-0 relative z-20">
+          <!-- Logo Canva / SlideCraft -->
+          <div class="flex items-center gap-8">
+            <a href="/" class="flex items-center gap-2 group cursor-pointer" title="Trang chủ SlideCraft">
+              <span class="font-serif italic font-bold text-2xl text-white tracking-wider group-hover:text-purple-300 transition">Canva</span>
+              <span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-semibold border border-purple-500/30">PPT</span>
+            </a>
+
+            <!-- Navigation Links -->
+            <nav class="hidden md:flex items-center gap-6 text-xs font-semibold text-white/80">
+              <a href="#" class="hover:text-white transition">Design</a>
+              <a href="#" class="hover:text-white transition">Product</a>
+              <a href="#" class="hover:text-white transition">Plans</a>
+              <a href="#" class="hover:text-white transition">Business</a>
+              <a href="#" class="hover:text-white transition">Education</a>
+              <a href="#" class="hover:text-white transition">Help</a>
+            </nav>
+          </div>
+
+          <!-- Right Action Buttons -->
+          <div class="flex items-center gap-3">
+            <button id="btnHomeGoToImport" class="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-200 hover:text-white text-xs font-semibold rounded-xl border border-slate-700/80 transition shadow-sm cursor-pointer" title="Nạp tệp PowerPoint (.pptx)">
+              <i data-lucide="upload" class="w-3.5 h-3.5 text-cyan-400"></i>
+              <span>Nạp .PPTX</span>
+            </button>
+
+            <button id="btnHomeGoToProjects" class="flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 hover:text-white text-xs font-semibold rounded-xl border border-purple-500/30 transition shadow-sm cursor-pointer" title="Xem danh sách bài thuyết trình">
+              <i data-lucide="folder-kanban" class="w-3.5 h-3.5 text-purple-400"></i>
+              <span>Dự án của bạn</span>
+            </button>
+          </div>
+        </header>
+
+        <!-- Center Jump Back In Card (Modal y hệt ảnh người dùng chụp) -->
+        <div class="flex-1 flex items-center justify-center p-4 relative z-20">
+          <div class="w-full max-w-[430px] bg-[#18191b] border border-slate-800/90 rounded-3xl p-8 sm:p-9 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200">
+            <!-- Jump back in Title -->
+            <h2 class="text-xl font-bold text-white mb-6 text-left">Jump back in!</h2>
+
+            <!-- Authenticated Profile View (Khi đã đăng nhập hoặc có thông tin user) -->
+            <div id="homeAuthBlock" class="flex flex-col items-center">
+              <!-- Avatar Circle -->
+              <div id="homeUserAvatarContainer" class="w-16 h-16 rounded-full bg-[#a27863] text-white text-2xl font-semibold flex items-center justify-center shadow-lg border-2 border-white/10 mb-3 overflow-hidden">
+                <span id="homeUserAvatarLetter">T</span>
+                <img id="homeUserAvatarImg" src="" alt="Avatar" class="w-full h-full object-cover hidden" />
+              </div>
+
+              <!-- Name & Email -->
+              <h3 id="homeUserNameText" class="text-sm font-semibold text-white tracking-wide">Tvirus Acma</h3>
+              <p id="homeUserEmailText" class="text-xs text-slate-400 mt-0.5 mb-6">acmatvjrus@gmail.com</p>
+
+              <!-- Main CTA: Continue (Tím Canva) -->
+              <button id="btnHomeContinue" class="w-full py-3 bg-[#7c3aed] hover:bg-[#6d28d9] active:scale-[0.99] text-white font-bold text-sm rounded-xl transition shadow-lg shadow-purple-900/40 cursor-pointer flex items-center justify-center gap-2">
+                <span>Continue</span>
+              </button>
+
+              <!-- Divider OR -->
+              <div class="w-full flex items-center my-4">
+                <div class="flex-1 h-px bg-slate-800"></div>
+                <span class="px-3 text-[11px] font-medium text-slate-500 uppercase">OR</span>
+                <div class="flex-1 h-px bg-slate-800"></div>
+              </div>
+
+              <!-- Secondary CTA: Continue with another account -->
+              <button id="btnHomeContinueAnother" class="w-full py-2.5 bg-transparent hover:bg-slate-800/80 active:scale-[0.99] text-slate-200 hover:text-white font-semibold text-xs rounded-xl border border-slate-700/80 transition cursor-pointer">
+                Continue with another account
+              </button>
+
+              <!-- Terms & Privacy -->
+              <p class="text-[11px] text-slate-400 mt-5 leading-relaxed text-left w-full">
+                By continuing, you agree to Canva's <a href="#" class="underline hover:text-purple-300">Terms of Use</a>. Read our <a href="#" class="underline hover:text-purple-300">Privacy Policy</a>.
+              </p>
+
+              <!-- Bottom Action: Remove accounts -->
+              <div class="w-full mt-7 text-left">
+                <button id="btnHomeRemoveAccount" class="text-xs text-purple-400 hover:text-purple-300 transition flex items-center gap-1.5 cursor-pointer font-medium">
+                  <i data-lucide="user-x" class="w-3.5 h-3.5"></i>
+                  <span>Remove accounts</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Guest View (Khi chưa từng đăng nhập) -->
+            <div id="homeGuestBlock" class="hidden flex flex-col items-center">
+              <div class="w-16 h-16 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-4 shadow-inner">
+                <i data-lucide="sparkles" class="w-8 h-8"></i>
+              </div>
+              <h3 class="text-base font-bold text-white mb-1">Bắt đầu sáng tạo slide</h3>
+              <p class="text-xs text-slate-400 mb-6 text-center">Đăng nhập tài khoản Google để lưu trữ bài thuyết trình trên đám mây</p>
+
+              <button id="btnHomeGoogleLogin" class="w-full py-3 bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs rounded-xl transition shadow flex items-center justify-center gap-2.5 cursor-pointer">
+                <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                <span>Tiếp tục với Google</span>
+              </button>
+
+              <div class="w-full flex items-center my-4">
+                <div class="flex-1 h-px bg-slate-800"></div>
+                <span class="px-3 text-[11px] font-medium text-slate-500 uppercase">HOẶC</span>
+                <div class="flex-1 h-px bg-slate-800"></div>
+              </div>
+
+              <div class="w-full flex gap-2.5">
+                <button id="btnHomeTryImport" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl border border-slate-700 transition flex items-center justify-center gap-1.5 cursor-pointer">
+                  <i data-lucide="upload" class="w-3.5 h-3.5 text-cyan-400"></i>
+                  <span>Nạp file .PPTX</span>
+                </button>
+                <button id="btnHomeTryBlank" class="flex-1 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl transition shadow flex items-center justify-center gap-1.5 cursor-pointer">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                  <span>Tạo bản mới</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Bottom Footer -->
+        <footer class="h-10 px-8 flex items-center justify-end gap-6 text-[11px] text-slate-400 relative z-20">
+          <a href="#" class="hover:text-slate-300 transition">Privacy policy</a>
+          <span>|</span>
+          <a href="#" class="hover:text-slate-300 transition">Terms</a>
+          <span>|</span>
+          <div class="flex items-center gap-1.5 text-slate-400 hover:text-slate-200 cursor-pointer transition">
+            <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+            <span>English (United Kingdom)</span>
+          </div>
+        </footer>
+      </div>
+
+      <!-- STATE 1: UPLOAD DROPZONE (TRANG IMPORT PPTX - ROUTE /import) -->
       <div
         id="uploadView"
-        class="flex-1 flex items-center justify-center p-6 bg-[#0f172a] relative"
+        class="hidden flex-1 flex items-center justify-center p-6 bg-[#0f172a] relative"
       >
-        <!-- Top Bar on Upload Screen (Projects Navigation & Google Auth) -->
+        <!-- Top Bar on Upload Screen (Back to Home, Projects Navigation & Google Auth) -->
         <div class="absolute top-4 left-4 right-4 flex items-center justify-between z-30">
-          <button id="btnGoToProjectsFromUpload" class="flex items-center gap-2 px-3.5 py-1.5 bg-slate-800/90 hover:bg-slate-700 text-purple-300 hover:text-white text-xs font-semibold rounded-xl border border-purple-500/30 shadow-md transition group cursor-pointer" title="Xem tất cả bài thuyết trình đã tạo">
-            <i data-lucide="folder-kanban" class="w-4 h-4 text-purple-400 group-hover:scale-110 transition"></i>
-            <span>Dự án của bạn</span>
-          </button>
+          <div class="flex items-center gap-3">
+            <button id="btnBackFromUploadToHome" class="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/90 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium rounded-xl border border-slate-700 transition cursor-pointer" title="Quay lại trang chủ">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              <span>Trang chủ</span>
+            </button>
+            <button id="btnGoToProjectsFromUpload" class="flex items-center gap-2 px-3.5 py-1.5 bg-slate-800/90 hover:bg-slate-700 text-purple-300 hover:text-white text-xs font-semibold rounded-xl border border-purple-500/30 shadow-md transition group cursor-pointer" title="Xem tất cả bài thuyết trình đã tạo">
+              <i data-lucide="folder-kanban" class="w-4 h-4 text-purple-400 group-hover:scale-110 transition"></i>
+              <span>Dự án của bạn</span>
+            </button>
+          </div>
 
           <div class="relative">
             <button id="btnGoogleLoginUpload" class="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 shadow-md transition group">
@@ -1507,6 +1711,6 @@
       <span id="toastMsg">Thành công!</span>
     </div>
 
-    <script src="/app.js?v=20261031_f5_projects_fix"></script>
+    <script src="/app.js?v=20261031_home_canva_v1"></script>
   </body>
 </html>

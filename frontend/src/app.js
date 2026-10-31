@@ -7,6 +7,24 @@ let undoStack = [];
 let redoStack = [];
 
 // DOM References
+const homeView = document.getElementById('homeView');
+const btnHomeGoToImport = document.getElementById('btnHomeGoToImport');
+const btnHomeGoToProjects = document.getElementById('btnHomeGoToProjects');
+const homeAuthBlock = document.getElementById('homeAuthBlock');
+const homeGuestBlock = document.getElementById('homeGuestBlock');
+const homeUserAvatarContainer = document.getElementById('homeUserAvatarContainer');
+const homeUserAvatarLetter = document.getElementById('homeUserAvatarLetter');
+const homeUserAvatarImg = document.getElementById('homeUserAvatarImg');
+const homeUserNameText = document.getElementById('homeUserNameText');
+const homeUserEmailText = document.getElementById('homeUserEmailText');
+const btnHomeContinue = document.getElementById('btnHomeContinue');
+const btnHomeContinueAnother = document.getElementById('btnHomeContinueAnother');
+const btnHomeRemoveAccount = document.getElementById('btnHomeRemoveAccount');
+const btnHomeGoogleLogin = document.getElementById('btnHomeGoogleLogin');
+const btnHomeTryImport = document.getElementById('btnHomeTryImport');
+const btnHomeTryBlank = document.getElementById('btnHomeTryBlank');
+const btnBackFromUploadToHome = document.getElementById('btnBackFromUploadToHome');
+
 const uploadView = document.getElementById('uploadView');
 const editorView = document.getElementById('editorView');
 const dropZone = document.getElementById('dropZone');
@@ -1894,13 +1912,72 @@ if (btnCreateBlankDeck) {
 
 if (btnHome) {
   btnHome.addEventListener('click', () => {
+    openHomePage();
+  });
+}
+
+// --- 14.1 HOME & IMPORT VIEW CONTROLLERS ---
+function openHomePage() {
+  if (editorView && !editorView.classList.contains('hidden')) {
     saveCurrentSlideState();
     stopPresenceHeartbeat();
-    editorView.classList.add('hidden');
-    uploadView.classList.remove('hidden');
-    window.history.pushState({}, '', '/');
-    showToast("Đã quay về trang bắt đầu");
-  });
+  }
+  if (uploadView) uploadView.classList.add('hidden');
+  if (editorView) editorView.classList.add('hidden');
+  if (accountPageView) accountPageView.classList.add('hidden');
+  if (projectsPageView) projectsPageView.classList.add('hidden');
+  if (homeView) homeView.classList.remove('hidden');
+
+  if (window.location.pathname !== '/') {
+    window.history.pushState({ page: 'home' }, '', '/');
+  }
+
+  renderHomeAuthCard();
+  if (window.lucide) lucide.createIcons();
+}
+
+function openImportPage() {
+  if (editorView && !editorView.classList.contains('hidden')) {
+    saveCurrentSlideState();
+    stopPresenceHeartbeat();
+  }
+  if (homeView) homeView.classList.add('hidden');
+  if (editorView) editorView.classList.add('hidden');
+  if (accountPageView) accountPageView.classList.add('hidden');
+  if (projectsPageView) projectsPageView.classList.add('hidden');
+  if (uploadView) uploadView.classList.remove('hidden');
+
+  if (window.location.pathname !== '/import') {
+    window.history.pushState({ page: 'import' }, '', '/import');
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function renderHomeAuthCard() {
+  const user = getCurrentUser();
+  if (user) {
+    if (homeAuthBlock) homeAuthBlock.classList.remove('hidden');
+    if (homeGuestBlock) homeGuestBlock.classList.add('hidden');
+
+    if (homeUserNameText) homeUserNameText.textContent = user.name || 'Người dùng';
+    if (homeUserEmailText) homeUserEmailText.textContent = user.email || '';
+
+    const initial = (user.name || user.email || 'T').trim().charAt(0).toUpperCase();
+    if (homeUserAvatarLetter) homeUserAvatarLetter.textContent = initial;
+
+    if (user.picture && homeUserAvatarImg) {
+      homeUserAvatarImg.src = user.picture;
+      homeUserAvatarImg.classList.remove('hidden');
+      if (homeUserAvatarLetter) homeUserAvatarLetter.classList.add('hidden');
+    } else {
+      if (homeUserAvatarImg) homeUserAvatarImg.classList.add('hidden');
+      if (homeUserAvatarLetter) homeUserAvatarLetter.classList.remove('hidden');
+    }
+  } else {
+    if (homeAuthBlock) homeAuthBlock.classList.add('hidden');
+    if (homeGuestBlock) homeGuestBlock.classList.remove('hidden');
+  }
 }
 
 deckTitleInput.addEventListener('change', () => {
@@ -1964,12 +2041,15 @@ function closeAccountPage() {
 
   if (previousViewBeforeAccount === 'editor' && currentDeck && currentDeck.designId) {
     if (editorView) editorView.classList.remove('hidden');
-    if (uploadView) uploadView.classList.add('hidden');
     window.history.pushState({ designId: currentDeck.designId }, '', `/design/${currentDeck.designId}/${currentDeck.editToken}/edit`);
-  } else {
+  } else if (previousViewBeforeAccount === 'projects') {
+    if (projectsPageView) projectsPageView.classList.remove('hidden');
+    window.history.pushState({ page: 'projects' }, '', '/projects');
+  } else if (previousViewBeforeAccount === 'import' || previousViewBeforeAccount === 'upload') {
     if (uploadView) uploadView.classList.remove('hidden');
-    if (editorView) editorView.classList.add('hidden');
-    window.history.pushState({}, '', '/');
+    window.history.pushState({ page: 'import' }, '', '/import');
+  } else {
+    openHomePage();
   }
 
   if (window.lucide) lucide.createIcons();
@@ -2124,10 +2204,22 @@ async function renderRecentDecksInAccountPage() {
 }
 
 window.addEventListener('popstate', (e) => {
-  if (window.location.pathname === '/account' || window.location.pathname === '/account/') {
+  const path = window.location.pathname;
+
+  if (path === '/' || path === '') {
+    openHomePage();
+    return;
+  }
+
+  if (path === '/import' || path === '/import/') {
+    openImportPage();
+    return;
+  }
+
+  if (path === '/account' || path === '/account/') {
     const user = getCurrentUser();
     if (user) {
-      openAccountPage('upload');
+      openAccountPage('home');
       return;
     }
   }
@@ -2137,8 +2229,8 @@ window.addEventListener('popstate', (e) => {
     return;
   }
 
-  if (window.location.pathname === '/projects' || window.location.pathname === '/projects/') {
-    openProjectsPage('upload');
+  if (path === '/projects' || path === '/projects/') {
+    openProjectsPage('home');
     return;
   }
 
@@ -2159,24 +2251,30 @@ window.addEventListener('popstate', (e) => {
 async function initAppRouting() {
   const path = window.location.pathname;
 
-  // 1. Kiểm tra route /projects
-  if (path === '/projects' || path === '/projects/') {
-    openProjectsPage('upload');
+  // 1. Kiểm tra route /import (Trang nạp tệp PPTX mới tách)
+  if (path === '/import' || path === '/import/') {
+    openImportPage();
     return;
   }
 
-  // 2. Kiểm tra route /account
+  // 2. Kiểm tra route /projects
+  if (path === '/projects' || path === '/projects/') {
+    openProjectsPage('home');
+    return;
+  }
+
+  // 3. Kiểm tra route /account
   if (path === '/account' || path === '/account/') {
     const user = getCurrentUser();
     if (user) {
-      openAccountPage('upload');
+      openAccountPage('home');
       return;
     } else {
       window.history.replaceState({}, '', '/');
     }
   }
 
-  // 2. Match /design/:designId/:editToken/(edit|view)?
+  // 4. Match /design/:designId/:editToken/(edit|view)?
   const match = path.match(/^\/design\/([A-Za-z0-9_-]+)\/([A-Za-z0-9_-]+)(?:\/(edit|view))?\/?$/);
 
   if (match) {
@@ -2242,7 +2340,11 @@ async function initAppRouting() {
     } finally {
       hideLoader();
     }
+    return;
   }
+
+  // 5. Mặc định: Mở trang chủ Canva Welcome (Jump back in!)
+  openHomePage();
 }
 
 // --- 15. GOOGLE AUTHENTICATION MODULE ---
@@ -2275,6 +2377,7 @@ function logoutGoogle() {
   if (accountPageView && !accountPageView.classList.contains('hidden')) {
     closeAccountPage();
   }
+  renderHomeAuthCard();
   showToast("Đã đăng xuất tài khoản Google");
 }
 
@@ -2284,6 +2387,8 @@ function renderAuthUI() {
   const uploadUserAvatar = document.getElementById('uploadUserAvatar');
   const uploadGoogleIcon = document.getElementById('uploadGoogleIcon');
   const uploadAccountChevron = document.getElementById('uploadAccountChevron');
+
+  renderHomeAuthCard();
 
   if (user) {
     const avatarUrl = user.picture || 'https://www.gravatar.com/avatar?d=mp';
@@ -3850,6 +3955,69 @@ if (selectProjectsSort) {
   selectProjectsSort.addEventListener('change', (e) => {
     currentProjectsSort = e.target.value;
     renderProjectsGrid();
+  });
+}
+
+// --- 19. HOME VIEW EVENT LISTENERS ---
+// Nút "Continue" trên thẻ Jump back in (dẫn thẳng vào danh sách dự án của người dùng)
+if (btnHomeContinue) {
+  btnHomeContinue.addEventListener('click', () => {
+    openProjectsPage('home');
+  });
+}
+
+// Nút "Continue with another account" (Mở Google Login chọn tài khoản khác)
+if (btnHomeContinueAnother) {
+  btnHomeContinueAnother.addEventListener('click', () => {
+    loginWithGoogle();
+  });
+}
+
+// Nút "Remove accounts" (Đăng xuất)
+if (btnHomeRemoveAccount) {
+  btnHomeRemoveAccount.addEventListener('click', () => {
+    logoutGoogle();
+  });
+}
+
+// Nút đăng nhập Google trên thẻ khách
+if (btnHomeGoogleLogin) {
+  btnHomeGoogleLogin.addEventListener('click', () => {
+    loginWithGoogle();
+  });
+}
+
+// Nút chuyển sang trang nạp file PPTX (/import)
+if (btnHomeGoToImport) {
+  btnHomeGoToImport.addEventListener('click', () => {
+    openImportPage();
+  });
+}
+if (btnHomeTryImport) {
+  btnHomeTryImport.addEventListener('click', () => {
+    openImportPage();
+  });
+}
+
+// Nút chuyển sang trang dự án (/projects)
+if (btnHomeGoToProjects) {
+  btnHomeGoToProjects.addEventListener('click', () => {
+    openProjectsPage('home');
+  });
+}
+
+// Nút tạo slide mới từ trang chủ
+if (btnHomeTryBlank) {
+  btnHomeTryBlank.addEventListener('click', () => {
+    openHomePage();
+    createNewBlankPresentation();
+  });
+}
+
+// Nút quay lại trang chủ từ trang Import (/import)
+if (btnBackFromUploadToHome) {
+  btnBackFromUploadToHome.addEventListener('click', () => {
+    openHomePage();
   });
 }
 
