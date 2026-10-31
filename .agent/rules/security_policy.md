@@ -19,3 +19,4 @@
 - **HTTPS & SSL Bắt Buộc**: Toàn bộ kết nối trên môi trường Production phải đi qua SSL/TLS Let's Encrypt với HTTP Strict Transport Security và tự động chuyển hướng 301 từ HTTP sang HTTPS.
 - **Giới Hạn Tải Lên (File Upload Limit)**: Cấu hình `client_max_body_size 100M` trên Nginx để tránh DoS/OOM bộ nhớ máy chủ khi người dùng tải lên tệp PowerPoint quá khổ.
 - **Xóa Dữ Liệu An Toàn**: Khi xóa một bài thiết kế, phải xóa sạch trong cả 2 bảng `designs` và `design_collaborators` trong một transaction SQLite.
+

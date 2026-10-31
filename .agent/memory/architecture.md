@@ -86,3 +86,4 @@ Theo dõi người dùng đồng thời mở cùng một bài thiết kế:
 - **BroadcastChannel API ở Frontend**: Kênh `'slidecraft_presence_' + designId` kết nối các tab cùng trình duyệt tức thì (< 5ms) mà không phụ thuộc độ trễ mạng.
 - **Heartbeat định kỳ**: Gửi định kỳ mỗi 2 giây tới `/api/presence/heartbeat` và `/api/presence/leave` (kèm `navigator.sendBeacon` khi đóng tab).
 - **Avatar Stack trên Header**: Hiển thị avatar tròn xếp chồng (overlapping), viền màu sắc định danh, chấm xanh online và tooltip hiện tên khi hover.
+

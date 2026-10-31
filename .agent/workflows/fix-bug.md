@@ -27,3 +27,4 @@
    - Đảm bảo các chức năng cũ (import, edit, share, projects) vẫn chạy tốt.
 5. **Ghi lại vào Memory**:
    - Thêm bài học kinh nghiệm vào `.agent/memory/issue_resolutions.md`.
+

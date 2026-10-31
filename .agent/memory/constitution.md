@@ -26,3 +26,4 @@ domain: https://ppt-editor.thuc.me
 - **PowerShell 5.1+**: Trên môi trường Windows, ngăn cách các lệnh bằng dấu chấm phẩy `;` (tuyệt đối KHÔNG dùng `&&`).
 - **15-Minute Rule**: Mỗi tác vụ phát triển phải mang tính nguyên tử (atomic), ảnh hưởng ≤ 3 files khi không phải refactor lớn.
 - **Không Hardcode Secrets**: URL máy chủ, Google Client ID, Secret, Callback phải luôn lấy từ file cấu hình `.env`.
+

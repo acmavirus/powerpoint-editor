@@ -29,3 +29,4 @@
 - **Nguyên nhân**: Frontend gửi snake_case (`design_id`, `edit_token`), trong khi backend chỉ kiểm tra camelCase (`designId`, `editToken`).
 - **Cách khắc phục**: Chuẩn hóa hàm `save_design()` trong `database.py` để chấp nhận cả hai kiểu đặt tên:
   `design_id = design_data.get("designId") or design_data.get("id") or design_data.get("design_id")`.
+

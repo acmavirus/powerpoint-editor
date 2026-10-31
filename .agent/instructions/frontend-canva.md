@@ -29,3 +29,4 @@ Toàn bộ ứng dụng gồm 4 view chính nằm bên trong thẻ `<main>`:
 3. **Đồng Bộ Dữ Liệu Hai Chiều**:
    - Vừa lưu vào LocalStorage (`canva_design_{id}`) để làm việc offline mượt mà.
    - Vừa đồng bộ lên Database SQLite trung tâm qua `/api/designs` khi có mạng.
+

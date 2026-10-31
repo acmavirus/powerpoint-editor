@@ -33,3 +33,4 @@
 ## 3. CÁC LƯU Ý QUAN TRỌNG
 - Luôn kiểm tra đường dẫn file upload và sanitized filename trước khi ghi vào `/app/storage/uploads/`.
 - Khi bổ sung cột mới cho database SQLite, viết hàm kiểm tra `PRAGMA table_info(...)` và `ALTER TABLE ADD COLUMN` an toàn trong `init_db()` để không làm mất dữ liệu hiện có.
+

@@ -33,3 +33,4 @@ Hệ thống tài liệu tri thức (Agent Memory & Knowledge Base) được thi
 - Trước khi bắt đầu bất kỳ task nào, hãy đọc file `constitution.md` và `architecture.md`.
 - Khi cần deploy lên VPS, tuân thủ các bước trong `workflows/deploy.md` và `memory/deployment.md`.
 - Khi gặp lỗi hoặc chuẩn bị sửa bug, đối chiếu với `memory/issue_resolutions.md` để tránh lặp lại các lỗi đã được giải quyết.
+

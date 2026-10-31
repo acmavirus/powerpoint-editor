@@ -30,3 +30,4 @@
 - **Docker-First**: Mọi lệnh test, chạy uvicorn, python, nginx phải diễn ra trong container.
 - **Không Mount Volume Trực Tiếp Vào Môi Trường Đang Build**:
   - Dùng volume Docker (`ppt_storage`) cho dữ liệu bền vững (/app/storage).
+

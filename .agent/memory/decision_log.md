@@ -28,3 +28,4 @@
 - **Quyết định**:
   - Xây dựng view SPA `#projectsPageView` với phong cách Canva Dashboard: lưới card có mockup slide preview, badge vai trò (`Chủ sở hữu`, `Được sửa`, `Chỉ xem`), các tab bộ lọc (`Tất cả`, `Của tôi`, `Được chia sẻ`), tìm kiếm thời gian thực, menu nhân bản bài và xóa bài có modal xác nhận.
   - Định tuyến route `/projects` tương thích hoàn toàn với SPA Nginx (`try_files $uri $uri/ /index.html;`).
+
