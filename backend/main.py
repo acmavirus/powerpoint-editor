@@ -174,6 +174,38 @@ def get_slide_font(deck_id: str, font_name: str):
     return FileResponse(path, media_type=media_type)
 
 # ================= GOOGLE AUTHENTICATION ENDPOINTS =================
+def get_frontend_base_url(request: Request) -> str:
+    """
+    Determines the public frontend base URL dynamically to ensure redirects
+    never bounce users from production back to localhost.
+    Priority:
+    1. APP_URL or APP_FRONTEND_URL environment variable.
+    2. Origin extracted from APP_AUTH_CALLBACK (e.g. https://ppt-editor.thuc.me).
+    3. Reverse proxy headers (X-Forwarded-Proto + X-Forwarded-Host or Host).
+    4. Fallback to empty string for relative redirect.
+    """
+    env_base = os.getenv("APP_URL") or os.getenv("APP_FRONTEND_URL")
+    if env_base and env_base.strip():
+        return env_base.strip().rstrip("/")
+
+    # Extract origin from APP_AUTH_CALLBACK
+    callback = os.getenv("APP_AUTH_CALLBACK", "")
+    if callback and callback.startswith("http"):
+        try:
+            parsed = urllib.parse.urlparse(callback)
+            if parsed.netloc:
+                return f"{parsed.scheme}://{parsed.netloc}"
+        except Exception:
+            pass
+
+    # Extract from request headers passed by reverse proxy
+    proto = request.headers.get("x-forwarded-proto") or request.url.scheme or "https"
+    host = request.headers.get("x-forwarded-host") or request.headers.get("host")
+    if host and "backend" not in host:
+        return f"{proto}://{host}"
+
+    return ""
+
 @app.get("/api/auth/config")
 def get_auth_config():
     """Returns Google OAuth Client configuration."""
@@ -190,14 +222,17 @@ def google_login(state: Optional[str] = None):
     return RedirectResponse(url=url)
 
 @app.get("/api/auth/google/callback")
-def google_callback(code: Optional[str] = None, error: Optional[str] = None):
+def google_callback(request: Request, code: Optional[str] = None, error: Optional[str] = None):
     """
     Receives authorization code from Google OAuth redirect,
     exchanges code for user profile, and redirects back to frontend.
     """
+    base_url = get_frontend_base_url(request)
+
     if error or not code:
         logger.warning(f"Google OAuth cancelled or returned error: {error}")
-        return RedirectResponse(url="http://localhost:9030/?auth_error=cancelled")
+        target_url = f"{base_url}/?auth_error=cancelled" if base_url else "/?auth_error=cancelled"
+        return RedirectResponse(url=target_url)
 
     try:
         user_info = exchange_code_for_user_info(code)
@@ -206,11 +241,13 @@ def google_callback(code: Optional[str] = None, error: Optional[str] = None):
         user_json = json.dumps(saved_user)
         encoded_user = urllib.parse.quote(user_json)
         logger.info(f"User authenticated and saved to DB: {saved_user.get('email')}")
-        return RedirectResponse(url=f"http://localhost:9030/?auth_status=success&user={encoded_user}")
+        target_url = f"{base_url}/?auth_status=success&user={encoded_user}" if base_url else f"/?auth_status=success&user={encoded_user}"
+        return RedirectResponse(url=target_url)
     except Exception as e:
         logger.exception(f"Google Auth callback error: {e}")
         err_msg = urllib.parse.quote(str(e))
-        return RedirectResponse(url=f"http://localhost:9030/?auth_error={err_msg}")
+        target_url = f"{base_url}/?auth_error={err_msg}" if base_url else f"/?auth_error={err_msg}"
+        return RedirectResponse(url=target_url)
 
 # ================= DATABASE REST API (DESIGNS & COLLABORATION) =================
 @app.get("/api/designs")
