@@ -1651,6 +1651,48 @@
       </div>
     </div>
 
+    <!-- Modal Toàn Cục: Thông Báo Đang Nạp / Xử Lý Tệp (Global Loading Modal) -->
+    <div
+      id="globalLoadingOverlay"
+      class="fixed inset-0 bg-[#090b10]/85 backdrop-blur-md z-[200] flex items-center justify-center p-4 hidden select-none animate-in fade-in duration-200"
+    >
+      <div class="bg-[#18191b] border border-slate-800/90 rounded-3xl p-8 max-w-[440px] w-full text-center shadow-2xl relative">
+        <!-- Glowing Pulse Icon -->
+        <div class="relative w-20 h-20 mx-auto mb-5 flex items-center justify-center">
+          <div class="absolute inset-0 rounded-full bg-gradient-to-tr from-purple-600 to-cyan-500 opacity-20 blur-xl animate-pulse"></div>
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-purple-600/20 to-cyan-500/20 border border-purple-500/30 flex items-center justify-center text-purple-400 relative z-10 shadow-lg">
+            <i data-lucide="file-presentation" id="globalLoadingIcon" class="w-8 h-8 animate-bounce"></i>
+          </div>
+          <!-- Spinning Ring -->
+          <div class="absolute inset-0 rounded-full border-2 border-transparent border-t-purple-500 border-r-cyan-400 animate-spin"></div>
+        </div>
+
+        <!-- Tiêu đề & Tên file -->
+        <h3 id="globalLoadingTitle" class="text-lg font-bold text-white mb-1.5">
+          Đang nạp bài thuyết trình...
+        </h3>
+        <p id="globalLoadingFilename" class="text-xs text-purple-300 font-medium truncate max-w-[340px] mx-auto mb-4 bg-purple-500/10 px-3 py-1 rounded-full border border-purple-500/20 hidden">
+          document.pptx
+        </p>
+
+        <!-- Dynamic Process Description -->
+        <p id="globalLoadingSubtitle" class="text-xs text-slate-400 leading-relaxed mb-6">
+          Hệ thống đang bóc tách slide, vector hóa hình ảnh và tối ưu font chữ.
+        </p>
+
+        <!-- Animated Progress Bar -->
+        <div class="w-full bg-slate-800/90 h-2 rounded-full overflow-hidden mb-5 relative">
+          <div class="h-full bg-gradient-to-r from-purple-600 via-indigo-500 to-cyan-400 rounded-full animate-pulse w-full"></div>
+        </div>
+
+        <!-- Cảnh báo quan trọng để người dùng không reload hoặc đóng tab -->
+        <div class="flex items-center justify-center gap-2 text-[11px] text-amber-400/90 bg-amber-500/10 border border-amber-500/20 py-2.5 px-3 rounded-xl font-medium">
+          <i data-lucide="alert-circle" class="w-4 h-4 shrink-0 text-amber-400"></i>
+          <span>Vui lòng không tải lại trang hoặc đóng trình duyệt</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast Notification -->
     <div
       id="toast"
@@ -1660,6 +1702,6 @@
       <span id="toastMsg">Thành công!</span>
     </div>
 
-    <script src="/app.js?v=20261031_import_pptx_fix_v4"></script>
+    <script src="/app.js?v=20261031_global_loader_modal_v5"></script>
   </body>
 </html>

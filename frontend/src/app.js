@@ -34,6 +34,12 @@ const btnHome = document.getElementById('btnHome');
 const uploadLoader = document.getElementById('uploadLoader');
 const loaderText = document.getElementById('loaderText');
 
+// Global Loading Modal References
+const globalLoadingOverlay = document.getElementById('globalLoadingOverlay');
+const globalLoadingTitle = document.getElementById('globalLoadingTitle');
+const globalLoadingFilename = document.getElementById('globalLoadingFilename');
+const globalLoadingSubtitle = document.getElementById('globalLoadingSubtitle');
+
 // Google Auth & Account Page References
 const btnGoogleLoginUpload = document.getElementById('btnGoogleLoginUpload');
 const uploadUserDropdownMenu = document.getElementById('uploadUserDropdownMenu');
@@ -529,7 +535,7 @@ dropZone.addEventListener('drop', (e) => {
 btnLoadSample.addEventListener('click', loadSampleDeck);
 
 async function loadSampleDeck() {
-  showLoader("Đang nạp slide mẫu và bóc tách font nhúng...");
+  showLoader("Đang nạp bài thuyết trình mẫu...", "vietnam_travel_sample.pptx", "Đang bóc tách bố cục, hình ảnh vector và font chữ nhúng...");
   try {
     const res = await fetch('/api/demo/sample', { method: 'POST' });
     if (!res.ok) throw new Error("Không thể tải slide mẫu");
@@ -548,7 +554,7 @@ async function uploadPPTX(file) {
     return;
   }
 
-  showLoader(`Đang xử lý ${file.name} (Bóc tách font & vector)...`);
+  showLoader("Đang nạp bài thuyết trình...", file.name, "Hệ thống đang bóc tách slide, vector hóa hình ảnh và tối ưu font chữ. Vui lòng chờ trong giây lát.");
   const formData = new FormData();
   formData.append('file', file);
 
@@ -570,12 +576,50 @@ async function uploadPPTX(file) {
   }
 }
 
-function showLoader(text) {
-  loaderText.textContent = text;
-  uploadLoader.classList.remove('hidden');
+let isGlobalOperationInProgress = false;
+
+function preventTabCloseDuringLoading(e) {
+  if (isGlobalOperationInProgress) {
+    e.preventDefault();
+    e.returnValue = 'Quá trình nạp bài thuyết trình đang diễn ra. Bạn có chắc chắn muốn rời đi?';
+    return e.returnValue;
+  }
 }
+
+function showLoader(text, filename = null, subtitle = null) {
+  if (loaderText) loaderText.textContent = text;
+  if (uploadLoader) uploadLoader.classList.remove('hidden');
+
+  if (globalLoadingOverlay) {
+    if (globalLoadingTitle) {
+      globalLoadingTitle.textContent = text || "Đang nạp bài thuyết trình...";
+    }
+    if (globalLoadingFilename) {
+      if (filename) {
+        globalLoadingFilename.textContent = filename;
+        globalLoadingFilename.classList.remove('hidden');
+      } else {
+        globalLoadingFilename.classList.add('hidden');
+      }
+    }
+    if (globalLoadingSubtitle) {
+      globalLoadingSubtitle.textContent = subtitle || "Hệ thống đang bóc tách slide, vector hóa hình ảnh và tối ưu font chữ...";
+    }
+    globalLoadingOverlay.classList.remove('hidden');
+  }
+
+  isGlobalOperationInProgress = true;
+  window.addEventListener('beforeunload', preventTabCloseDuringLoading);
+
+  if (window.lucide) lucide.createIcons();
+}
+
 function hideLoader() {
-  uploadLoader.classList.add('hidden');
+  if (uploadLoader) uploadLoader.classList.add('hidden');
+  if (globalLoadingOverlay) globalLoadingOverlay.classList.add('hidden');
+
+  isGlobalOperationInProgress = false;
+  window.removeEventListener('beforeunload', preventTabCloseDuringLoading);
 }
 
 // --- 3.5. ROLE-BASED ACCESS CONTROL (RBAC) ---
@@ -2203,7 +2247,7 @@ async function renderRecentDecksInAccountPage() {
       if (d.deckObj) {
         setupDeck(d.deckObj, true, `Đã mở: ${d.title}`);
       } else {
-        showLoader(`Đang nạp "${d.title}" từ máy chủ...`);
+        showLoader("Đang nạp bài thiết kế...", d.title, "Đang đồng bộ slide từ cơ sở dữ liệu máy chủ...");
         try {
           const res = await fetch(`/api/designs/${d.id}`);
           if (res.ok) {
@@ -3757,7 +3801,7 @@ async function openSpecificProject(d) {
     return;
   }
 
-  showLoader(`Đang nạp "${d.title}" từ máy chủ...`);
+  showLoader("Đang nạp bài thiết kế...", d.title, "Đang đồng bộ slide từ cơ sở dữ liệu máy chủ...");
   try {
     const res = await fetch(`/api/designs/${d.id}`);
     if (res.ok) {
