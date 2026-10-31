@@ -5,7 +5,7 @@ import shutil
 import logging
 import urllib.parse
 from typing import Optional, Dict, Any
-from fastapi import FastAPI, UploadFile, File, HTTPException, Request
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from importer import PPTXImporter
@@ -567,6 +567,117 @@ def admin_get_templates(request: Request, category: Optional[str] = None, search
     get_current_admin(request)
     templates = list_pptx_templates(include_inactive=True, category=category, search=search)
     return JSONResponse(content={"status": "success", "templates": templates})
+
+@app.post("/api/admin/templates/import-pptx")
+async def admin_import_pptx_templates(
+    request: Request,
+    file: UploadFile = File(...),
+    category: str = Form("business"),
+    category_name: str = Form("Doanh nghiệp"),
+    tags: str = Form(""),
+    prefix_title: Optional[str] = Form("")
+):
+    """
+    Receives an uploaded .pptx file, parses all slides via LibreOffice & PyMuPDF,
+    extracts high-fidelity vector/raster renders, and registers each slide as an
+    independent template in pptx_templates table.
+    """
+    current_admin = get_current_admin(request)
+
+    if not file.filename.lower().endswith((".pptx", ".ppt")):
+        raise HTTPException(status_code=400, detail="Chỉ hỗ trợ tệp trình chiếu PowerPoint định dạng .pptx hoặc .ppt")
+
+    # Safe file storage
+    timestamp_prefix = int(time.time())
+    safe_filename = f"{timestamp_prefix}_{file.filename}"
+    upload_path = os.path.join(STORAGE_DIR, "uploads", safe_filename)
+
+    try:
+        with open(upload_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        deck_data = importer.import_pptx(upload_path, file.filename)
+        slides = deck_data.get("slides", [])
+        if not slides:
+            raise HTTPException(status_code=400, detail="Tệp PowerPoint không chứa slide nào hợp lệ")
+
+        # Parse tags
+        clean_tags = [t.strip().lower() for t in tags.split(",") if t.strip()]
+        if category not in clean_tags:
+            clean_tags.insert(0, category)
+
+        # Base name for titles
+        original_base_name = os.path.splitext(file.filename)[0]
+        deck_id = deck_data.get("id") or str(timestamp_prefix)
+
+        created_templates = []
+        for idx, slide in enumerate(slides):
+            slide_idx = slide.get("index", idx)
+            slide_title = (slide.get("title") or "").strip()
+
+            if prefix_title and prefix_title.strip():
+                final_title = f"{prefix_title.strip()} - Trang {slide_idx + 1}"
+            elif slide_title and len(slide_title) > 2:
+                final_title = slide_title
+            else:
+                final_title = f"{original_base_name} - Trang {slide_idx + 1}"
+
+            tmpl_id = f"tmpl_{deck_id[:10]}_{slide_idx + 1}"
+
+            # Slide tags
+            slide_tags = list(clean_tags)
+            slide_tags.extend([f"trang {slide_idx + 1}", f"slide {slide_idx + 1}"])
+            if slide_title:
+                slide_tags.extend([w.lower() for w in slide_title.split() if len(w) > 2])
+            slide_tags = list(dict.fromkeys(slide_tags))
+
+            render_png_url = slide.get("renderPngUrl") or f"/api/slides/{deck_id}/{slide_idx}/render.png"
+            render_svg_url = slide.get("renderSvgUrl") or f"/api/slides/{deck_id}/{slide_idx}/render.svg"
+
+            # High-res preview thumbnail
+            preview_html = f'''<div class="w-full h-full relative overflow-hidden bg-slate-900 flex items-center justify-center select-none"><img src="{render_png_url}" class="w-full h-full object-contain pointer-events-none" alt="{final_title}" loading="lazy" /></div>'''
+
+            tmpl_data = {
+                "id": tmpl_id,
+                "title": final_title,
+                "category": category,
+                "category_name": category_name,
+                "tags": slide_tags,
+                "bg_gradient": "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+                "preview_badge": category_name.upper(),
+                "preview_html": preview_html,
+                "slide_data": {
+                    "renderPngUrl": render_png_url,
+                    "renderSvgUrl": render_svg_url,
+                    "elements": slide.get("elements", []),
+                    "customColor": None,
+                    "width": slide.get("width", 1920),
+                    "height": slide.get("height", 1080),
+                    "fabricJson": {
+                        "objects": []
+                    }
+                },
+                "is_active": 1,
+                "order_index": idx
+            }
+
+            created_tmpl = create_pptx_template(tmpl_data)
+            created_templates.append(created_tmpl)
+
+        logger.info(f"Admin {current_admin['username']} imported {len(created_templates)} slide templates from {file.filename}")
+        return JSONResponse(content={
+            "status": "success",
+            "message": f"Đã bóc tách thành công {len(created_templates)} slide thành mẫu vào kho!",
+            "deckId": deck_id,
+            "filename": file.filename,
+            "importedCount": len(created_templates),
+            "templates": created_templates
+        })
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Error importing PPTX presentation into template library: {e}")
+        raise HTTPException(status_code=500, detail=f"Lỗi khi bóc tách file PPTX: {str(e)}")
 
 @app.post("/api/admin/templates")
 async def admin_create_template(request: Request):

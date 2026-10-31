@@ -126,6 +126,25 @@ const tmplEditIsActive = document.getElementById('tmplEditIsActive');
 const btnCloseAdminTemplateModal = document.getElementById('btnCloseAdminTemplateModal');
 const btnCancelAdminTemplateModal = document.getElementById('btnCancelAdminTemplateModal');
 
+const adminImportPptxModal = document.getElementById('adminImportPptxModal');
+const btnCloseAdminImportPptxModal = document.getElementById('btnCloseAdminImportPptxModal');
+const btnCancelAdminImportPptxModal = document.getElementById('btnCancelAdminImportPptxModal');
+const adminImportPptxForm = document.getElementById('adminImportPptxForm');
+const adminPptxDropzone = document.getElementById('adminPptxDropzone');
+const adminPptxFileInput = document.getElementById('adminPptxFileInput');
+const adminPptxDropzoneDefault = document.getElementById('adminPptxDropzoneDefault');
+const adminPptxFileInfo = document.getElementById('adminPptxFileInfo');
+const adminPptxFileName = document.getElementById('adminPptxFileName');
+const adminPptxFileSize = document.getElementById('adminPptxFileSize');
+const btnRemoveAdminPptxFile = document.getElementById('btnRemoveAdminPptxFile');
+const adminPptxCategory = document.getElementById('adminPptxCategory');
+const adminPptxCategoryName = document.getElementById('adminPptxCategoryName');
+const adminPptxPrefixTitle = document.getElementById('adminPptxPrefixTitle');
+const adminPptxTags = document.getElementById('adminPptxTags');
+const adminPptxProgressBox = document.getElementById('adminPptxProgressBox');
+const btnSubmitAdminImportPptx = document.getElementById('btnSubmitAdminImportPptx');
+const btnOpenManualTemplateCreate = document.getElementById('btnOpenManualTemplateCreate');
+
 const btnOpenCreateAdminModal = document.getElementById('btnOpenCreateAdminModal');
 const adminListTableBody = document.getElementById('adminListTableBody');
 const adminCreateModal = document.getElementById('adminCreateModal');
@@ -1337,18 +1356,34 @@ function applyTemplateToDeck(template, replaceCurrent = false) {
 
   saveCurrentSlideState();
 
-  const clonedFabricJson = JSON.parse(JSON.stringify(template.slideData.fabricJson));
+  const slideData = template.slideData || {};
+  const clonedFabricJson = slideData.fabricJson ? JSON.parse(JSON.stringify(slideData.fabricJson)) : { objects: [] };
+  const hasBgImg = !!slideData.renderPngUrl;
 
   if (replaceCurrent) {
     const targetSlide = currentDeck.slides[currentSlideIndex];
     if (!targetSlide) return;
     targetSlide.title = template.title;
-    targetSlide.customColor = template.slideData.customColor;
-    targetSlide.useCustomColor = true;
-    targetSlide.renderPngUrl = null;
-    targetSlide.elements = [];
-    targetSlide.fabricJson = clonedFabricJson;
-    targetSlide.isEdited = true;
+
+    if (hasBgImg) {
+      targetSlide.renderPngUrl = slideData.renderPngUrl;
+      targetSlide.renderSvgUrl = slideData.renderSvgUrl || null;
+      targetSlide.thumbnailUrl = slideData.renderPngUrl;
+      targetSlide.elements = slideData.elements ? JSON.parse(JSON.stringify(slideData.elements)) : [];
+      targetSlide.useCustomColor = false;
+      targetSlide.customColor = null;
+      targetSlide.fabricJson = clonedFabricJson;
+      targetSlide.isEdited = false;
+    } else {
+      targetSlide.customColor = slideData.customColor || '#032030';
+      targetSlide.useCustomColor = true;
+      targetSlide.renderPngUrl = null;
+      targetSlide.renderSvgUrl = null;
+      targetSlide.thumbnailUrl = null;
+      targetSlide.elements = [];
+      targetSlide.fabricJson = clonedFabricJson;
+      targetSlide.isEdited = true;
+    }
 
     loadSlideToCanvas(currentSlideIndex);
     renderSlideThumbnails();
@@ -1359,13 +1394,16 @@ function applyTemplateToDeck(template, replaceCurrent = false) {
     const newSlide = {
       index: newIdx,
       title: template.title,
-      width: 1920,
-      height: 1080,
-      elements: [],
+      width: slideData.width || 1920,
+      height: slideData.height || 1080,
+      renderPngUrl: hasBgImg ? slideData.renderPngUrl : null,
+      renderSvgUrl: hasBgImg ? (slideData.renderSvgUrl || null) : null,
+      thumbnailUrl: hasBgImg ? slideData.renderPngUrl : null,
+      elements: (hasBgImg && slideData.elements) ? JSON.parse(JSON.stringify(slideData.elements)) : [],
       fabricJson: clonedFabricJson,
-      isEdited: true,
-      useCustomColor: true,
-      customColor: template.slideData.customColor
+      isEdited: !hasBgImg,
+      useCustomColor: !hasBgImg,
+      customColor: !hasBgImg ? (slideData.customColor || '#032030') : null
     };
 
     currentDeck.slides.push(newSlide);
@@ -5631,9 +5669,195 @@ if (tmplEditColorPicker && tmplEditCustomColor) {
   });
 }
 
+let selectedAdminPptxFile = null;
+
+function resetAdminImportPptxModal() {
+  selectedAdminPptxFile = null;
+  if (adminPptxFileInput) adminPptxFileInput.value = '';
+  if (adminPptxDropzoneDefault) adminPptxDropzoneDefault.classList.remove('hidden');
+  if (adminPptxFileInfo) adminPptxFileInfo.classList.add('hidden');
+  if (adminPptxProgressBox) adminPptxProgressBox.classList.add('hidden');
+  if (btnSubmitAdminImportPptx) {
+    btnSubmitAdminImportPptx.disabled = false;
+    btnSubmitAdminImportPptx.classList.remove('opacity-60', 'cursor-not-allowed');
+  }
+  if (adminPptxPrefixTitle) adminPptxPrefixTitle.value = '';
+  if (adminPptxTags) adminPptxTags.value = '';
+}
+
+function openAdminImportPptxModal() {
+  resetAdminImportPptxModal();
+  if (adminImportPptxModal) {
+    adminImportPptxModal.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+function handleSelectAdminPptx(file) {
+  if (!file) return;
+  const lowerName = file.name.toLowerCase();
+  if (!lowerName.endsWith('.pptx') && !lowerName.endsWith('.ppt')) {
+    showToast('Vui lòng chọn tệp PowerPoint có định dạng .pptx hoặc .ppt', true);
+    return;
+  }
+  selectedAdminPptxFile = file;
+  if (adminPptxFileName) adminPptxFileName.textContent = file.name;
+  if (adminPptxFileSize) {
+    const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+    adminPptxFileSize.textContent = `${sizeInMB} MB`;
+  }
+  if (adminPptxDropzoneDefault) adminPptxDropzoneDefault.classList.add('hidden');
+  if (adminPptxFileInfo) adminPptxFileInfo.classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+
 if (btnOpenCreateTemplateModal) {
   btnOpenCreateTemplateModal.addEventListener('click', () => {
+    openAdminImportPptxModal();
+  });
+}
+
+if (btnCloseAdminImportPptxModal) {
+  btnCloseAdminImportPptxModal.addEventListener('click', () => {
+    if (adminImportPptxModal) adminImportPptxModal.classList.add('hidden');
+  });
+}
+
+if (btnCancelAdminImportPptxModal) {
+  btnCancelAdminImportPptxModal.addEventListener('click', () => {
+    if (adminImportPptxModal) adminImportPptxModal.classList.add('hidden');
+  });
+}
+
+if (btnOpenManualTemplateCreate) {
+  btnOpenManualTemplateCreate.addEventListener('click', () => {
+    if (adminImportPptxModal) adminImportPptxModal.classList.add('hidden');
     openEditTemplateModal(null);
+  });
+}
+
+if (adminPptxCategory && adminPptxCategoryName) {
+  adminPptxCategory.addEventListener('change', () => {
+    const opt = adminPptxCategory.options[adminPptxCategory.selectedIndex];
+    const catName = opt ? opt.getAttribute('data-name') : 'Doanh nghiệp';
+    if (catName) adminPptxCategoryName.value = catName;
+  });
+}
+
+if (adminPptxDropzone && adminPptxFileInput) {
+  adminPptxDropzone.addEventListener('click', (e) => {
+    if (e.target.closest('#btnRemoveAdminPptxFile')) return;
+    adminPptxFileInput.click();
+  });
+
+  adminPptxFileInput.addEventListener('change', (e) => {
+    if (e.target.files && e.target.files.length > 0) {
+      handleSelectAdminPptx(e.target.files[0]);
+    }
+  });
+
+  adminPptxDropzone.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    adminPptxDropzone.classList.add('border-purple-400', 'bg-purple-950/20');
+  });
+
+  adminPptxDropzone.addEventListener('dragleave', () => {
+    adminPptxDropzone.classList.remove('border-purple-400', 'bg-purple-950/20');
+  });
+
+  adminPptxDropzone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    adminPptxDropzone.classList.remove('border-purple-400', 'bg-purple-950/20');
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleSelectAdminPptx(e.dataTransfer.files[0]);
+    }
+  });
+}
+
+if (btnRemoveAdminPptxFile) {
+  btnRemoveAdminPptxFile.addEventListener('click', (e) => {
+    e.stopPropagation();
+    selectedAdminPptxFile = null;
+    if (adminPptxFileInput) adminPptxFileInput.value = '';
+    if (adminPptxFileInfo) adminPptxFileInfo.classList.add('hidden');
+    if (adminPptxDropzoneDefault) adminPptxDropzoneDefault.classList.remove('hidden');
+  });
+}
+
+if (adminImportPptxForm) {
+  adminImportPptxForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!selectedAdminPptxFile) {
+      showToast('Vui lòng chọn hoặc kéo thả một tệp .pptx để bóc tách mẫu!', true);
+      return;
+    }
+
+    const category = adminPptxCategory ? adminPptxCategory.value : 'business';
+    const categoryName = adminPptxCategoryName ? adminPptxCategoryName.value.trim() : 'Doanh nghiệp';
+    const prefixTitle = adminPptxPrefixTitle ? adminPptxPrefixTitle.value.trim() : '';
+    const tags = adminPptxTags ? adminPptxTags.value.trim() : '';
+
+    const formData = new FormData();
+    formData.append('file', selectedAdminPptxFile);
+    formData.append('category', category);
+    formData.append('category_name', categoryName);
+    formData.append('tags', tags);
+    formData.append('prefix_title', prefixTitle);
+
+    if (adminPptxProgressBox) adminPptxProgressBox.classList.remove('hidden');
+    if (btnSubmitAdminImportPptx) {
+      btnSubmitAdminImportPptx.disabled = true;
+      btnSubmitAdminImportPptx.classList.add('opacity-60', 'cursor-not-allowed');
+    }
+    if (window.lucide) lucide.createIcons();
+
+    try {
+      const res = await authAdminFetch('/api/admin/templates/import-pptx', {
+        method: 'POST',
+        body: formData
+      });
+
+      const json = await res.json();
+      if (res.ok && json.status === 'success') {
+        showToast(`Đã bóc tách thành công ${json.importedCount} mẫu slide vào kho!`);
+        if (adminImportPptxModal) adminImportPptxModal.classList.add('hidden');
+        resetAdminImportPptxModal();
+        loadAdminTemplates();
+
+        // Tự động đồng bộ lại danh sách mẫu cho Canva Editor Drawer
+        fetch('/api/templates')
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            if (data && Array.isArray(data.templates)) {
+              SYSTEM_PPTX_TEMPLATES.length = 0;
+              SYSTEM_PPTX_TEMPLATES.push(...data.templates.map(t => ({
+                id: t.id,
+                title: t.title,
+                category: t.category,
+                categoryName: t.category_name,
+                tags: t.tags || [],
+                bgGradient: t.bg_gradient,
+                previewBadge: t.preview_badge || (t.category_name || '').toUpperCase(),
+                previewHtml: t.preview_html,
+                slideData: t.slide_data || { customColor: '#032030', fabricJson: { objects: [] } }
+              })));
+              renderTemplatesGrid(currentTemplateSearchQuery, currentTemplateCategory);
+            }
+          })
+          .catch(() => {});
+      } else {
+        showToast(json.detail || 'Lỗi khi bóc tách tệp PPTX', true);
+      }
+    } catch (err) {
+      console.error('Import PPTX error:', err);
+      showToast('Lỗi kết nối máy chủ khi tải lên tệp PPTX', true);
+    } finally {
+      if (adminPptxProgressBox) adminPptxProgressBox.classList.add('hidden');
+      if (btnSubmitAdminImportPptx) {
+        btnSubmitAdminImportPptx.disabled = false;
+        btnSubmitAdminImportPptx.classList.remove('opacity-60', 'cursor-not-allowed');
+      }
+    }
   });
 }
 

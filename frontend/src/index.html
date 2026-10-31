@@ -2101,6 +2101,112 @@
       </main>
     </div>
 
+    <!-- MODAL IMPORT PPTX BÓC TÁCH THÀNH MẪU SLIDE -->
+    <div id="adminImportPptxModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 select-none">
+      <div class="bg-[#161b22] border border-slate-800 rounded-3xl p-6 max-w-xl w-full shadow-2xl animate-in fade-in duration-150">
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/30 flex items-center justify-center text-purple-400">
+              <i data-lucide="file-up" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white">Thêm Mẫu Mới (Nhập Tệp PowerPoint)</h3>
+              <p class="text-[11px] text-slate-400">Bóc tách từng slide thành mẫu trang độc lập vào kho</p>
+            </div>
+          </div>
+          <button type="button" id="btnCloseAdminImportPptxModal" class="p-1.5 text-slate-400 hover:text-white rounded-lg transition cursor-pointer">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <form id="adminImportPptxForm" class="space-y-4 text-xs text-slate-300">
+          <!-- Dropzone Area -->
+          <div>
+            <label class="block font-semibold mb-1.5 text-slate-200">Chọn tệp PowerPoint (.pptx) (*)</label>
+            <div id="adminPptxDropzone" class="border-2 border-dashed border-slate-700 hover:border-purple-500/80 rounded-2xl p-5 text-center cursor-pointer bg-[#0d1117]/80 hover:bg-purple-950/10 transition group">
+              <input type="file" id="adminPptxFileInput" accept=".pptx,.ppt" class="hidden" />
+              <div id="adminPptxDropzoneDefault" class="flex flex-col items-center gap-2">
+                <div class="w-12 h-12 rounded-2xl bg-purple-600/10 border border-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-105 transition-transform">
+                  <i data-lucide="upload-cloud" class="w-6 h-6"></i>
+                </div>
+                <div>
+                  <p class="font-bold text-slate-200 text-xs">Kéo thả tệp .pptx vào đây hoặc <span class="text-purple-400 underline">chọn tệp</span></p>
+                  <p class="text-[10px] text-slate-400 mt-0.5">Hỗ trợ Microsoft PowerPoint (.pptx, .ppt) • Khuyến nghị bản trình chiếu mẫu</p>
+                </div>
+              </div>
+              <div id="adminPptxFileInfo" class="hidden flex items-center justify-between p-3 bg-slate-900 border border-purple-500/40 rounded-xl text-left">
+                <div class="flex items-center gap-2.5 overflow-hidden">
+                  <i data-lucide="presentation" class="w-5 h-5 text-purple-400 shrink-0"></i>
+                  <div class="truncate">
+                    <p id="adminPptxFileName" class="font-bold text-white text-xs truncate">presentation.pptx</p>
+                    <p id="adminPptxFileSize" class="text-[10px] text-slate-400">1.2 MB</p>
+                  </div>
+                </div>
+                <button type="button" id="btnRemoveAdminPptxFile" class="p-1 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-400 transition" title="Chọn file khác">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Metadata Configuration -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold mb-1 text-slate-200">Danh mục mẫu (*)</label>
+              <select id="adminPptxCategory" class="w-full bg-[#0d1117] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none cursor-pointer">
+                <option value="travel" data-name="Du lịch">Du lịch (Travel)</option>
+                <option value="business" data-name="Doanh nghiệp" selected>Doanh nghiệp (Business)</option>
+                <option value="marketing" data-name="Marketing">Marketing & Truyền thông</option>
+                <option value="pitch" data-name="Pitch Deck">Pitch Deck (Gọi vốn)</option>
+                <option value="education" data-name="Giáo dục">Giáo dục (Education)</option>
+                <option value="creative" data-name="Sáng tạo">Sáng tạo & Nghệ thuật</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold mb-1 text-slate-200">Tên hiển thị danh mục</label>
+              <input type="text" id="adminPptxCategoryName" value="Doanh nghiệp" required class="w-full bg-[#0d1117] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-purple-500" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold mb-1 text-slate-200">Tiền tố tên mẫu (Tùy chọn)</label>
+              <input type="text" id="adminPptxPrefixTitle" placeholder="Ví dụ: Báo Cáo Tài Chính" class="w-full bg-[#0d1117] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-purple-500" />
+              <p class="text-[10px] text-slate-400 mt-1">Để trống sẽ tự động lấy tiêu đề từng slide trong file</p>
+            </div>
+            <div>
+              <label class="block font-semibold mb-1 text-slate-200">Từ khóa tìm kiếm (Tags bổ sung)</label>
+              <input type="text" id="adminPptxTags" placeholder="sale, finance, q3, startup" class="w-full bg-[#0d1117] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-purple-500" />
+              <p class="text-[10px] text-slate-400 mt-1">Cách nhau bởi dấu phẩy để người dùng dễ tìm</p>
+            </div>
+          </div>
+
+          <!-- Progress / Loading Status -->
+          <div id="adminPptxProgressBox" class="hidden p-3.5 bg-purple-950/20 border border-purple-500/30 rounded-xl flex items-center gap-3">
+            <i data-lucide="loader-2" class="w-5 h-5 text-purple-400 animate-spin shrink-0"></i>
+            <div>
+              <p class="font-bold text-white text-xs">Đang bóc tách slide & chuyển thành mẫu...</p>
+              <p class="text-[10px] text-purple-300/80">Quá trình render chất lượng cao và tích hợp font chữ tự động có thể mất vài giây.</p>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center justify-between pt-3 border-t border-slate-800">
+            <button type="button" id="btnOpenManualTemplateCreate" class="text-xs text-slate-400 hover:text-cyan-400 underline transition cursor-pointer">
+              Hoặc tạo mẫu trống thủ công
+            </button>
+            <div class="flex items-center gap-2">
+              <button type="button" id="btnCancelAdminImportPptxModal" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition cursor-pointer">Hủy</button>
+              <button type="submit" id="btnSubmitAdminImportPptx" class="px-5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl transition shadow-lg shadow-purple-900/40 flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="sparkles" class="w-4 h-4"></i>
+                <span>Bóc Tách & Thêm Vào Kho Mẫu</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- MODAL 1: THÊM / CHỈNH SỬA MẪU SLIDE PPTX -->
     <div id="adminTemplateEditModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 select-none">
       <div class="bg-[#161b22] border border-slate-800 rounded-3xl p-6 max-w-xl w-full shadow-2xl animate-in fade-in duration-150">
