@@ -28,7 +28,26 @@ from database import (
     duplicate_design_in_db,
     add_design_collaborator,
     remove_design_collaborator,
-    set_design_access_level
+    set_design_access_level,
+    admin_authenticate,
+    create_admin_token,
+    verify_admin_token,
+    revoke_admin_token,
+    list_admin_users,
+    create_admin_user,
+    update_admin_user,
+    delete_admin_user,
+    list_users_for_admin,
+    get_user_details_for_admin,
+    set_user_status,
+    delete_user_by_admin,
+    get_admin_dashboard_stats,
+    list_pptx_templates,
+    get_pptx_template,
+    create_pptx_template,
+    update_pptx_template,
+    delete_pptx_template,
+    seed_default_templates
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -382,3 +401,224 @@ async def presence_leave(request: Request):
     except Exception as e:
         logger.debug(f"Presence leave error: {e}")
     return JSONResponse(content={"status": "ok"})
+
+# ============================================================================
+# ======================== ADMIN PORTAL RESTFUL APIS =========================
+# ============================================================================
+
+def get_current_admin(request: Request) -> Dict[str, Any]:
+    """Dependency helper to verify admin token from headers."""
+    auth_header = request.headers.get("Authorization", "")
+    token = request.headers.get("X-Admin-Token") or (auth_header.replace("Bearer ", "").strip() if auth_header else "")
+    if not token:
+        raise HTTPException(status_code=401, detail="Vui lòng đăng nhập với quyền quản trị viên")
+    
+    admin = verify_admin_token(token)
+    if not admin:
+        raise HTTPException(status_code=401, detail="Phiên đăng nhập quản trị không hợp lệ hoặc đã hết hạn")
+    return admin
+
+def require_super_admin(request: Request) -> Dict[str, Any]:
+    admin = get_current_admin(request)
+    if admin.get("role") != "super_admin":
+        raise HTTPException(status_code=403, detail="Yêu cầu quyền Quản trị cấp cao (Super Admin)")
+    return admin
+
+# --- 1. ADMIN AUTHENTICATION ---
+@app.post("/api/admin/auth/login")
+async def admin_login(request: Request):
+    """Admin login endpoint verifying credentials and returning secure session token."""
+    try:
+        body = await request.json()
+        username = body.get("username", "").strip()
+        password = body.get("password", "")
+
+        if not username or not password:
+            raise HTTPException(status_code=400, detail="Vui lòng nhập tên đăng nhập và mật khẩu")
+
+        admin = admin_authenticate(username, password)
+        if not admin:
+            raise HTTPException(status_code=401, detail="Tên đăng nhập hoặc mật khẩu không chính xác")
+
+        token = create_admin_token(admin["id"])
+        return JSONResponse(content={
+            "status": "success",
+            "token": token,
+            "admin": admin
+        })
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Admin login error: {e}")
+        raise HTTPException(status_code=500, detail="Lỗi máy chủ trong quá trình xác thực quản trị")
+
+@app.get("/api/admin/auth/me")
+def admin_me(request: Request):
+    """Returns profile of currently authenticated admin."""
+    admin = get_current_admin(request)
+    return JSONResponse(content={"status": "success", "admin": admin})
+
+@app.post("/api/admin/auth/logout")
+async def admin_logout(request: Request):
+    """Revokes the current admin session token."""
+    auth_header = request.headers.get("Authorization", "")
+    token = request.headers.get("X-Admin-Token") or (auth_header.replace("Bearer ", "").strip() if auth_header else "")
+    if token:
+        revoke_admin_token(token)
+    return JSONResponse(content={"status": "success", "message": "Đã đăng xuất phiên quản trị"})
+
+# --- 2. ADMIN DASHBOARD STATS ---
+@app.get("/api/admin/stats")
+def admin_stats(request: Request):
+    """Returns overview metrics for dashboard."""
+    get_current_admin(request)
+    stats = get_admin_dashboard_stats()
+    return JSONResponse(content={"status": "success", "stats": stats})
+
+# --- 3. END-USER MANAGEMENT ---
+@app.get("/api/admin/users")
+def admin_list_users(request: Request, query: str = "", status: str = "all", page: int = 1, page_size: int = 50):
+    """Lists end-users with pagination and filter."""
+    get_current_admin(request)
+    result = list_users_for_admin(query=query, status=status, page=page, page_size=page_size)
+    return JSONResponse(content={"status": "success", "data": result})
+
+@app.get("/api/admin/users/{user_id}")
+def admin_get_user(user_id: str, request: Request):
+    """Gets details and designs of an end-user."""
+    get_current_admin(request)
+    user = get_user_details_for_admin(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Không tìm thấy người dùng")
+    return JSONResponse(content={"status": "success", "user": user})
+
+@app.put("/api/admin/users/{user_id}/status")
+async def admin_update_user_status(user_id: str, request: Request):
+    """Locks or unlocks an end-user account."""
+    get_current_admin(request)
+    body = await request.json()
+    is_active = int(body.get("is_active", 1))
+    notes = body.get("notes")
+    success = set_user_status(user_id, is_active, notes)
+    if not success:
+        raise HTTPException(status_code=400, detail="Không thể cập nhật trạng thái người dùng")
+    return JSONResponse(content={"status": "success", "message": "Đã cập nhật trạng thái người dùng", "is_active": is_active})
+
+@app.delete("/api/admin/users/{user_id}")
+def admin_delete_user(user_id: str, request: Request):
+    """Deletes an end-user and their presentations."""
+    require_super_admin(request)
+    success = delete_user_by_admin(user_id)
+    if not success:
+        raise HTTPException(status_code=400, detail="Không thể xóa người dùng")
+    return JSONResponse(content={"status": "success", "message": "Đã xóa tài khoản người dùng thành công"})
+
+# --- 4. ADMINISTRATORS MANAGEMENT ---
+@app.get("/api/admin/admins")
+def admin_list_admins(request: Request):
+    """Lists all admin accounts."""
+    get_current_admin(request)
+    admins = list_admin_users()
+    return JSONResponse(content={"status": "success", "admins": admins})
+
+@app.post("/api/admin/admins")
+async def admin_create_admin(request: Request):
+    """Creates a new admin account (Super Admin only)."""
+    require_super_admin(request)
+    body = await request.json()
+    try:
+        new_admin = create_admin_user(body)
+        return JSONResponse(content={"status": "success", "admin": new_admin})
+    except ValueError as ve:
+        raise HTTPException(status_code=400, detail=str(ve))
+    except Exception as e:
+        logger.exception(f"Error creating admin: {e}")
+        raise HTTPException(status_code=500, detail="Lỗi khi tạo tài khoản quản trị viên")
+
+@app.put("/api/admin/admins/{admin_id}")
+async def admin_update_admin(admin_id: str, request: Request):
+    """Updates an admin account role, status or password."""
+    current_admin = get_current_admin(request)
+    if current_admin["role"] != "super_admin" and current_admin["id"] != admin_id:
+        raise HTTPException(status_code=403, detail="Không có quyền chỉnh sửa tài khoản này")
+
+    body = await request.json()
+    updated = update_admin_user(admin_id, body)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản quản trị")
+    return JSONResponse(content={"status": "success", "admin": updated})
+
+@app.delete("/api/admin/admins/{admin_id}")
+def admin_delete_admin(admin_id: str, request: Request):
+    """Deletes an admin account (cannot delete self)."""
+    current_admin = require_super_admin(request)
+    if current_admin["id"] == admin_id:
+        raise HTTPException(status_code=400, detail="Không thể tự xóa tài khoản của chính mình")
+
+    success = delete_admin_user(admin_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Không tìm thấy tài khoản để xóa")
+    return JSONResponse(content={"status": "success", "message": "Đã xóa tài khoản quản trị viên"})
+
+# --- 5. PPTX TEMPLATES MANAGEMENT (ADMIN CRUD) ---
+@app.get("/api/admin/templates")
+def admin_get_templates(request: Request, category: Optional[str] = None, search: Optional[str] = None):
+    """Lists all PPTX templates including inactive for admin."""
+    get_current_admin(request)
+    templates = list_pptx_templates(include_inactive=True, category=category, search=search)
+    return JSONResponse(content={"status": "success", "templates": templates})
+
+@app.post("/api/admin/templates")
+async def admin_create_template(request: Request):
+    """Creates a new pre-made template."""
+    get_current_admin(request)
+    body = await request.json()
+    new_template = create_pptx_template(body)
+    return JSONResponse(content={"status": "success", "template": new_template})
+
+@app.get("/api/admin/templates/{template_id}")
+def admin_get_single_template(template_id: str, request: Request):
+    """Gets details of a template."""
+    get_current_admin(request)
+    tmpl = get_pptx_template(template_id)
+    if not tmpl:
+        raise HTTPException(status_code=404, detail="Không tìm thấy mẫu trang PPTX")
+    return JSONResponse(content={"status": "success", "template": tmpl})
+
+@app.put("/api/admin/templates/{template_id}")
+async def admin_update_single_template(template_id: str, request: Request):
+    """Updates an existing PPTX template."""
+    get_current_admin(request)
+    body = await request.json()
+    updated = update_pptx_template(template_id, body)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Không tìm thấy mẫu trang để cập nhật")
+    return JSONResponse(content={"status": "success", "template": updated})
+
+@app.delete("/api/admin/templates/{template_id}")
+def admin_delete_single_template(template_id: str, request: Request):
+    """Deletes a PPTX template from system."""
+    get_current_admin(request)
+    success = delete_pptx_template(template_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Không tìm thấy mẫu trang để xóa")
+    return JSONResponse(content={"status": "success", "message": "Đã xóa mẫu trang thành công"})
+
+@app.post("/api/admin/templates/seed")
+def admin_seed_templates(request: Request):
+    """Restores default 10 pre-made templates."""
+    require_super_admin(request)
+    seed_default_templates()
+    templates = list_pptx_templates(include_inactive=True)
+    return JSONResponse(content={"status": "success", "message": "Đã khôi phục kho mẫu tiêu chuẩn", "templates": templates})
+
+# --- 6. PUBLIC TEMPLATES API (FOR CANVA EDITOR DRAWER) ---
+@app.get("/api/templates")
+def public_get_templates(category: Optional[str] = None, search: Optional[str] = None):
+    """Public endpoint returning active templates for the editor drawer."""
+    try:
+        templates = list_pptx_templates(include_inactive=False, category=category, search=search)
+        return JSONResponse(content={"status": "success", "templates": templates})
+    except Exception as e:
+        logger.error(f"Error fetching public templates: {e}")
+        return JSONResponse(content={"status": "error", "templates": []})

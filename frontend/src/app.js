@@ -73,6 +73,70 @@ const headerRoleBadge = document.getElementById('headerRoleBadge');
 // Share Design & Role Elements
 const btnShareDesign = document.getElementById('btnShareDesign');
 const shareDesignDropdown = document.getElementById('shareDesignDropdown');
+
+// ======================== ADMIN PORTAL DOM REFERENCES ========================
+const adminLoginView = document.getElementById('adminLoginView');
+const adminDashboardView = document.getElementById('adminDashboardView');
+const adminLoginForm = document.getElementById('adminLoginForm');
+const adminLoginUsername = document.getElementById('adminLoginUsername');
+const adminLoginPassword = document.getElementById('adminLoginPassword');
+const adminLoginErrorAlert = document.getElementById('adminLoginErrorAlert');
+const adminLoginErrorText = document.getElementById('adminLoginErrorText');
+const btnAdminLoginBackHome = document.getElementById('btnAdminLoginBackHome');
+const btnAdminLogout = document.getElementById('btnAdminLogout');
+const btnAdminBackToEditor = document.getElementById('btnAdminBackToEditor');
+const adminNavBtns = document.querySelectorAll('.admin-nav-btn');
+const adminPanes = document.querySelectorAll('.admin-pane');
+const adminCurrentTabTitle = document.getElementById('adminCurrentTabTitle');
+const btnAdminRefreshData = document.getElementById('btnAdminRefreshData');
+
+const statTotalUsers = document.getElementById('statTotalUsers');
+const statBannedUsers = document.getElementById('statBannedUsers');
+const statTotalDesigns = document.getElementById('statTotalDesigns');
+const statActiveTemplates = document.getElementById('statActiveTemplates');
+const adminRecentUsersTableBody = document.getElementById('adminRecentUsersTableBody');
+const adminRecentDesignsTableBody = document.getElementById('adminRecentDesignsTableBody');
+const adminProfileInitial = document.getElementById('adminProfileInitial');
+const adminProfileName = document.getElementById('adminProfileName');
+const adminProfileRole = document.getElementById('adminProfileRole');
+
+const adminUsersSearchInput = document.getElementById('adminUsersSearchInput');
+const adminUsersStatusFilter = document.getElementById('adminUsersStatusFilter');
+const btnRefreshAdminUsers = document.getElementById('btnRefreshAdminUsers');
+const adminUsersTableBody = document.getElementById('adminUsersTableBody');
+const adminUsersPaginationText = document.getElementById('adminUsersPaginationText');
+const btnAdminUsersPrevPage = document.getElementById('btnAdminUsersPrevPage');
+const btnAdminUsersNextPage = document.getElementById('btnAdminUsersNextPage');
+
+const btnOpenCreateTemplateModal = document.getElementById('btnOpenCreateTemplateModal');
+const btnSeedDefaultTemplates = document.getElementById('btnSeedDefaultTemplates');
+const adminTemplatesCategoryFilter = document.getElementById('adminTemplatesCategoryFilter');
+const btnRefreshAdminTemplates = document.getElementById('btnRefreshAdminTemplates');
+const adminTemplatesGrid = document.getElementById('adminTemplatesGrid');
+const adminTemplateEditModal = document.getElementById('adminTemplateEditModal');
+const adminTemplateForm = document.getElementById('adminTemplateForm');
+const tmplEditId = document.getElementById('tmplEditId');
+const tmplEditTitle = document.getElementById('tmplEditTitle');
+const tmplEditCategory = document.getElementById('tmplEditCategory');
+const tmplEditCategoryName = document.getElementById('tmplEditCategoryName');
+const tmplEditTags = document.getElementById('tmplEditTags');
+const tmplEditColorPicker = document.getElementById('tmplEditColorPicker');
+const tmplEditCustomColor = document.getElementById('tmplEditCustomColor');
+const tmplEditIsActive = document.getElementById('tmplEditIsActive');
+const btnCloseAdminTemplateModal = document.getElementById('btnCloseAdminTemplateModal');
+const btnCancelAdminTemplateModal = document.getElementById('btnCancelAdminTemplateModal');
+
+const btnOpenCreateAdminModal = document.getElementById('btnOpenCreateAdminModal');
+const adminListTableBody = document.getElementById('adminListTableBody');
+const adminCreateModal = document.getElementById('adminCreateModal');
+const adminCreateForm = document.getElementById('adminCreateForm');
+const adminNewFullName = document.getElementById('adminNewFullName');
+const adminNewUsername = document.getElementById('adminNewUsername');
+const adminNewEmail = document.getElementById('adminNewEmail');
+const adminNewPassword = document.getElementById('adminNewPassword');
+const adminNewRole = document.getElementById('adminNewRole');
+const btnCloseAdminCreateModal = document.getElementById('btnCloseAdminCreateModal');
+const btnCancelAdminCreateModal = document.getElementById('btnCancelAdminCreateModal');
 const shareRoleStatusBanner = document.getElementById('shareRoleStatusBanner');
 const shareInviteSection = document.getElementById('shareInviteSection');
 const shareGuestNotice = document.getElementById('shareGuestNotice');
@@ -1018,6 +1082,33 @@ function initSystemTemplatesLibrary() {
 
   // Render lần đầu toàn bộ danh sách mẫu
   renderTemplatesGrid('', 'all');
+
+  // Nạp kho mẫu động từ SQLite Database Backend nếu khả dụng
+  fetch('/api/templates')
+    .then(res => res.ok ? res.json() : null)
+    .then(data => {
+      if (data && Array.isArray(data.templates) && data.templates.length > 0) {
+        // Map database templates into SYSTEM_PPTX_TEMPLATES format
+        const dynamicTemplates = data.templates.map(t => ({
+          id: t.id,
+          title: t.title,
+          category: t.category,
+          categoryName: t.category_name,
+          tags: Array.isArray(t.tags) ? t.tags : [],
+          bgGradient: t.bg_gradient || 'linear-gradient(135deg, #032030 0%, #004d73 100%)',
+          previewBadge: t.preview_badge || (t.category_name || '').toUpperCase(),
+          previewHtml: t.preview_html,
+          slideData: t.slide_data || { customColor: '#032030', fabricJson: { objects: [] } }
+        }));
+        // Update in-memory array and re-render
+        SYSTEM_PPTX_TEMPLATES.length = 0;
+        SYSTEM_PPTX_TEMPLATES.push(...dynamicTemplates);
+        renderTemplatesGrid(currentTemplateSearchQuery, currentTemplateCategory);
+      }
+    })
+    .catch(err => {
+      console.warn("Could not sync templates from server DB, using local cache:", err);
+    });
 
   // Gắn sự kiện ô tìm kiếm drawerSearchInput
   if (drawerSearchInput) {
@@ -2738,13 +2829,15 @@ if (btnHome) {
 // --- 14.1 VIEW SWITCHER & NAVIGATION CONTROLLERS ---
 // Quản lý chuyển đổi view tập trung - Đảm bảo chỉ duy nhất 1 view được hiển thị tại 1 thời điểm
 function switchMainView(activeViewName) {
-  // activeViewName: 'home' | 'upload' | 'editor' | 'projects' | 'account'
+  // activeViewName: 'home' | 'upload' | 'editor' | 'projects' | 'account' | 'adminLogin' | 'adminDashboard'
   const views = {
     home: homeView,
     upload: uploadView,
     editor: editorView,
     projects: projectsPageView,
-    account: accountPageView
+    account: accountPageView,
+    adminLogin: adminLoginView,
+    adminDashboard: adminDashboardView
   };
 
   Object.entries(views).forEach(([name, el]) => {
@@ -3103,6 +3196,18 @@ window.addEventListener('popstate', (e) => {
 // Auto-route on initial page load
 async function initAppRouting() {
   const path = window.location.pathname;
+
+  // 0. Kiểm tra route /admin/login (Cổng đăng nhập Quản trị viên riêng biệt)
+  if (path === '/admin/login' || path === '/admin/login/') {
+    openAdminLoginPage();
+    return;
+  }
+
+  // 0.1 Kiểm tra route /admin (Bảng điều khiển Quản trị viên)
+  if (path === '/admin' || path === '/admin/' || path.startsWith('/admin/')) {
+    openAdminDashboardPage();
+    return;
+  }
 
   // 1. Kiểm tra route /import (Trang nạp tệp PPTX mới tách)
   if (path === '/import' || path === '/import/') {
@@ -4871,6 +4976,878 @@ if (btnHomeFirstSignup) {
 if (btnBackFromUploadToHome) {
   btnBackFromUploadToHome.addEventListener('click', () => {
     openHomePage();
+  });
+}
+
+// ============================================================================
+// ==================== MODULE QUẢN TRỊ VIÊN HỆ THỐNG (ADMIN) ==================
+// ============================================================================
+
+let adminCurrentActiveTab = 'dashboard';
+let adminUsersCurrentPage = 1;
+
+function getAdminToken() {
+  return localStorage.getItem('slidecraft_admin_token') || '';
+}
+
+function setAdminToken(token) {
+  localStorage.setItem('slidecraft_admin_token', token);
+}
+
+function removeAdminToken() {
+  localStorage.removeItem('slidecraft_admin_token');
+  localStorage.removeItem('slidecraft_admin_profile');
+}
+
+function getAdminProfile() {
+  try {
+    const raw = localStorage.getItem('slidecraft_admin_profile');
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function setAdminProfile(profile) {
+  localStorage.setItem('slidecraft_admin_profile', JSON.stringify(profile));
+}
+
+async function authAdminFetch(url, options = {}) {
+  const token = getAdminToken();
+  const headers = Object.assign({}, options.headers || {}, {
+    'X-Admin-Token': token,
+    'Authorization': `Bearer ${token}`
+  });
+  const res = await fetch(url, Object.assign({}, options, { headers }));
+  if (res.status === 401) {
+    removeAdminToken();
+    openAdminLoginPage();
+    throw new Error('Phiên đăng nhập quản trị đã hết hạn hoặc không hợp lệ');
+  }
+  return res;
+}
+
+function openAdminLoginPage() {
+  switchMainView('adminLogin');
+  if (window.location.pathname !== '/admin/login') {
+    window.history.pushState({ page: 'adminLogin' }, '', '/admin/login');
+  }
+  if (adminLoginErrorAlert) adminLoginErrorAlert.classList.add('hidden');
+  if (adminLoginUsername) {
+    adminLoginUsername.focus();
+  }
+}
+
+async function openAdminDashboardPage() {
+  const token = getAdminToken();
+  if (!token) {
+    openAdminLoginPage();
+    return;
+  }
+
+  // Xác thực token qua backend
+  try {
+    const res = await authAdminFetch('/api/admin/auth/me');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.admin) {
+        setAdminProfile(data.admin);
+      }
+    } else {
+      openAdminLoginPage();
+      return;
+    }
+  } catch (e) {
+    openAdminLoginPage();
+    return;
+  }
+
+  switchMainView('adminDashboard');
+  if (window.location.pathname !== '/admin') {
+    window.history.pushState({ page: 'adminDashboard' }, '', '/admin');
+  }
+
+  updateAdminProfileUI();
+  setupAdminNavigation();
+  switchAdminTab(adminCurrentActiveTab || 'dashboard');
+}
+
+function updateAdminProfileUI() {
+  const profile = getAdminProfile();
+  if (!profile) return;
+  if (adminProfileName) adminProfileName.textContent = profile.full_name || profile.username || 'Admin';
+  if (adminProfileRole) adminProfileRole.textContent = profile.role === 'super_admin' ? 'Super Admin' : (profile.role === 'editor' ? 'Editor' : 'Admin');
+  if (adminProfileInitial) {
+    const initial = (profile.full_name || profile.username || 'A').trim().charAt(0).toUpperCase();
+    adminProfileInitial.textContent = initial;
+  }
+}
+
+function setupAdminNavigation() {
+  if (adminNavBtns) {
+    adminNavBtns.forEach(btn => {
+      btn.onclick = () => {
+        const tab = btn.getAttribute('data-admin-tab');
+        switchAdminTab(tab);
+      };
+    });
+  }
+
+  if (btnAdminRefreshData) {
+    btnAdminRefreshData.onclick = () => {
+      switchAdminTab(adminCurrentActiveTab);
+      showToast('Đã làm mới dữ liệu quản trị!');
+    };
+  }
+
+  if (btnAdminLogout) {
+    btnAdminLogout.onclick = async () => {
+      try {
+        await authAdminFetch('/api/admin/auth/logout', { method: 'POST' });
+      } catch (e) {}
+      removeAdminToken();
+      showToast('Đã đăng xuất khỏi tài khoản quản trị');
+      openAdminLoginPage();
+    };
+  }
+
+  if (btnAdminBackToEditor) {
+    btnAdminBackToEditor.onclick = () => {
+      openHomePage();
+    };
+  }
+
+  if (btnAdminLoginBackHome) {
+    btnAdminLoginBackHome.onclick = () => {
+      openHomePage();
+    };
+  }
+}
+
+function switchAdminTab(targetTab) {
+  adminCurrentActiveTab = targetTab;
+
+  // Cập nhật giao diện nút Sidebar
+  if (adminNavBtns) {
+    adminNavBtns.forEach(b => {
+      const tab = b.getAttribute('data-admin-tab');
+      if (tab === targetTab) {
+        b.className = 'admin-nav-btn w-full text-left px-3.5 py-2.5 rounded-xl flex items-center gap-3 transition bg-purple-600/20 text-purple-300 border border-purple-500/30 font-bold cursor-pointer';
+      } else {
+        b.className = 'admin-nav-btn w-full text-left px-3.5 py-2.5 rounded-xl flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800/60 transition font-semibold cursor-pointer';
+      }
+    });
+  }
+
+  // Ẩn tất cả panes, mở pane tương ứng
+  if (adminPanes) {
+    adminPanes.forEach(p => p.classList.add('hidden'));
+    const activePane = document.getElementById(`adminPane-${targetTab}`);
+    if (activePane) activePane.classList.remove('hidden');
+  }
+
+  // Cập nhật tiêu đề trang
+  const titles = {
+    dashboard: 'Tổng quan hệ thống',
+    users: 'Quản lý tài khoản người dùng',
+    templates: 'Quản lý kho mẫu slide PPTX',
+    admins: 'Quản lý Ban Quản Trị & Phân quyền'
+  };
+  if (adminCurrentTabTitle) {
+    adminCurrentTabTitle.textContent = titles[targetTab] || 'Quản trị hệ thống';
+  }
+
+  // Nạp dữ liệu tương ứng của từng tab
+  if (targetTab === 'dashboard') loadAdminDashboardStats();
+  else if (targetTab === 'users') loadAdminUsers();
+  else if (targetTab === 'templates') loadAdminTemplates();
+  else if (targetTab === 'admins') loadAdminAdmins();
+
+  if (window.lucide) lucide.createIcons();
+}
+
+// --- 1. XỬ LÝ ĐĂNG NHẬP ADMIN ---
+if (adminLoginForm) {
+  adminLoginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (adminLoginErrorAlert) adminLoginErrorAlert.classList.add('hidden');
+
+    const username = adminLoginUsername ? adminLoginUsername.value.trim() : '';
+    const password = adminLoginPassword ? adminLoginPassword.value : '';
+
+    if (!username || !password) return;
+
+    if (btnAdminLoginSubmit) {
+      btnAdminLoginSubmit.disabled = true;
+      btnAdminLoginSubmit.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>Đang xác thực...</span>';
+      if (window.lucide) lucide.createIcons();
+    }
+
+    try {
+      const res = await fetch('/api/admin/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        setAdminToken(data.token);
+        setAdminProfile(data.admin);
+        showToast(`Xin chào, ${data.admin.full_name || data.admin.username}!`);
+        openAdminDashboardPage();
+      } else {
+        if (adminLoginErrorAlert && adminLoginErrorText) {
+          adminLoginErrorText.textContent = data.detail || 'Tên đăng nhập hoặc mật khẩu không chính xác';
+          adminLoginErrorAlert.classList.remove('hidden');
+        }
+      }
+    } catch (err) {
+      if (adminLoginErrorAlert && adminLoginErrorText) {
+        adminLoginErrorText.textContent = 'Không thể kết nối đến máy chủ quản trị';
+        adminLoginErrorAlert.classList.remove('hidden');
+      }
+    } finally {
+      if (btnAdminLoginSubmit) {
+        btnAdminLoginSubmit.disabled = false;
+        btnAdminLoginSubmit.innerHTML = '<i data-lucide="log-in" class="w-4 h-4"></i><span>Đăng nhập Quản trị</span>';
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+  });
+}
+
+// --- 2. TAB TỔNG QUAN (DASHBOARD STATS) ---
+async function loadAdminDashboardStats() {
+  try {
+    const res = await authAdminFetch('/api/admin/stats');
+    if (!res.ok) return;
+    const json = await res.json();
+    const stats = json.stats || {};
+
+    if (statTotalUsers) statTotalUsers.textContent = stats.total_users || '0';
+    if (statBannedUsers) statBannedUsers.textContent = stats.banned_users || '0';
+    if (statTotalDesigns) statTotalDesigns.textContent = stats.total_designs || '0';
+    if (statActiveTemplates) statActiveTemplates.textContent = stats.active_templates || '0';
+
+    // Render Recent Users
+    if (adminRecentUsersTableBody) {
+      adminRecentUsersTableBody.innerHTML = '';
+      const recentUsers = stats.recent_users || [];
+      if (recentUsers.length === 0) {
+        adminRecentUsersTableBody.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-slate-500">Chưa có người dùng nào</td></tr>';
+      } else {
+        recentUsers.forEach(u => {
+          const tr = document.createElement('tr');
+          const isBanned = u.is_active === 0;
+          tr.innerHTML = `
+            <td class="py-2.5">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 rounded-full bg-slate-700 overflow-hidden flex items-center justify-center text-[10px] text-white">
+                  ${u.picture ? `<img src="${u.picture}" class="w-full h-full object-cover"/>` : (u.name || 'U').charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <p class="font-bold text-white truncate max-w-[120px]">${u.name || 'Người dùng'}</p>
+                  <p class="text-[10px] text-slate-400 truncate max-w-[120px]">${u.email}</p>
+                </div>
+              </div>
+            </td>
+            <td class="py-2.5 text-slate-400 text-[11px]">${(u.created_at || '').slice(0, 10)}</td>
+            <td class="py-2.5 text-right">
+              <span class="px-2 py-0.5 rounded-full text-[9px] font-bold ${isBanned ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}">
+                ${isBanned ? 'Đã khóa' : 'Hoạt động'}
+              </span>
+            </td>
+          `;
+          adminRecentUsersTableBody.appendChild(tr);
+        });
+      }
+    }
+
+    // Render Recent Designs
+    if (adminRecentDesignsTableBody) {
+      adminRecentDesignsTableBody.innerHTML = '';
+      const recentDesigns = stats.recent_designs || [];
+      if (recentDesigns.length === 0) {
+        adminRecentDesignsTableBody.innerHTML = '<tr><td colspan="3" class="py-4 text-center text-slate-500">Chưa có bài thiết kế nào</td></tr>';
+      } else {
+        recentDesigns.forEach(d => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="py-2.5">
+              <p class="font-bold text-white truncate max-w-[150px]">${d.title || 'Thiết kế không tên'}</p>
+              <p class="text-[10px] text-slate-500">${(d.updated_at || '').slice(0, 16)}</p>
+            </td>
+            <td class="py-2.5 text-slate-300 text-[11px] truncate max-w-[100px]">${d.owner_name || d.owner_email || 'Chưa rõ'}</td>
+            <td class="py-2.5 text-right font-bold text-purple-400">${d.slide_count || 1}</td>
+          `;
+          adminRecentDesignsTableBody.appendChild(tr);
+        });
+      }
+    }
+
+    if (window.lucide) lucide.createIcons();
+  } catch (err) {
+    console.warn("Could not load admin stats:", err);
+  }
+}
+
+// --- 3. TAB QUẢN LÝ NGƯỜI DÙNG (USERS CRUD) ---
+async function loadAdminUsers() {
+  if (!adminUsersTableBody) return;
+  adminUsersTableBody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-500"><i data-lucide="loader-2" class="w-5 h-5 animate-spin mx-auto mb-2 text-purple-400"></i>Đang tải danh sách người dùng...</td></tr>';
+  if (window.lucide) lucide.createIcons();
+
+  const query = adminUsersSearchInput ? adminUsersSearchInput.value.trim() : '';
+  const status = adminUsersStatusFilter ? adminUsersStatusFilter.value : 'all';
+
+  try {
+    const res = await authAdminFetch(`/api/admin/users?query=${encodeURIComponent(query)}&status=${encodeURIComponent(status)}&page=${adminUsersCurrentPage}&page_size=20`);
+    if (!res.ok) return;
+    const json = await res.json();
+    const data = json.data || {};
+    const users = data.users || [];
+
+    if (adminUsersPaginationText) {
+      adminUsersPaginationText.textContent = `Hiển thị ${users.length} trên tổng số ${data.total || 0} người dùng (Trang ${data.page}/${data.total_pages || 1})`;
+    }
+    if (btnAdminUsersPrevPage) btnAdminUsersPrevPage.disabled = adminUsersCurrentPage <= 1;
+    if (btnAdminUsersNextPage) btnAdminUsersNextPage.disabled = adminUsersCurrentPage >= (data.total_pages || 1);
+
+    adminUsersTableBody.innerHTML = '';
+    if (users.length === 0) {
+      adminUsersTableBody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-500">Không tìm thấy người dùng phù hợp</td></tr>';
+      return;
+    }
+
+    users.forEach(u => {
+      const tr = document.createElement('tr');
+      const isBanned = u.is_active === 0;
+      tr.className = 'hover:bg-slate-900/50 transition';
+      tr.innerHTML = `
+        <td class="py-3 px-4">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-slate-700 overflow-hidden flex items-center justify-center font-bold text-white text-xs border border-white/10 shrink-0">
+              ${u.picture ? `<img src="${u.picture}" class="w-full h-full object-cover"/>` : (u.name || 'U').charAt(0).toUpperCase()}
+            </div>
+            <div class="overflow-hidden">
+              <p class="font-bold text-white truncate max-w-[180px]">${u.name || 'Người dùng'}</p>
+              <p class="text-[10px] text-slate-500 truncate max-w-[180px]">ID: ${u.id}</p>
+            </div>
+          </div>
+        </td>
+        <td class="py-3 px-4 font-mono text-slate-300 text-[11px]">${u.email}</td>
+        <td class="py-3 px-4 text-slate-400 text-[11px]">${(u.created_at || '').slice(0, 10)}</td>
+        <td class="py-3 px-4 text-center font-bold text-purple-400 text-xs">${u.designs_count || 0}</td>
+        <td class="py-3 px-4 text-center">
+          <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${isBanned ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'}">
+            ${isBanned ? 'Đã khóa' : 'Hoạt động'}
+          </span>
+        </td>
+        <td class="py-3 px-4 text-right">
+          <div class="flex items-center justify-end gap-1.5">
+            <button
+              class="btn-toggle-ban px-2.5 py-1 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer ${isBanned ? 'bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40' : 'bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/40'}"
+              data-user-id="${u.id}"
+              data-current-active="${u.is_active}"
+            >
+              <i data-lucide="${isBanned ? 'check' : 'lock'}" class="w-3 h-3"></i>
+              <span>${isBanned ? 'Mở khóa' : 'Khóa'}</span>
+            </button>
+          </div>
+        </td>
+      `;
+
+      // Gắn sự kiện khóa / mở khóa
+      const btnToggle = tr.querySelector('.btn-toggle-ban');
+      if (btnToggle) {
+        btnToggle.addEventListener('click', async () => {
+          const userId = btnToggle.getAttribute('data-user-id');
+          const currentActive = parseInt(btnToggle.getAttribute('data-current-active'));
+          const nextActive = currentActive === 1 ? 0 : 1;
+          const confirmMsg = nextActive === 0 ? 'Bạn có chắc chắn muốn KHÓA tài khoản người dùng này?' : 'Bạn có muốn MỞ KHÓA tài khoản người dùng này?';
+          if (!confirm(confirmMsg)) return;
+
+          try {
+            const updateRes = await authAdminFetch(`/api/admin/users/${userId}/status`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ is_active: nextActive })
+            });
+            if (updateRes.ok) {
+              showToast(nextActive === 0 ? 'Đã khóa tài khoản thành công!' : 'Đã mở khóa tài khoản thành công!');
+              loadAdminUsers();
+            } else {
+              showToast('Lỗi khi cập nhật trạng thái', true);
+            }
+          } catch (e) {
+            showToast('Lỗi máy chủ', true);
+          }
+        });
+      }
+
+      adminUsersTableBody.appendChild(tr);
+    });
+
+    if (window.lucide) lucide.createIcons();
+  } catch (err) {
+    adminUsersTableBody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-red-400">Không thể tải danh sách người dùng</td></tr>';
+  }
+}
+
+if (adminUsersSearchInput) {
+  let searchTimer = null;
+  adminUsersSearchInput.addEventListener('input', () => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+      adminUsersCurrentPage = 1;
+      loadAdminUsers();
+    }, 250);
+  });
+}
+
+if (adminUsersStatusFilter) {
+  adminUsersStatusFilter.addEventListener('change', () => {
+    adminUsersCurrentPage = 1;
+    loadAdminUsers();
+  });
+}
+
+if (btnRefreshAdminUsers) {
+  btnRefreshAdminUsers.addEventListener('click', () => {
+    loadAdminUsers();
+  });
+}
+
+if (btnAdminUsersPrevPage) {
+  btnAdminUsersPrevPage.addEventListener('click', () => {
+    if (adminUsersCurrentPage > 1) {
+      adminUsersCurrentPage--;
+      loadAdminUsers();
+    }
+  });
+}
+
+if (btnAdminUsersNextPage) {
+  btnAdminUsersNextPage.addEventListener('click', () => {
+    adminUsersCurrentPage++;
+    loadAdminUsers();
+  });
+}
+
+// --- 4. TAB KHO MẪU TRANG PPTX (TEMPLATES CRUD) ---
+async function loadAdminTemplates() {
+  if (!adminTemplatesGrid) return;
+  adminTemplatesGrid.innerHTML = '<div class="col-span-full py-12 text-center text-slate-500"><i data-lucide="loader-2" class="w-6 h-6 animate-spin mx-auto mb-2 text-purple-400"></i>Đang tải kho mẫu PPTX...</div>';
+  if (window.lucide) lucide.createIcons();
+
+  const category = adminTemplatesCategoryFilter ? adminTemplatesCategoryFilter.value : 'all';
+
+  try {
+    const res = await authAdminFetch(`/api/admin/templates?category=${encodeURIComponent(category)}`);
+    if (!res.ok) return;
+    const json = await res.json();
+    const templates = json.templates || [];
+
+    adminTemplatesGrid.innerHTML = '';
+    if (templates.length === 0) {
+      adminTemplatesGrid.innerHTML = '<div class="col-span-full py-12 text-center text-slate-500">Chưa có mẫu nào trong danh mục này</div>';
+      return;
+    }
+
+    templates.forEach(t => {
+      const card = document.createElement('div');
+      const isActive = t.is_active === 1;
+      card.className = `p-4 rounded-2xl bg-[#161b22] border transition flex flex-col justify-between ${isActive ? 'border-slate-800 hover:border-purple-500/60' : 'border-red-900/40 opacity-70 bg-red-950/10'}`;
+
+      const tagsList = Array.isArray(t.tags) ? t.tags : [];
+
+      card.innerHTML = `
+        <div>
+          <!-- Frame Preview -->
+          <div class="w-full aspect-video rounded-xl overflow-hidden relative shadow-inner border border-slate-800 bg-slate-950 mb-3 select-none">
+            ${t.preview_html || `<div class="w-full h-full flex items-center justify-center font-bold text-white" style="background: ${t.bg_gradient || '#0f172a'};">${t.title}</div>`}
+            <span class="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[9px] font-bold ${isActive ? 'bg-emerald-500/80 text-white' : 'bg-red-500/80 text-white'}">
+              ${isActive ? 'Hoạt động' : 'Tạm ẩn'}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[10px] font-bold text-purple-400 uppercase tracking-wider">${t.category_name || t.category}</span>
+            <span class="text-[9px] text-slate-500 font-mono">ID: ${t.id}</span>
+          </div>
+          <h4 class="text-xs font-bold text-white mb-2 line-clamp-1">${t.title}</h4>
+
+          <!-- Tags -->
+          <div class="flex flex-wrap gap-1 mb-4">
+            ${tagsList.slice(0, 4).map(tag => `<span class="px-1.5 py-0.5 rounded bg-slate-800 text-[9px] text-slate-400 font-medium">#${tag}</span>`).join('')}
+            ${tagsList.length > 4 ? `<span class="text-[9px] text-slate-500 self-center">+${tagsList.length - 4}</span>` : ''}
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="pt-3 border-t border-slate-800/80 flex items-center justify-between gap-2">
+          <button
+            class="btn-toggle-template-active flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition cursor-pointer ${isActive ? 'bg-slate-800 hover:bg-slate-700 text-slate-300' : 'bg-emerald-600/30 hover:bg-emerald-600 text-emerald-300 hover:text-white'}"
+            data-template-id="${t.id}"
+            data-current-active="${t.is_active}"
+          >
+            <i data-lucide="${isActive ? 'eye-off' : 'eye'}" class="w-3.5 h-3.5"></i>
+            <span>${isActive ? 'Ẩn mẫu' : 'Bật mẫu'}</span>
+          </button>
+
+          <div class="flex items-center gap-1">
+            <button
+              class="btn-edit-template p-1.5 hover:bg-purple-600/20 text-slate-400 hover:text-purple-300 rounded-lg transition cursor-pointer"
+              title="Chỉnh sửa thông tin mẫu"
+            >
+              <i data-lucide="edit-3" class="w-4 h-4"></i>
+            </button>
+            <button
+              class="btn-delete-template p-1.5 hover:bg-red-600/20 text-slate-400 hover:text-red-400 rounded-lg transition cursor-pointer"
+              title="Xóa mẫu này"
+              data-template-id="${t.id}"
+            >
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Event toggle active
+      const btnToggle = card.querySelector('.btn-toggle-template-active');
+      if (btnToggle) {
+        btnToggle.addEventListener('click', async () => {
+          const tmplId = btnToggle.getAttribute('data-template-id');
+          const curAct = parseInt(btnToggle.getAttribute('data-current-active'));
+          const nextAct = curAct === 1 ? 0 : 1;
+          try {
+            const upRes = await authAdminFetch(`/api/admin/templates/${tmplId}`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ is_active: nextAct })
+            });
+            if (upRes.ok) {
+              showToast(nextAct === 1 ? 'Đã kích hoạt mẫu!' : 'Đã ẩn mẫu khỏi kho!');
+              loadAdminTemplates();
+            }
+          } catch (e) {
+            showToast('Lỗi cập nhật', true);
+          }
+        });
+      }
+
+      // Event edit template
+      const btnEdit = card.querySelector('.btn-edit-template');
+      if (btnEdit) {
+        btnEdit.addEventListener('click', () => {
+          openEditTemplateModal(t);
+        });
+      }
+
+      // Event delete template
+      const btnDel = card.querySelector('.btn-delete-template');
+      if (btnDel) {
+        btnDel.addEventListener('click', async () => {
+          if (!confirm(`Bạn có chắc chắn muốn xóa mẫu "${t.title}"?`)) return;
+          try {
+            const delRes = await authAdminFetch(`/api/admin/templates/${t.id}`, { method: 'DELETE' });
+            if (delRes.ok) {
+              showToast('Đã xóa mẫu thành công!');
+              loadAdminTemplates();
+            }
+          } catch (e) {
+            showToast('Lỗi khi xóa mẫu', true);
+          }
+        });
+      }
+
+      adminTemplatesGrid.appendChild(card);
+    });
+
+    if (window.lucide) lucide.createIcons();
+  } catch (err) {
+    adminTemplatesGrid.innerHTML = '<div class="col-span-full py-12 text-center text-red-400">Không thể tải kho mẫu</div>';
+  }
+}
+
+if (adminTemplatesCategoryFilter) {
+  adminTemplatesCategoryFilter.addEventListener('change', () => {
+    loadAdminTemplates();
+  });
+}
+
+if (btnRefreshAdminTemplates) {
+  btnRefreshAdminTemplates.addEventListener('click', () => {
+    loadAdminTemplates();
+  });
+}
+
+if (btnSeedDefaultTemplates) {
+  btnSeedDefaultTemplates.addEventListener('click', async () => {
+    if (!confirm('Khôi phục 10 mẫu mặc định ban đầu vào hệ thống?')) return;
+    try {
+      const seedRes = await authAdminFetch('/api/admin/templates/seed', { method: 'POST' });
+      if (seedRes.ok) {
+        showToast('Đã khôi phục kho mẫu tiêu chuẩn thành công!');
+        loadAdminTemplates();
+      }
+    } catch (e) {
+      showToast('Lỗi khôi phục mẫu', true);
+    }
+  });
+}
+
+// Modal Thêm / Sửa Template
+function openEditTemplateModal(tmpl = null) {
+  if (!adminTemplateEditModal) return;
+  const isEdit = !!tmpl;
+  const modalTitle = document.getElementById('adminTemplateModalTitle');
+  if (modalTitle) modalTitle.textContent = isEdit ? 'Chỉnh Sửa Mẫu Trang PPTX' : 'Thêm Mẫu Trang PPTX Mới';
+
+  if (tmplEditId) tmplEditId.value = isEdit ? tmpl.id : '';
+  if (tmplEditTitle) tmplEditTitle.value = isEdit ? tmpl.title : '';
+  if (tmplEditCategory) tmplEditCategory.value = isEdit ? tmpl.category : 'travel';
+  if (tmplEditCategoryName) tmplEditCategoryName.value = isEdit ? tmpl.category_name : 'Du lịch';
+  if (tmplEditTags) {
+    tmplEditTags.value = isEdit && Array.isArray(tmpl.tags) ? tmpl.tags.join(', ') : '';
+  }
+  const color = (isEdit && tmpl.slide_data && tmpl.slide_data.customColor) ? tmpl.slide_data.customColor : '#032030';
+  if (tmplEditColorPicker) tmplEditColorPicker.value = color;
+  if (tmplEditCustomColor) tmplEditCustomColor.value = color;
+  if (tmplEditIsActive) tmplEditIsActive.value = isEdit ? tmpl.is_active : 1;
+
+  adminTemplateEditModal.classList.remove('hidden');
+}
+
+if (tmplEditColorPicker && tmplEditCustomColor) {
+  tmplEditColorPicker.addEventListener('input', (e) => {
+    tmplEditCustomColor.value = e.target.value.toUpperCase();
+  });
+  tmplEditCustomColor.addEventListener('input', (e) => {
+    if (/^#[0-9A-Fa-f]{6}$/.test(e.target.value)) {
+      tmplEditColorPicker.value = e.target.value;
+    }
+  });
+}
+
+if (btnOpenCreateTemplateModal) {
+  btnOpenCreateTemplateModal.addEventListener('click', () => {
+    openEditTemplateModal(null);
+  });
+}
+
+if (btnCloseAdminTemplateModal) {
+  btnCloseAdminTemplateModal.addEventListener('click', () => {
+    if (adminTemplateEditModal) adminTemplateEditModal.classList.add('hidden');
+  });
+}
+if (btnCancelAdminTemplateModal) {
+  btnCancelAdminTemplateModal.addEventListener('click', () => {
+    if (adminTemplateEditModal) adminTemplateEditModal.classList.add('hidden');
+  });
+}
+
+if (adminTemplateForm) {
+  adminTemplateForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = tmplEditId ? tmplEditId.value : '';
+    const title = tmplEditTitle ? tmplEditTitle.value.trim() : '';
+    const category = tmplEditCategory ? tmplEditCategory.value : 'travel';
+    const category_name = tmplEditCategoryName ? tmplEditCategoryName.value.trim() : 'Du lịch';
+    const tagsRaw = tmplEditTags ? tmplEditTags.value : '';
+    const tags = tagsRaw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+    const customColor = tmplEditCustomColor ? tmplEditCustomColor.value : '#032030';
+    const is_active = tmplEditIsActive ? parseInt(tmplEditIsActive.value) : 1;
+
+    const payload = {
+      title,
+      category,
+      category_name,
+      tags,
+      bg_gradient: `linear-gradient(135deg, ${customColor} 0%, #000000 100%)`,
+      preview_badge: category_name.toUpperCase(),
+      preview_html: `<div class="w-full h-full p-2.5 flex flex-col justify-between text-white" style="background: ${customColor};"><div><span class="inline-block px-1.5 py-0.5 rounded bg-cyan-500/80 text-[8px] font-bold tracking-wider mb-1">${category_name.toUpperCase()}</span><p class="font-extrabold text-[11px] leading-tight text-white tracking-tight">${title}</p></div><div class="text-[5px] text-slate-400 border-t border-slate-700/60 pt-0.5 truncate">SlideCraft PPTX Template</div></div>`,
+      slide_data: {
+        customColor: customColor,
+        fabricJson: {
+          objects: [
+            { type: 'textbox', left: 80, top: 60, width: 800, text: title, fontSize: 32, fontFamily: 'Inter', fontWeight: 'bold', fill: '#ffffff' },
+            { type: 'textbox', left: 80, top: 110, width: 800, text: `Mẫu trình bày chuyên nghiệp thuộc danh mục ${category_name}`, fontSize: 16, fontFamily: 'Inter', fill: '#94a3b8' },
+            { type: 'rect', left: 80, top: 180, width: 795, height: 260, fill: '#1e293b', rx: 12, ry: 12 },
+            { type: 'textbox', left: 110, top: 210, width: 735, text: '• Nhấp đúp vào đây để chỉnh sửa nội dung đoạn văn bản\\n• Tùy biến màu sắc, phông chữ và kích thước theo sở thích\\n• Chèn thêm hình ảnh, bảng biểu hoặc các khối hình vẽ tiện lợi', fontSize: 15, fontFamily: 'Inter', fill: '#f1f5f9', lineHeight: 1.5 }
+          ]
+        }
+      },
+      is_active
+    };
+
+    try {
+      let res;
+      if (id) {
+        res = await authAdminFetch(`/api/admin/templates/${id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      } else {
+        res = await authAdminFetch('/api/admin/templates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      if (res.ok) {
+        showToast(id ? 'Đã cập nhật mẫu thành công!' : 'Đã thêm mẫu mới thành công!');
+        if (adminTemplateEditModal) adminTemplateEditModal.classList.add('hidden');
+        loadAdminTemplates();
+      } else {
+        showToast('Lỗi khi lưu mẫu', true);
+      }
+    } catch (err) {
+      showToast('Lỗi kết nối máy chủ', true);
+    }
+  });
+}
+
+// --- 5. TAB BAN QUẢN TRỊ (ADMINS CRUD) ---
+async function loadAdminAdmins() {
+  if (!adminListTableBody) return;
+  adminListTableBody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-500"><i data-lucide="loader-2" class="w-5 h-5 animate-spin mx-auto mb-2 text-purple-400"></i>Đang tải danh sách quản trị viên...</td></tr>';
+  if (window.lucide) lucide.createIcons();
+
+  try {
+    const res = await authAdminFetch('/api/admin/admins');
+    if (!res.ok) return;
+    const json = await res.json();
+    const admins = json.admins || [];
+    const currentProfile = getAdminProfile() || {};
+
+    adminListTableBody.innerHTML = '';
+    if (admins.length === 0) {
+      adminListTableBody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-slate-500">Chưa có quản trị viên nào</td></tr>';
+      return;
+    }
+
+    admins.forEach(a => {
+      const tr = document.createElement('tr');
+      const isSelf = a.id === currentProfile.id;
+      const isSuper = a.role === 'super_admin';
+      const roleBadge = isSuper ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30' : (a.role === 'editor' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'bg-slate-700/50 text-slate-300 border border-slate-600/50');
+      const roleText = isSuper ? 'Super Admin' : (a.role === 'editor' ? 'Editor' : 'Admin');
+
+      tr.className = 'hover:bg-slate-900/50 transition';
+      tr.innerHTML = `
+        <td class="py-3 px-4">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-full bg-purple-600 flex items-center justify-center font-bold text-white text-xs">
+              ${(a.full_name || a.username || 'A').charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p class="font-bold text-white truncate max-w-[140px]">${a.full_name || a.username}${isSelf ? ' <span class="text-[9px] text-purple-400 font-normal">(Bạn)</span>' : ''}</p>
+            </div>
+          </div>
+        </td>
+        <td class="py-3 px-4 font-mono text-slate-300 text-[11px]">${a.username}</td>
+        <td class="py-3 px-4 text-slate-400 text-[11px] font-mono">${a.email}</td>
+        <td class="py-3 px-4 text-center">
+          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${roleBadge}">
+            ${roleText}
+          </span>
+        </td>
+        <td class="py-3 px-4 text-center">
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            Hoạt động
+          </span>
+        </td>
+        <td class="py-3 px-4 text-right">
+          ${isSelf ? '<span class="text-[10px] text-slate-500 italic">Đang dùng</span>' : `
+            <button
+              class="btn-delete-admin p-1.5 hover:bg-red-600/20 text-slate-400 hover:text-red-400 rounded-lg transition cursor-pointer"
+              title="Xóa tài khoản admin"
+              data-admin-id="${a.id}"
+            >
+              <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
+          `}
+        </td>
+      `;
+
+      const btnDel = tr.querySelector('.btn-delete-admin');
+      if (btnDel) {
+        btnDel.addEventListener('click', async () => {
+          if (!confirm(`Xóa tài khoản quản trị "${a.username}"?`)) return;
+          try {
+            const delRes = await authAdminFetch(`/api/admin/admins/${a.id}`, { method: 'DELETE' });
+            if (delRes.ok) {
+              showToast('Đã xóa quản trị viên thành công!');
+              loadAdminAdmins();
+            } else {
+              showToast('Không thể xóa quản trị viên này', true);
+            }
+          } catch (e) {
+            showToast('Lỗi máy chủ', true);
+          }
+        });
+      }
+
+      adminListTableBody.appendChild(tr);
+    });
+
+    if (window.lucide) lucide.createIcons();
+  } catch (err) {
+    adminListTableBody.innerHTML = '<tr><td colspan="6" class="py-8 text-center text-red-400">Không thể tải danh sách admin</td></tr>';
+  }
+}
+
+if (btnOpenCreateAdminModal) {
+  btnOpenCreateAdminModal.addEventListener('click', () => {
+    if (adminCreateModal) adminCreateModal.classList.remove('hidden');
+    if (adminNewFullName) adminNewFullName.focus();
+  });
+}
+if (btnCloseAdminCreateModal) {
+  btnCloseAdminCreateModal.addEventListener('click', () => {
+    if (adminCreateModal) adminCreateModal.classList.add('hidden');
+  });
+}
+if (btnCancelAdminCreateModal) {
+  btnCancelAdminCreateModal.addEventListener('click', () => {
+    if (adminCreateModal) adminCreateModal.classList.add('hidden');
+  });
+}
+
+if (adminCreateForm) {
+  adminCreateForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const full_name = adminNewFullName ? adminNewFullName.value.trim() : '';
+    const username = adminNewUsername ? adminNewUsername.value.trim() : '';
+    const email = adminNewEmail ? adminNewEmail.value.trim().toLowerCase() : '';
+    const password = adminNewPassword ? adminNewPassword.value : '';
+    const role = adminNewRole ? adminNewRole.value : 'admin';
+
+    if (!username || !email || !password) return;
+
+    try {
+      const res = await authAdminFetch('/api/admin/admins', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ full_name, username, email, password, role })
+      });
+
+      const data = await res.json();
+      if (res.ok && data.status === 'success') {
+        showToast(`Đã tạo tài khoản quản trị "${username}" thành công!`);
+        if (adminCreateModal) adminCreateModal.classList.add('hidden');
+        if (adminCreateForm) adminCreateForm.reset();
+        loadAdminAdmins();
+      } else {
+        showToast(data.detail || 'Lỗi khi tạo admin', true);
+      }
+    } catch (err) {
+      showToast('Lỗi kết nối', true);
+    }
   });
 }
 

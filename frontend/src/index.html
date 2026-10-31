@@ -1706,6 +1706,503 @@
       </div>
     </div>
 
+    <!-- ===================================================================== -->
+    <!-- VIEW 6: ADMIN LOGIN VIEW (CỔNG ĐĂNG NHẬP QUẢN TRỊ VIÊN - /admin/login) -->
+    <!-- ===================================================================== -->
+    <div
+      id="adminLoginView"
+      class="hidden fixed inset-0 bg-[#090d16] flex items-center justify-center p-4 z-50 select-none overflow-y-auto"
+    >
+      <div class="w-full max-w-[420px] bg-[#141824] border border-slate-800 rounded-3xl p-8 sm:p-9 shadow-2xl relative animate-in fade-in zoom-in-95 duration-200 text-center">
+        <!-- Logo Canva Admin -->
+        <div class="flex items-center justify-center gap-2 mb-3">
+          <span class="font-bold text-2xl tracking-tighter text-white" style="font-family: 'Brush Script MT', 'Dancing Script', cursive;">Canva</span>
+          <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase tracking-widest">Admin</span>
+        </div>
+        <h2 class="text-xl font-bold text-white mb-1.5">Đăng nhập Quản trị</h2>
+        <p class="text-xs text-slate-400 mb-6">Truy cập bảng điều khiển quản lý hệ thống</p>
+
+        <!-- Alert lỗi nếu đăng nhập thất bại -->
+        <div id="adminLoginErrorAlert" class="hidden mb-4 p-3 bg-red-950/60 border border-red-800/80 rounded-xl text-red-200 text-xs text-left flex items-center gap-2">
+          <i data-lucide="alert-circle" class="w-4 h-4 text-red-400 shrink-0"></i>
+          <span id="adminLoginErrorText">Tên đăng nhập hoặc mật khẩu không chính xác</span>
+        </div>
+
+        <!-- Form Đăng nhập Admin -->
+        <form id="adminLoginForm" class="space-y-4 text-left">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Tên đăng nhập hoặc Email</label>
+            <div class="relative">
+              <i data-lucide="user" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
+              <input
+                type="text"
+                id="adminLoginUsername"
+                required
+                autocomplete="username"
+                placeholder="admin"
+                class="w-full bg-[#0d111b] border border-slate-700/80 focus:border-purple-500 text-white rounded-xl pl-9 pr-3 py-2.5 text-xs outline-none transition"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Mật khẩu</label>
+            <div class="relative">
+              <i data-lucide="lock" class="w-4 h-4 absolute left-3 top-3 text-slate-500"></i>
+              <input
+                type="password"
+                id="adminLoginPassword"
+                required
+                autocomplete="current-password"
+                placeholder="••••••••"
+                class="w-full bg-[#0d111b] border border-slate-700/80 focus:border-purple-500 text-white rounded-xl pl-9 pr-3 py-2.5 text-xs outline-none transition"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            id="btnAdminLoginSubmit"
+            class="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 active:scale-[0.99] text-white font-bold text-xs rounded-xl transition shadow-lg shadow-purple-900/40 cursor-pointer flex items-center justify-center gap-2 mt-2"
+          >
+            <i data-lucide="log-in" class="w-4 h-4"></i>
+            <span>Đăng nhập Quản trị</span>
+          </button>
+        </form>
+
+        <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-center">
+          <button id="btnAdminLoginBackHome" class="text-xs text-slate-400 hover:text-white transition flex items-center gap-1.5 cursor-pointer">
+            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+            <span>Về trang người dùng</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===================================================================== -->
+    <!-- VIEW 7: ADMIN DASHBOARD VIEW (BẢNG ĐIỀU KHIỂN QUẢN TRỊ - /admin) ===== -->
+    <!-- ===================================================================== -->
+    <div
+      id="adminDashboardView"
+      class="hidden fixed inset-0 bg-[#0d1117] flex z-40 select-none overflow-hidden text-slate-200"
+    >
+      <!-- 1. SIDEBAR QUẢN TRỊ -->
+      <aside class="w-64 bg-[#161b22] border-r border-slate-800 flex flex-col justify-between shrink-0">
+        <div>
+          <!-- Header Logo -->
+          <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-2xl tracking-tighter text-white" style="font-family: 'Brush Script MT', 'Dancing Script', cursive;">Canva</span>
+              <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">QUẢN TRỊ</span>
+            </div>
+          </div>
+
+          <!-- Navigation Links -->
+          <nav class="p-3 space-y-1 text-xs font-semibold">
+            <button
+              class="admin-nav-btn w-full text-left px-3.5 py-2.5 rounded-xl flex items-center gap-3 transition bg-purple-600/20 text-purple-300 border border-purple-500/30 cursor-pointer"
+              data-admin-tab="dashboard"
+            >
+              <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+              <span>Tổng quan</span>
+            </button>
+            <button
+              class="admin-nav-btn w-full text-left px-3.5 py-2.5 rounded-xl flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800/60 transition cursor-pointer"
+              data-admin-tab="users"
+            >
+              <i data-lucide="users" class="w-4 h-4"></i>
+              <span>Quản lý Người dùng</span>
+            </button>
+            <button
+              class="admin-nav-btn w-full text-left px-3.5 py-2.5 rounded-xl flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800/60 transition cursor-pointer"
+              data-admin-tab="templates"
+            >
+              <i data-lucide="layout-template" class="w-4 h-4"></i>
+              <span>Kho Mẫu Trang PPTX</span>
+            </button>
+            <button
+              class="admin-nav-btn w-full text-left px-3.5 py-2.5 rounded-xl flex items-center gap-3 text-slate-400 hover:text-white hover:bg-slate-800/60 transition cursor-pointer"
+              data-admin-tab="admins"
+            >
+              <i data-lucide="shield-check" class="w-4 h-4"></i>
+              <span>Ban Quản Trị</span>
+            </button>
+          </nav>
+        </div>
+
+        <!-- Footer Profile & Logout -->
+        <div class="p-3 border-t border-slate-800 space-y-2">
+          <div class="px-3 py-2 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center font-bold text-white text-xs">
+              <span id="adminProfileInitial">A</span>
+            </div>
+            <div class="flex-1 overflow-hidden">
+              <p id="adminProfileName" class="text-xs font-bold text-white truncate">Admin</p>
+              <p id="adminProfileRole" class="text-[10px] text-purple-400 uppercase tracking-wider font-semibold">Super Admin</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <button id="btnAdminBackToEditor" class="flex-1 py-2 px-3 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[11px] font-semibold transition flex items-center justify-center gap-1.5 cursor-pointer" title="Về trang tạo bài">
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+              <span>Xem trang</span>
+            </button>
+            <button id="btnAdminLogout" class="py-2 px-3 bg-red-950/60 hover:bg-red-900 text-red-300 hover:text-white rounded-lg text-[11px] font-semibold border border-red-800/50 transition flex items-center justify-center gap-1.5 cursor-pointer" title="Đăng xuất quản trị">
+              <i data-lucide="log-out" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- 2. NỘI DUNG CHÍNH (CONTENT AREA) -->
+      <main class="flex-1 flex flex-col overflow-hidden bg-[#0d1117]">
+        <!-- Top Navigation Bar -->
+        <header class="h-14 bg-[#161b22] border-b border-slate-800 px-6 flex items-center justify-between shrink-0">
+          <div class="flex items-center gap-2">
+            <h1 id="adminCurrentTabTitle" class="text-sm font-bold text-white">Tổng quan hệ thống</h1>
+          </div>
+          <div class="flex items-center gap-3">
+            <button id="btnAdminRefreshData" class="p-2 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition cursor-pointer" title="Làm mới dữ liệu">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- Dynamic Admin Panes Container -->
+        <div class="flex-1 overflow-y-auto p-6 custom-scrollbar">
+
+          <!-- TAB 1: TỔNG QUAN (DASHBOARD) -->
+          <div id="adminPane-dashboard" class="admin-pane space-y-6">
+            <!-- 4 KPI Summary Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div class="p-4 rounded-2xl bg-[#161b22] border border-slate-800 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center border border-blue-500/20">
+                  <i data-lucide="users" class="w-6 h-6"></i>
+                </div>
+                <div>
+                  <p class="text-[11px] text-slate-400 font-medium">Tổng Người Dùng</p>
+                  <p id="statTotalUsers" class="text-2xl font-bold text-white">0</p>
+                </div>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-[#161b22] border border-slate-800 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center border border-red-500/20">
+                  <i data-lucide="user-x" class="w-6 h-6"></i>
+                </div>
+                <div>
+                  <p class="text-[11px] text-slate-400 font-medium">Tài Khoản Đang Khóa</p>
+                  <p id="statBannedUsers" class="text-2xl font-bold text-white">0</p>
+                </div>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-[#161b22] border border-slate-800 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center border border-purple-500/20">
+                  <i data-lucide="presentation" class="w-6 h-6"></i>
+                </div>
+                <div>
+                  <p class="text-[11px] text-slate-400 font-medium">Bài Thuyết Trình Đã Tạo</p>
+                  <p id="statTotalDesigns" class="text-2xl font-bold text-white">0</p>
+                </div>
+              </div>
+
+              <div class="p-4 rounded-2xl bg-[#161b22] border border-slate-800 flex items-center gap-4">
+                <div class="w-12 h-12 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/20">
+                  <i data-lucide="layout-template" class="w-6 h-6"></i>
+                </div>
+                <div>
+                  <p class="text-[11px] text-slate-400 font-medium">Mẫu PPTX Sẵn Có</p>
+                  <p id="statActiveTemplates" class="text-2xl font-bold text-white">0</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Two Columns Activity: Recent Users & Recent Designs -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Recent Users Table -->
+              <div class="bg-[#161b22] border border-slate-800 rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-xs font-bold text-white flex items-center gap-2">
+                    <i data-lucide="user-check" class="w-4 h-4 text-blue-400"></i>
+                    <span>Người dùng mới đăng ký</span>
+                  </h3>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-xs">
+                    <thead>
+                      <tr class="text-slate-400 border-b border-slate-800">
+                        <th class="pb-2 font-semibold">Tên / Email</th>
+                        <th class="pb-2 font-semibold">Ngày tham gia</th>
+                        <th class="pb-2 font-semibold text-right">Trạng thái</th>
+                      </tr>
+                    </thead>
+                    <tbody id="adminRecentUsersTableBody" class="divide-y divide-slate-800/60">
+                      <!-- Render dynamic -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Recent Designs Table -->
+              <div class="bg-[#161b22] border border-slate-800 rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-4">
+                  <h3 class="text-xs font-bold text-white flex items-center gap-2">
+                    <i data-lucide="clock" class="w-4 h-4 text-purple-400"></i>
+                    <span>Bài thuyết trình cập nhật gần đây</span>
+                  </h3>
+                </div>
+                <div class="overflow-x-auto">
+                  <table class="w-full text-left text-xs">
+                    <thead>
+                      <tr class="text-slate-400 border-b border-slate-800">
+                        <th class="pb-2 font-semibold">Tiêu đề thiết kế</th>
+                        <th class="pb-2 font-semibold">Tác giả</th>
+                        <th class="pb-2 font-semibold text-right">Trang</th>
+                      </tr>
+                    </thead>
+                    <tbody id="adminRecentDesignsTableBody" class="divide-y divide-slate-800/60">
+                      <!-- Render dynamic -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: QUẢN LÝ NGƯỜI DÙNG (USERS) -->
+          <div id="adminPane-users" class="admin-pane space-y-4 hidden">
+            <!-- Filter & Search Toolbar -->
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-[#161b22] border border-slate-800 p-4 rounded-2xl">
+              <div class="flex items-center gap-2 flex-1 max-w-md">
+                <div class="relative w-full">
+                  <i data-lucide="search" class="w-4 h-4 absolute left-3 top-2.5 text-slate-500"></i>
+                  <input
+                    type="text"
+                    id="adminUsersSearchInput"
+                    placeholder="Tìm theo tên hoặc email người dùng..."
+                    class="w-full bg-[#0d1117] border border-slate-700/80 rounded-xl pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-purple-500 transition"
+                  />
+                </div>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <select id="adminUsersStatusFilter" class="bg-[#0d1117] border border-slate-700/80 text-white rounded-xl px-3 py-2 text-xs outline-none cursor-pointer">
+                  <option value="all">Tất cả trạng thái</option>
+                  <option value="active">Đang hoạt động</option>
+                  <option value="banned">Đã bị khóa</option>
+                </select>
+                <button id="btnRefreshAdminUsers" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer">
+                  <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                  <span>Làm mới</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Users Data Table -->
+            <div class="bg-[#161b22] border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-900/60 text-slate-400 border-b border-slate-800">
+                    <tr>
+                      <th class="py-3 px-4 font-semibold">Người dùng</th>
+                      <th class="py-3 px-4 font-semibold">Email</th>
+                      <th class="py-3 px-4 font-semibold">Ngày tham gia</th>
+                      <th class="py-3 px-4 font-semibold text-center">Số bài thiết kế</th>
+                      <th class="py-3 px-4 font-semibold text-center">Trạng thái</th>
+                      <th class="py-3 px-4 font-semibold text-right">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody id="adminUsersTableBody" class="divide-y divide-slate-800/80">
+                    <!-- Populated dynamically via JS -->
+                  </tbody>
+                </table>
+              </div>
+              <div id="adminUsersPagination" class="p-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
+                <span id="adminUsersPaginationText">Hiển thị 0 người dùng</span>
+                <div class="flex items-center gap-1">
+                  <button id="btnAdminUsersPrevPage" class="px-2.5 py-1 bg-slate-800 rounded-lg disabled:opacity-50 cursor-pointer">Trang trước</button>
+                  <button id="btnAdminUsersNextPage" class="px-2.5 py-1 bg-slate-800 rounded-lg disabled:opacity-50 cursor-pointer">Trang sau</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: KHO MẪU TRANG PPTX (TEMPLATES) -->
+          <div id="adminPane-templates" class="admin-pane space-y-4 hidden">
+            <!-- Toolbar: Thêm Mẫu Mới & Khôi phục mẫu mặc định -->
+            <div class="flex flex-wrap items-center justify-between gap-3 bg-[#161b22] border border-slate-800 p-4 rounded-2xl">
+              <div class="flex items-center gap-2">
+                <button id="btnOpenCreateTemplateModal" class="px-3.5 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer">
+                  <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                  <span>+ Thêm Mẫu Mới</span>
+                </button>
+                <button id="btnSeedDefaultTemplates" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold rounded-xl border border-slate-700 transition flex items-center gap-1.5 cursor-pointer" title="Khôi phục 10 mẫu mặc định ban đầu">
+                  <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-cyan-400"></i>
+                  <span>Khôi phục mẫu gốc</span>
+                </button>
+              </div>
+
+              <div class="flex items-center gap-2">
+                <select id="adminTemplatesCategoryFilter" class="bg-[#0d1117] border border-slate-700/80 text-white rounded-xl px-3 py-2 text-xs outline-none cursor-pointer">
+                  <option value="all">Tất cả danh mục</option>
+                  <option value="travel">Du lịch (Travel)</option>
+                  <option value="business">Doanh nghiệp</option>
+                  <option value="marketing">Marketing</option>
+                  <option value="pitch">Pitch Deck</option>
+                  <option value="education">Giáo dục</option>
+                  <option value="creative">Sáng tạo</option>
+                </select>
+                <button id="btnRefreshAdminTemplates" class="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl border border-slate-700 transition cursor-pointer">
+                  <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Templates Grid Cards -->
+            <div id="adminTemplatesGrid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <!-- Render dynamic via JS -->
+            </div>
+          </div>
+
+          <!-- TAB 4: BAN QUẢN TRỊ (ADMINS) -->
+          <div id="adminPane-admins" class="admin-pane space-y-4 hidden">
+            <!-- Toolbar -->
+            <div class="flex items-center justify-between bg-[#161b22] border border-slate-800 p-4 rounded-2xl">
+              <div>
+                <h3 class="text-xs font-bold text-white">Danh sách tài khoản Ban Quản Trị</h3>
+                <p class="text-[11px] text-slate-400">Phân quyền vai trò quản trị viên hệ thống</p>
+              </div>
+              <button id="btnOpenCreateAdminModal" class="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-1.5 cursor-pointer">
+                <i data-lucide="user-plus" class="w-4 h-4"></i>
+                <span>+ Thêm Quản Trị Viên</span>
+              </button>
+            </div>
+
+            <!-- Admins Table -->
+            <div class="bg-[#161b22] border border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-900/60 text-slate-400 border-b border-slate-800">
+                  <tr>
+                    <th class="py-3 px-4 font-semibold">Tên quản trị viên</th>
+                    <th class="py-3 px-4 font-semibold">Tên đăng nhập</th>
+                    <th class="py-3 px-4 font-semibold">Email</th>
+                    <th class="py-3 px-4 font-semibold text-center">Vai trò</th>
+                    <th class="py-3 px-4 font-semibold text-center">Trạng thái</th>
+                    <th class="py-3 px-4 font-semibold text-right">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="adminListTableBody" class="divide-y divide-slate-800/80">
+                  <!-- Render dynamic via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+
+    <!-- MODAL 1: THÊM / CHỈNH SỬA MẪU SLIDE PPTX -->
+    <div id="adminTemplateEditModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 select-none">
+      <div class="bg-[#161b22] border border-slate-800 rounded-3xl p-6 max-w-xl w-full shadow-2xl animate-in fade-in duration-150">
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+          <h3 id="adminTemplateModalTitle" class="text-base font-bold text-white">Thêm Mẫu Trang PPTX Mới</h3>
+          <button id="btnCloseAdminTemplateModal" class="p-1.5 text-slate-400 hover:text-white rounded-lg transition">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <form id="adminTemplateForm" class="space-y-3.5 text-xs text-slate-300">
+          <input type="hidden" id="tmplEditId" value="" />
+          <div>
+            <label class="block font-semibold mb-1">Tiêu đề mẫu trang (*)</label>
+            <input type="text" id="tmplEditTitle" required placeholder="Ví dụ: Du Lịch & Nghỉ Dưỡng Hè" class="w-full bg-[#0d1117] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-purple-500" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold mb-1">Mã danh mục (slug)</label>
+              <select id="tmplEditCategory" class="w-full bg-[#0d1117] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none">
+                <option value="travel">travel (Du lịch)</option>
+                <option value="business">business (Doanh nghiệp)</option>
+                <option value="marketing">marketing (Marketing)</option>
+                <option value="pitch">pitch (Pitch Deck)</option>
+                <option value="education">education (Giáo dục)</option>
+                <option value="creative">creative (Sáng tạo)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold mb-1">Tên hiển thị danh mục</label>
+              <input type="text" id="tmplEditCategoryName" required placeholder="Du lịch" class="w-full bg-[#0d1117] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-purple-500" />
+            </div>
+          </div>
+          <div>
+            <label class="block font-semibold mb-1">Từ khóa tìm kiếm (cách nhau bởi dấu phẩy)</label>
+            <input type="text" id="tmplEditTags" placeholder="travel, du lich, tour, resort, bien" class="w-full bg-[#0d1117] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-purple-500" />
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold mb-1">Màu nền Slide HEX</label>
+              <div class="flex items-center gap-2">
+                <input type="color" id="tmplEditColorPicker" value="#032030" class="w-8 h-8 rounded-lg bg-transparent border-0 cursor-pointer" />
+                <input type="text" id="tmplEditCustomColor" value="#032030" class="flex-1 bg-[#0d1117] border border-slate-700 rounded-xl px-3 py-1.5 text-white outline-none uppercase font-mono" />
+              </div>
+            </div>
+            <div>
+              <label class="block font-semibold mb-1">Trạng thái kích hoạt</label>
+              <select id="tmplEditIsActive" class="w-full bg-[#0d1117] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none">
+                <option value="1">Đang hoạt động (Hiển thị trong kho)</option>
+                <option value="0">Tạm ẩn (Vô hiệu hóa)</option>
+              </select>
+            </div>
+          </div>
+          <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+            <button type="button" id="btnCancelAdminTemplateModal" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition cursor-pointer">Hủy</button>
+            <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition shadow cursor-pointer">Lưu Mẫu</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- MODAL 2: TẠO / SỬA ADMIN -->
+    <div id="adminCreateModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-[150] flex items-center justify-center p-4 select-none">
+      <div class="bg-[#161b22] border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl animate-in fade-in duration-150">
+        <div class="flex items-center justify-between pb-3 mb-4 border-b border-slate-800">
+          <h3 id="adminCreateModalTitle" class="text-base font-bold text-white">Thêm Quản Trị Viên</h3>
+          <button id="btnCloseAdminCreateModal" class="p-1.5 text-slate-400 hover:text-white rounded-lg transition">
+            <i data-lucide="x" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <form id="adminCreateForm" class="space-y-3.5 text-xs text-slate-300">
+          <div>
+            <label class="block font-semibold mb-1">Họ và tên (*)</label>
+            <input type="text" id="adminNewFullName" required placeholder="Nguyễn Văn A" class="w-full bg-[#0d1117] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-purple-500" />
+          </div>
+          <div>
+            <label class="block font-semibold mb-1">Tên đăng nhập (*)</label>
+            <input type="text" id="adminNewUsername" required placeholder="admin_mod" class="w-full bg-[#0d1117] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-purple-500" />
+          </div>
+          <div>
+            <label class="block font-semibold mb-1">Email (*)</label>
+            <input type="email" id="adminNewEmail" required placeholder="mod@slidecraft.local" class="w-full bg-[#0d1117] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-purple-500" />
+          </div>
+          <div>
+            <label class="block font-semibold mb-1">Mật khẩu (*)</label>
+            <input type="password" id="adminNewPassword" required placeholder="••••••••" class="w-full bg-[#0d1117] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none focus:border-purple-500" />
+          </div>
+          <div>
+            <label class="block font-semibold mb-1">Vai trò</label>
+            <select id="adminNewRole" class="w-full bg-[#0d1117] border border-slate-700 rounded-xl px-3 py-2 text-white outline-none">
+              <option value="admin">Quản trị viên (Admin)</option>
+              <option value="editor">Biên tập viên (Editor)</option>
+              <option value="super_admin">Quản trị cấp cao (Super Admin)</option>
+            </select>
+          </div>
+          <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
+            <button type="button" id="btnCancelAdminCreateModal" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition cursor-pointer">Hủy</button>
+            <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition shadow cursor-pointer">Tạo Tài Khoản</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <!-- Modal Toàn Cục: Thông Báo Đang Nạp / Xử Lý Tệp (Global Loading Modal) -->
     <div
       id="globalLoadingOverlay"
