@@ -8,8 +8,6 @@ let redoStack = [];
 
 // DOM References
 const homeView = document.getElementById('homeView');
-const btnHomeGoToImport = document.getElementById('btnHomeGoToImport');
-const btnHomeGoToProjects = document.getElementById('btnHomeGoToProjects');
 const homeAuthBlock = document.getElementById('homeAuthBlock');
 const homeGuestBlock = document.getElementById('homeGuestBlock');
 const homeUserAvatarContainer = document.getElementById('homeUserAvatarContainer');
@@ -3988,21 +3986,9 @@ if (btnHomeGoogleLogin) {
 }
 
 // Nút chuyển sang trang nạp file PPTX (/import)
-if (btnHomeGoToImport) {
-  btnHomeGoToImport.addEventListener('click', () => {
-    openImportPage();
-  });
-}
 if (btnHomeTryImport) {
   btnHomeTryImport.addEventListener('click', () => {
     openImportPage();
-  });
-}
-
-// Nút chuyển sang trang dự án (/projects)
-if (btnHomeGoToProjects) {
-  btnHomeGoToProjects.addEventListener('click', () => {
-    openProjectsPage('home');
   });
 }
 
