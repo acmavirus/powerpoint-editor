@@ -3,6 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
     <base href="/" />
     <title>Canva Style PowerPoint Editor - SlideCraft</title>
 
@@ -51,8 +54,13 @@
         id="uploadView"
         class="flex-1 flex items-center justify-center p-6 bg-[#0f172a] relative"
       >
-        <!-- Top Right Google Auth Button on Upload Screen -->
-        <div class="absolute top-4 right-4 z-30">
+        <!-- Top Bar on Upload Screen (Projects Navigation & Google Auth) -->
+        <div class="absolute top-4 left-4 right-4 flex items-center justify-between z-30">
+          <button id="btnGoToProjectsFromUpload" class="flex items-center gap-2 px-3.5 py-1.5 bg-slate-800/90 hover:bg-slate-700 text-purple-300 hover:text-white text-xs font-semibold rounded-xl border border-purple-500/30 shadow-md transition group cursor-pointer" title="Xem tất cả bài thuyết trình đã tạo">
+            <i data-lucide="folder-kanban" class="w-4 h-4 text-purple-400 group-hover:scale-110 transition"></i>
+            <span>Dự án của bạn</span>
+          </button>
+
           <div class="relative">
             <button id="btnGoogleLoginUpload" class="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 shadow-md transition group">
               <img id="uploadUserAvatar" src="" class="w-5 h-5 rounded-full object-cover hidden border border-cyan-400" />
@@ -76,12 +84,16 @@
                 </div>
               </div>
               <div class="p-1.5 space-y-0.5">
-                <button id="btnUploadGoToAccountPage" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 text-slate-700 rounded-xl flex items-center gap-3 font-semibold transition">
-                  <i data-lucide="user" class="w-4 h-4 text-purple-600"></i>
+                <button id="btnUploadGoToProjects" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 text-slate-700 rounded-xl flex items-center gap-3 font-semibold transition cursor-pointer">
+                  <i data-lucide="folder-kanban" class="w-4 h-4 text-purple-600"></i>
+                  <span>Dự án của bạn</span>
+                </button>
+                <button id="btnUploadGoToAccountPage" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 text-slate-700 rounded-xl flex items-center gap-3 font-semibold transition cursor-pointer">
+                  <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
                   <span>Quản lý tài khoản</span>
                 </button>
                 <div class="border-t border-slate-100 my-1"></div>
-                <button id="btnUploadLogout" class="w-full text-left px-3.5 py-2.5 hover:bg-red-50 text-red-600 rounded-xl flex items-center gap-3 font-semibold transition">
+                <button id="btnUploadLogout" class="w-full text-left px-3.5 py-2.5 hover:bg-red-50 text-red-600 rounded-xl flex items-center gap-3 font-semibold transition cursor-pointer">
                   <i data-lucide="log-out" class="w-4 h-4 text-red-500"></i>
                   <span>Đăng xuất Google</span>
                 </button>
@@ -163,14 +175,24 @@
         <header
           class="h-12 bg-gradient-to-r from-[#00c4cc] via-[#0e7490] to-[#7d2ae8] text-white flex items-center justify-between px-3.5 shrink-0 z-40 shadow-sm select-none"
         >
-          <!-- Left: Home, File, Resize, Undo/Redo, Saved status -->
-          <div class="flex items-center gap-3">
+          <!-- Left: Home, Projects, File, Resize, Undo/Redo, Saved status -->
+          <div class="flex items-center gap-2 sm:gap-3">
             <button
               id="btnHome"
-              class="p-1.5 hover:bg-white/10 rounded-lg transition"
-              title="Trang chủ"
+              class="p-1.5 hover:bg-white/10 rounded-lg transition cursor-pointer"
+              title="Trang bắt đầu"
             >
               <i data-lucide="home" class="w-4 h-4"></i>
+            </button>
+
+            <!-- Nút Dự Án trên Header -->
+            <button
+              id="btnGoToProjectsFromEditor"
+              class="flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold hover:bg-white/15 rounded-md transition text-slate-100 hover:text-white cursor-pointer"
+              title="Xem tất cả bài thuyết trình đã tạo"
+            >
+              <i data-lucide="folder-kanban" class="w-3.5 h-3.5 text-purple-200"></i>
+              <span>Dự án</span>
             </button>
 
             <!-- Tệp (File) Dropdown -->
@@ -254,20 +276,32 @@
             </div>
           </div>
 
-          <!-- Center: Editable Presentation Title -->
-          <div class="flex-1 flex justify-center max-w-md mx-4">
+          <!-- Center: Editable Presentation Title & Role Badge -->
+          <div class="flex-1 flex justify-center items-center max-w-md mx-4 gap-2">
             <input
               id="deckTitleInput"
               type="text"
               value="Thiết kế không tên - Bài thuyết trình"
               class="bg-transparent hover:bg-white/10 focus:bg-white/20 text-center text-xs font-semibold text-white px-3 py-1 rounded-md border border-transparent focus:border-white/40 outline-none transition w-full truncate"
             />
+            <span id="headerRoleBadge" class="shrink-0 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider hidden shadow-sm"></span>
           </div>
 
           <!-- Right: User, Insights, Comments, Present, Export, and Share Button -->
-          <div class="flex items-center gap-2">
-            <!-- Google Auth Profile Component (Header) -->
-            <div id="authProfileContainer" class="relative">
+          <div class="flex items-center gap-2 shrink-0">
+            <!-- DÃY AVATAR CỘNG TÁC VIÊN ĐANG ONLINE TRÊN DESIGN (Canva / Figma Live Collaborators Stack) -->
+            <div id="collaboratorsPresenceContainer" class="flex items-center gap-1.5 relative shrink-0">
+              <!-- Stack các avatar của tất cả những người đang mở design -->
+              <div id="activeCollaboratorsStack" class="flex items-center -space-x-2 overflow-visible">
+                <!-- Self avatar placeholder để luôn có avatar hiển thị tức thì -->
+                <div id="selfAvatarPlaceholder" class="relative group cursor-pointer transition-transform hover:scale-110 select-none">
+                  <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-amber-600 text-white font-bold text-xs flex items-center justify-center border-2 border-white shadow-md">
+                    <span id="selfAvatarPlaceholderText">T</span>
+                  </div>
+                  <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
+                </div>
+              </div>
+
               <!-- Nút Đăng nhập Google (khi chưa đăng nhập) -->
               <button id="btnGoogleLoginHeader" class="flex items-center gap-1.5 px-2.5 py-1 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold rounded-md shadow-sm transition border border-slate-200">
                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24">
@@ -279,32 +313,29 @@
                 <span class="hidden sm:inline">Đăng nhập</span>
               </button>
 
-              <!-- Avatar & Dropdown (khi đã đăng nhập) -->
-              <div id="userLoggedInMenu" class="hidden relative">
-                <button id="userAvatarBtn" class="flex items-center gap-1.5 focus:outline-none group" title="Tài khoản Google">
-                  <img id="userAvatarImg" src="" alt="Avatar" class="w-7 h-7 rounded-full object-cover border-2 border-white/60 shadow-sm" />
-                </button>
-                
-                <!-- Popup Dropdown chuẩn Canva y như ảnh của bạn -->
-                <div id="userDropdownMenu" class="absolute right-0 mt-2 w-72 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-100 py-2 hidden z-50 text-xs select-none">
-                  <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
-                    <img id="dropdownAvatarImg" src="" class="w-11 h-11 rounded-full object-cover border border-slate-200 shadow-sm" />
-                    <div class="overflow-hidden flex-1">
-                      <p id="userNameText" class="font-bold text-slate-800 text-sm truncate"></p>
-                      <p id="userEmailText" class="text-xs text-slate-500 truncate mt-0.5"></p>
-                    </div>
+              <!-- Popup Dropdown chuẩn Canva khi bấm vào Avatar của bạn -->
+              <div id="userDropdownMenu" class="absolute right-0 top-full mt-2 w-72 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-100 py-2 hidden z-50 text-xs select-none">
+                <div class="px-4 py-3 border-b border-slate-100 flex items-center gap-3">
+                  <img id="dropdownAvatarImg" src="" class="w-11 h-11 rounded-full object-cover border border-slate-200 shadow-sm" />
+                  <div class="overflow-hidden flex-1">
+                    <p id="userNameText" class="font-bold text-slate-800 text-sm truncate"></p>
+                    <p id="userEmailText" class="text-xs text-slate-500 truncate mt-0.5"></p>
                   </div>
-                  <div class="p-1.5 space-y-0.5">
-                    <button id="btnGoToAccountPage" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 text-slate-700 rounded-xl flex items-center gap-3 font-semibold transition">
-                      <i data-lucide="user" class="w-4 h-4 text-purple-600"></i>
-                      <span>Quản lý tài khoản</span>
-                    </button>
-                    <div class="border-t border-slate-100 my-1"></div>
-                    <button id="btnLogout" class="w-full text-left px-3.5 py-2.5 hover:bg-red-50 text-red-600 rounded-xl flex items-center gap-3 font-semibold transition">
-                      <i data-lucide="log-out" class="w-4 h-4 text-red-500"></i>
-                      <span>Đăng xuất Google</span>
-                    </button>
-                  </div>
+                </div>
+                <div class="p-1.5 space-y-0.5">
+                  <button id="btnMenuGoToProjects" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 text-slate-700 rounded-xl flex items-center gap-3 font-semibold transition cursor-pointer">
+                    <i data-lucide="folder-kanban" class="w-4 h-4 text-purple-600"></i>
+                    <span>Dự án của bạn</span>
+                  </button>
+                  <button id="btnGoToAccountPage" class="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 text-slate-700 rounded-xl flex items-center gap-3 font-semibold transition cursor-pointer">
+                    <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
+                    <span>Quản lý tài khoản</span>
+                  </button>
+                  <div class="border-t border-slate-100 my-1"></div>
+                  <button id="btnLogout" class="w-full text-left px-3.5 py-2.5 hover:bg-red-50 text-red-600 rounded-xl flex items-center gap-3 font-semibold transition">
+                    <i data-lucide="log-out" class="w-4 h-4 text-red-500"></i>
+                    <span>Đăng xuất Google</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -351,10 +382,10 @@
               <!-- Popover Dropdown Chia Sẻ Thiết Kế -->
               <div
                 id="shareDesignDropdown"
-                class="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-100 p-5 hidden z-50 select-none animate-in fade-in duration-150"
+                class="absolute right-0 top-full mt-2 w-84 sm:w-96 bg-white text-slate-800 rounded-2xl shadow-2xl border border-slate-100 p-5 hidden z-50 select-none animate-in fade-in duration-150"
               >
                 <!-- Header: Tiêu đề + Icon thống kê + Icon cài đặt -->
-                <div class="flex items-center justify-between mb-4">
+                <div class="flex items-center justify-between mb-3">
                   <h3 class="text-base font-bold text-slate-900">Chia sẻ thiết kế</h3>
                   <div class="flex items-center gap-1 text-slate-500">
                     <button class="p-1.5 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition" title="Thống kê">
@@ -366,64 +397,77 @@
                   </div>
                 </div>
 
-                <!-- Phần 1: Thành viên có quyền truy cập -->
-                <div class="space-y-3 mb-4">
-                  <label class="block text-xs font-bold text-slate-800">Thành viên có quyền truy cập</label>
-                  
-                  <!-- Input tìm kiếm / thêm người -->
-                  <div class="relative">
-                    <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-2.5 text-slate-400"></i>
-                    <input
-                      id="inputShareMemberEmail"
-                      type="text"
-                      placeholder="Thêm người"
-                      class="w-full bg-white border border-slate-200 focus:border-purple-500 rounded-xl pl-10 pr-14 py-2 text-xs text-slate-800 placeholder-slate-400 outline-none transition shadow-sm"
-                    />
-                    <button id="btnAddShareMember" class="absolute right-2.5 top-1.5 text-purple-600 hover:text-purple-700 text-xs font-bold px-2 py-0.5 hover:bg-purple-50 rounded-lg transition">
-                      Thêm
-                    </button>
-                  </div>
+                <!-- Banner thông báo vai trò của tài khoản hiện tại -->
+                <div id="shareRoleStatusBanner" class="mb-3.5 p-2.5 rounded-xl text-xs flex items-center gap-2 font-medium"></div>
 
-                  <!-- Hàng Avatar danh sách thành viên có quyền truy cập -->
-                  <div id="shareMembersAvatarList" class="flex items-center gap-2 pt-1 flex-wrap">
-                    <!-- Avatar chủ sở hữu (Owner) -->
-                    <div id="shareOwnerAvatarContainer" class="w-8 h-8 rounded-full bg-amber-700 text-white font-bold text-xs flex items-center justify-center border-2 border-white shadow-sm overflow-hidden" title="Chủ sở hữu">
-                      <img id="shareOwnerAvatarImg" src="" class="w-full h-full object-cover hidden" />
-                      <span id="shareOwnerInitial">T</span>
+                <!-- Khu vực mời người (Chỉ hiển thị cho Chủ sở hữu) -->
+                <div id="shareInviteSection" class="space-y-2 mb-4">
+                  <label class="block text-xs font-bold text-slate-800">Mời thêm thành viên</label>
+                  <div class="flex items-center gap-1.5">
+                    <div class="relative flex-1">
+                      <i data-lucide="mail" class="w-4 h-4 absolute left-3 top-2.5 text-slate-400"></i>
+                      <input
+                        id="inputShareMemberEmail"
+                        type="text"
+                        placeholder="Nhập email người cần mời"
+                        class="w-full bg-white border border-slate-200 focus:border-purple-500 rounded-xl pl-9 pr-3 py-2 text-xs text-slate-800 placeholder-slate-400 outline-none transition shadow-sm"
+                      />
                     </div>
-                    
-                    <!-- Danh sách các thành viên được thêm thêm vào đây -->
-                    <div id="dynamicSharedMembers" class="flex items-center gap-1.5 flex-wrap"></div>
-
-                    <!-- Nút dấu + -->
-                    <button id="btnTriggerAddMember" class="w-8 h-8 rounded-full border border-dashed border-slate-300 hover:border-purple-400 flex items-center justify-center text-slate-500 hover:text-purple-600 hover:bg-purple-50 transition" title="Mời thêm người">
-                      <i data-lucide="plus" class="w-4 h-4"></i>
+                    <!-- Role selector for new invitee -->
+                    <select id="selectShareRole" class="bg-slate-50 border border-slate-200 text-slate-700 text-xs rounded-xl px-2.5 py-2 outline-none focus:border-purple-500 font-medium">
+                      <option value="editor">Chỉnh sửa</option>
+                      <option value="viewer">Chỉ xem</option>
+                    </select>
+                    <button id="btnAddShareMember" class="bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold px-3 py-2 rounded-xl transition shrink-0 shadow-sm cursor-pointer">
+                      Mời
                     </button>
                   </div>
                 </div>
 
-                <!-- Phần 2: Cấp độ truy cập -->
-                <div class="space-y-2 mb-5">
-                  <label class="block text-xs font-bold text-slate-800">Cấp độ truy cập</label>
+                <!-- Thông báo khi không phải chủ sở hữu -->
+                <div id="shareGuestNotice" class="mb-4 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-[11px] text-slate-500 flex items-center gap-2 hidden">
+                  <i data-lucide="info" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                  <span>Chỉ chủ sở hữu mới có quyền mời và quản lý quyền của các thành viên.</span>
+                </div>
+
+                <!-- Phần 1: Thành viên có quyền truy cập (Dạng danh sách chi tiết chuyên nghiệp) -->
+                <div class="space-y-2 mb-4">
+                  <div class="flex items-center justify-between">
+                    <label class="text-xs font-bold text-slate-800">Thành viên có quyền truy cập</label>
+                    <span id="shareMembersCountBadge" class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-bold">1</span>
+                  </div>
+                  
+                  <!-- Danh sách thành viên dạng dòng cuộn -->
+                  <div id="shareMembersDetailedList" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    <!-- Owner Row & Collaborator Rows render dynamically here -->
+                  </div>
+                </div>
+
+                <!-- Phần 2: Cấp độ truy cập chung -->
+                <div class="space-y-2 mb-4">
+                  <label class="block text-xs font-bold text-slate-800">Cấp độ truy cập chung</label>
                   <div class="relative">
                     <div id="accessLevelSelector" class="flex items-center justify-between p-2.5 bg-slate-50 hover:bg-slate-100/80 border border-slate-200 rounded-xl cursor-pointer transition">
-                      <div class="flex items-center gap-3">
+                      <div class="flex items-center gap-3 overflow-hidden">
                         <div id="accessLevelIconWrapper" class="w-8 h-8 rounded-full bg-slate-200/70 flex items-center justify-center text-slate-700 shrink-0">
                           <i id="accessLevelIcon" data-lucide="lock" class="w-4 h-4"></i>
                         </div>
-                        <span id="accessLevelText" class="text-xs font-medium text-slate-800">Chỉ bạn mới có quyền truy cập</span>
+                        <div class="overflow-hidden">
+                          <p id="accessLevelText" class="text-xs font-semibold text-slate-800 truncate">Chỉ bạn mới có quyền truy cập</p>
+                          <p id="accessLevelSubText" class="text-[10px] text-slate-400 truncate">Chỉ thành viên được mời mới có thể mở liên kết</p>
+                        </div>
                       </div>
-                      <i data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
+                      <i id="accessLevelChevron" data-lucide="chevron-down" class="w-4 h-4 text-slate-400 shrink-0"></i>
                     </div>
 
-                    <!-- Dropdown menu chọn cấp độ -->
+                    <!-- Dropdown menu chọn cấp độ (chỉ Owner mở được) -->
                     <div id="accessLevelMenu" class="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl py-1 hidden z-50 text-xs">
                       <button class="access-level-option w-full text-left px-3.5 py-2.5 hover:bg-slate-50 flex items-center gap-3 font-medium text-slate-800 transition" data-level="private">
                         <div class="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 shrink-0">
                           <i data-lucide="lock" class="w-3.5 h-3.5"></i>
                         </div>
                         <div>
-                          <p class="font-semibold text-slate-800">Chỉ bạn mới có quyền truy cập</p>
+                          <p class="font-semibold text-slate-800">Chỉ bạn và người được thêm mới có quyền truy cập</p>
                           <p class="text-[11px] text-slate-400">Chỉ những người được mời mới có thể mở liên kết này</p>
                         </div>
                       </button>
@@ -447,12 +491,13 @@
                       </button>
                     </div>
                   </div>
+                  <p id="accessLevelDisabledNote" class="text-[10px] text-slate-400 italic hidden">Chỉ chủ sở hữu mới có quyền thay đổi cấp độ truy cập này.</p>
                 </div>
 
                 <!-- Phần 3: Nút Sao chép liên kết to màu tím chuẩn Canva -->
                 <button
                   id="btnCopyShareLinkModal"
-                  class="w-full py-3 px-4 bg-[#7d2ae8] hover:bg-[#6c23cb] text-white font-bold text-xs rounded-xl shadow-lg shadow-purple-500/20 transition flex items-center justify-center gap-2 group cursor-pointer"
+                  class="w-full py-2.5 px-4 bg-[#7d2ae8] hover:bg-[#6c23cb] text-white font-bold text-xs rounded-xl shadow-lg shadow-purple-500/20 transition flex items-center justify-center gap-2 group cursor-pointer"
                 >
                   <i id="btnCopyShareLinkIcon" data-lucide="link-2" class="w-4 h-4 group-hover:scale-110 transition"></i>
                   <span id="btnCopyShareLinkText">Sao chép liên kết</span>
@@ -1133,6 +1178,176 @@
 
         </div>
       </div>
+
+      <!-- STATE 4: TRANG DỰ ÁN (PROJECTS DASHBOARD PAGE) -->
+      <div id="projectsPageView" class="hidden flex-1 flex flex-col bg-[#0b0f19] text-slate-100 overflow-y-auto select-none min-h-screen">
+        <!-- Top Navigation Header -->
+        <header class="h-16 bg-[#111827]/90 backdrop-blur-md border-b border-slate-800/80 px-6 sm:px-8 flex items-center justify-between shrink-0 sticky top-0 z-30 shadow-lg">
+          <div class="flex items-center gap-4">
+            <button id="btnProjectsBackHome" class="flex items-center gap-2 px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700/80 text-slate-300 hover:text-white rounded-xl text-xs font-medium border border-slate-700/60 transition shadow-sm cursor-pointer" title="Quay lại">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i>
+              <span class="hidden sm:inline">Quay lại</span>
+            </button>
+            
+            <div class="h-5 w-px bg-slate-800"></div>
+
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center shadow-md shadow-purple-500/20">
+                <i data-lucide="folder-kanban" class="w-4 h-4 text-white"></i>
+              </div>
+              <div>
+                <h1 class="text-sm font-bold text-white tracking-tight flex items-center gap-2">
+                  Dự Án Của Bạn
+                  <span id="projectsTotalCountBadge" class="text-[10px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-semibold border border-purple-500/30">0</span>
+                </h1>
+                <p class="text-[11px] text-slate-400 hidden sm:block">Xem và quản lý tất cả các bài trình chiếu của bạn</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Search Bar in Header -->
+          <div class="flex-1 max-w-md mx-4 hidden md:block">
+            <div class="relative">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+              <input
+                id="inputProjectsSearch"
+                type="text"
+                placeholder="Tìm kiếm bài thuyết trình theo tên..."
+                class="w-full pl-9 pr-4 py-2 bg-slate-900/90 border border-slate-700/80 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition shadow-inner"
+              />
+            </div>
+          </div>
+
+          <!-- Actions Header -->
+          <div class="flex items-center gap-3">
+            <button id="btnProjectsImportPPTX" class="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-semibold border border-slate-700 transition shadow cursor-pointer">
+              <i data-lucide="upload" class="w-4 h-4 text-cyan-400"></i>
+              <span class="hidden sm:inline">Nạp tệp PPTX</span>
+            </button>
+
+            <button id="btnProjectsCreateNew" class="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-purple-600/30 hover:shadow-purple-600/50 transition cursor-pointer">
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Tạo bài mới</span>
+            </button>
+
+            <div class="h-6 w-px bg-slate-800 mx-1"></div>
+
+            <!-- User Profile Indicator -->
+            <div id="projectsUserBadge" class="flex items-center gap-2 pl-1 cursor-pointer">
+              <img id="projectsUserAvatar" src="https://lh3.googleusercontent.com/a/default-user" alt="Avatar" class="w-8 h-8 rounded-full border border-purple-400/40 object-cover shadow-sm" />
+              <span id="projectsUserName" class="text-xs font-medium text-slate-300 max-w-[100px] truncate hidden lg:inline">Tài khoản</span>
+            </div>
+          </div>
+        </header>
+
+        <!-- Main Body -->
+        <div class="flex-1 max-w-7xl w-full mx-auto px-6 sm:px-8 py-8 space-y-6">
+          <!-- Mobile Search Bar (hiển thị khi màn hình nhỏ) -->
+          <div class="block md:hidden">
+            <div class="relative">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+              <input
+                id="inputProjectsSearchMobile"
+                type="text"
+                placeholder="Tìm kiếm dự án..."
+                class="w-full pl-9 pr-4 py-2 bg-slate-900 border border-slate-700/80 rounded-xl text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500"
+              />
+            </div>
+          </div>
+
+          <!-- Toolbar: Filter Tabs & Sorting -->
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-slate-800">
+            <!-- Filter Tabs -->
+            <div class="flex items-center gap-2 overflow-x-auto no-scrollbar">
+              <button id="tabProjectsAll" class="project-tab-btn active px-4 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-2 bg-purple-600/20 text-purple-300 border border-purple-500/30" data-filter="all">
+                <i data-lucide="layout-grid" class="w-3.5 h-3.5"></i>
+                <span>Tất cả bài viết</span>
+                <span id="tabCountAll" class="text-[10px] px-1.5 py-0.5 bg-purple-500/30 rounded-md">0</span>
+              </button>
+              <button id="tabProjectsMine" class="project-tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition flex items-center gap-2" data-filter="mine">
+                <i data-lucide="user-check" class="w-3.5 h-3.5"></i>
+                <span>Của tôi</span>
+                <span id="tabCountMine" class="text-[10px] px-1.5 py-0.5 bg-slate-800 rounded-md text-slate-400">0</span>
+              </button>
+              <button id="tabProjectsShared" class="project-tab-btn px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition flex items-center gap-2" data-filter="shared">
+                <i data-lucide="share-2" class="w-3.5 h-3.5"></i>
+                <span>Được chia sẻ</span>
+                <span id="tabCountShared" class="text-[10px] px-1.5 py-0.5 bg-slate-800 rounded-md text-slate-400">0</span>
+              </button>
+            </div>
+
+            <!-- Sorting & Refresh -->
+            <div class="flex items-center gap-3">
+              <div class="flex items-center gap-2 text-xs text-slate-400">
+                <i data-lucide="arrow-down-up" class="w-3.5 h-3.5 text-slate-400"></i>
+                <span>Sắp xếp:</span>
+                <select id="selectProjectsSort" class="bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-purple-500">
+                  <option value="recent">Mới cập nhật nhất</option>
+                  <option value="oldest">Cũ nhất</option>
+                  <option value="name_asc">Tên (A-Z)</option>
+                  <option value="name_desc">Tên (Z-A)</option>
+                </select>
+              </div>
+
+              <button id="btnProjectsRefresh" class="p-2 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition cursor-pointer" title="Làm mới danh sách">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Loading Skeleton State -->
+          <div id="projectsLoadingState" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl overflow-hidden animate-pulse">
+              <div class="h-44 bg-slate-800/50"></div>
+              <div class="p-4 space-y-3">
+                <div class="h-4 bg-slate-800/80 rounded w-3/4"></div>
+                <div class="h-3 bg-slate-800/50 rounded w-1/2"></div>
+              </div>
+            </div>
+            <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl overflow-hidden animate-pulse">
+              <div class="h-44 bg-slate-800/50"></div>
+              <div class="p-4 space-y-3">
+                <div class="h-4 bg-slate-800/80 rounded w-2/3"></div>
+                <div class="h-3 bg-slate-800/50 rounded w-1/3"></div>
+              </div>
+            </div>
+            <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl overflow-hidden animate-pulse">
+              <div class="h-44 bg-slate-800/50"></div>
+              <div class="p-4 space-y-3">
+                <div class="h-4 bg-slate-800/80 rounded w-4/5"></div>
+                <div class="h-3 bg-slate-800/50 rounded w-2/5"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div id="projectsEmptyState" class="hidden py-16 px-4 text-center max-w-md mx-auto">
+            <div class="w-20 h-20 rounded-3xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto mb-5 shadow-inner">
+              <i data-lucide="folder-plus" class="w-10 h-10"></i>
+            </div>
+            <h3 class="text-base font-bold text-white mb-2">Chưa có bài trình chiếu nào</h3>
+            <p class="text-xs text-slate-400 leading-relaxed mb-6">
+              Bạn chưa có bài thiết kế nào trong mục này. Bắt đầu ngay bằng cách tạo một slide mới hoặc tải lên tệp PowerPoint sẵn có của bạn!
+            </p>
+            <div class="flex items-center justify-center gap-3">
+              <button id="btnEmptyCreateNew" class="px-4 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-purple-600/30 flex items-center gap-2 cursor-pointer">
+                <i data-lucide="plus" class="w-4 h-4"></i>
+                <span>Tạo bài mới</span>
+              </button>
+              <button id="btnEmptyImportPPTX" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold border border-slate-700 transition flex items-center gap-2 cursor-pointer">
+                <i data-lucide="upload" class="w-4 h-4"></i>
+                <span>Nạp PPTX</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Projects Grid Cards List -->
+          <div id="projectsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <!-- Dynamically populated cards -->
+          </div>
+
+        </div>
+      </div>
   </main>
 
     <!-- FULLSCREEN PRESENTATION MODE (F5) -->
@@ -1240,6 +1455,49 @@
       </div>
     </div>
 
+    <!-- Modal Thông Báo Chặn Quyền Riêng Tư (Access Denied) -->
+    <div id="accessDeniedOverlay" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4 hidden select-none animate-in fade-in duration-200">
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-8 max-w-md w-full text-center shadow-2xl relative">
+        <div class="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center mx-auto mb-4 shadow-inner">
+          <i data-lucide="lock" class="w-8 h-8"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white mb-2">Bài thiết kế ở chế độ Riêng tư</h3>
+        <p class="text-xs text-slate-400 leading-relaxed mb-6">
+          Chỉ chủ sở hữu và những người được cấp quyền mới có thể truy cập bài thiết kế này. Vui lòng đăng nhập tài khoản Google đã được mời hoặc liên hệ chủ sở hữu để được cấp quyền.
+        </p>
+        <div class="flex flex-col gap-2.5">
+          <button id="btnDeniedLoginGoogle" class="w-full py-2.5 px-4 bg-white hover:bg-slate-100 text-slate-900 font-bold text-xs rounded-xl transition shadow flex items-center justify-center gap-2 cursor-pointer">
+            <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+            <span>Đăng nhập tài khoản Google khác</span>
+          </button>
+          <button id="btnDeniedGoHome" class="w-full py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl transition cursor-pointer">
+            Quay lại trang chủ
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Xác Nhận Xóa Dự Án -->
+    <div id="deleteProjectModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4 hidden select-none animate-in fade-in duration-200">
+      <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl relative">
+        <div class="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center mx-auto mb-4">
+          <i data-lucide="trash-2" class="w-7 h-7"></i>
+        </div>
+        <h3 class="text-base font-bold text-white mb-1.5">Xác nhận xóa bài thiết kế?</h3>
+        <p class="text-xs text-slate-400 leading-relaxed mb-6">
+          Hành động này sẽ xóa vĩnh viễn bài thiết kế <span id="deleteProjectTargetTitle" class="text-white font-semibold"></span> và không thể hoàn tác.
+        </p>
+        <div class="flex items-center gap-3">
+          <button id="btnCancelDeleteProject" class="flex-1 py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs rounded-xl transition cursor-pointer">
+            Hủy bỏ
+          </button>
+          <button id="btnConfirmDeleteProject" class="flex-1 py-2.5 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl transition shadow-lg shadow-rose-600/30 cursor-pointer">
+            Xóa bài này
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Toast Notification -->
     <div
       id="toast"
@@ -1249,6 +1507,6 @@
       <span id="toastMsg">Thành công!</span>
     </div>
 
-    <script src="/app.js"></script>
+    <script src="/app.js?v=20261031_f5_projects_fix"></script>
   </body>
 </html>

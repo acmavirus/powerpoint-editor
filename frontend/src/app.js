@@ -47,24 +47,83 @@ const accPageAvatar = document.getElementById('accPageAvatar');
 const accPageName = document.getElementById('accPageName');
 const accPageEmail = document.getElementById('accPageEmail');
 const accountRecentDecksList = document.getElementById('accountRecentDecksList');
+const activeCollaboratorsStack = document.getElementById('activeCollaboratorsStack');
+const headerRoleBadge = document.getElementById('headerRoleBadge');
 
-// Share Design Elements
+// Share Design & Role Elements
 const btnShareDesign = document.getElementById('btnShareDesign');
 const shareDesignDropdown = document.getElementById('shareDesignDropdown');
+const shareRoleStatusBanner = document.getElementById('shareRoleStatusBanner');
+const shareInviteSection = document.getElementById('shareInviteSection');
+const shareGuestNotice = document.getElementById('shareGuestNotice');
 const inputShareMemberEmail = document.getElementById('inputShareMemberEmail');
+const selectShareRole = document.getElementById('selectShareRole');
 const btnAddShareMember = document.getElementById('btnAddShareMember');
-const btnTriggerAddMember = document.getElementById('btnTriggerAddMember');
-const shareOwnerAvatarContainer = document.getElementById('shareOwnerAvatarContainer');
-const shareOwnerAvatarImg = document.getElementById('shareOwnerAvatarImg');
-const shareOwnerInitial = document.getElementById('shareOwnerInitial');
-const dynamicSharedMembers = document.getElementById('dynamicSharedMembers');
+const shareMembersCountBadge = document.getElementById('shareMembersCountBadge');
+const shareMembersDetailedList = document.getElementById('shareMembersDetailedList');
 const accessLevelSelector = document.getElementById('accessLevelSelector');
 const accessLevelMenu = document.getElementById('accessLevelMenu');
 const accessLevelText = document.getElementById('accessLevelText');
+const accessLevelSubText = document.getElementById('accessLevelSubText');
 const accessLevelIcon = document.getElementById('accessLevelIcon');
+const accessLevelIconWrapper = document.getElementById('accessLevelIconWrapper');
+const accessLevelChevron = document.getElementById('accessLevelChevron');
+const accessLevelDisabledNote = document.getElementById('accessLevelDisabledNote');
 const btnCopyShareLinkModal = document.getElementById('btnCopyShareLinkModal');
 const btnCopyShareLinkText = document.getElementById('btnCopyShareLinkText');
 const btnCopyShareLinkIcon = document.getElementById('btnCopyShareLinkIcon');
+
+// Access Denied Elements
+const accessDeniedOverlay = document.getElementById('accessDeniedOverlay');
+const btnDeniedLoginGoogle = document.getElementById('btnDeniedLoginGoogle');
+const btnDeniedGoHome = document.getElementById('btnDeniedGoHome');
+
+// Projects Dashboard Elements
+const btnGoToProjectsFromUpload = document.getElementById('btnGoToProjectsFromUpload');
+const btnGoToProjectsFromEditor = document.getElementById('btnGoToProjectsFromEditor');
+const btnUploadGoToProjects = document.getElementById('btnUploadGoToProjects');
+const btnMenuGoToProjects = document.getElementById('btnMenuGoToProjects');
+
+const projectsPageView = document.getElementById('projectsPageView');
+const btnProjectsBackHome = document.getElementById('btnProjectsBackHome');
+const projectsTotalCountBadge = document.getElementById('projectsTotalCountBadge');
+const inputProjectsSearch = document.getElementById('inputProjectsSearch');
+const inputProjectsSearchMobile = document.getElementById('inputProjectsSearchMobile');
+const btnProjectsImportPPTX = document.getElementById('btnProjectsImportPPTX');
+const btnProjectsCreateNew = document.getElementById('btnProjectsCreateNew');
+const projectsUserBadge = document.getElementById('projectsUserBadge');
+const projectsUserAvatar = document.getElementById('projectsUserAvatar');
+const projectsUserName = document.getElementById('projectsUserName');
+
+const tabProjectsAll = document.getElementById('tabProjectsAll');
+const tabProjectsMine = document.getElementById('tabProjectsMine');
+const tabProjectsShared = document.getElementById('tabProjectsShared');
+const tabCountAll = document.getElementById('tabCountAll');
+const tabCountMine = document.getElementById('tabCountMine');
+const tabCountShared = document.getElementById('tabCountShared');
+
+const selectProjectsSort = document.getElementById('selectProjectsSort');
+const btnProjectsRefresh = document.getElementById('btnProjectsRefresh');
+const projectsLoadingState = document.getElementById('projectsLoadingState');
+const projectsEmptyState = document.getElementById('projectsEmptyState');
+const btnEmptyCreateNew = document.getElementById('btnEmptyCreateNew');
+const btnEmptyImportPPTX = document.getElementById('btnEmptyImportPPTX');
+const projectsGrid = document.getElementById('projectsGrid');
+
+// Delete Project Modal
+const deleteProjectModal = document.getElementById('deleteProjectModal');
+const deleteProjectTargetTitle = document.getElementById('deleteProjectTargetTitle');
+const btnCancelDeleteProject = document.getElementById('btnCancelDeleteProject');
+const btnConfirmDeleteProject = document.getElementById('btnConfirmDeleteProject');
+
+// Projects State Variables (Declared early to prevent TDZ on initial route load)
+let previousViewBeforeProjects = 'upload';
+let cachedProjectsList = [];
+let currentProjectsFilter = 'all'; // 'all', 'mine', 'shared'
+let currentProjectsSearch = '';
+let currentProjectsSort = 'recent'; // 'recent', 'oldest', 'name_asc', 'name_desc'
+let pendingDeleteProject = null;
+let projectsSearchDebounceTimer = null;
 
 // --- CANVA URL & ID GENERATION UTILITIES ---
 // Sinh Canva Design ID: tiền tố 'DA' + 9 ký tự ngẫu nhiên (tổng 11 ký tự, e.g. DAHZkAweP4E)
@@ -95,6 +154,9 @@ function updateBrowserUrlForDesign(designId, editToken) {
   }
 }
 
+// --- DATABASE & LOCAL STORAGE SYNC ENGINE ---
+let autoSaveDebounceTimer = null;
+
 function saveDeckToLocalStorage(deck) {
   if (!deck || !deck.designId) return;
   try {
@@ -111,6 +173,102 @@ function getDeckFromLocalStorage(designId) {
     return raw ? JSON.parse(raw) : null;
   } catch (e) {
     return null;
+  }
+}
+
+async function apiSaveDeck(deck, showIndicator = true) {
+  if (!deck || !deck.designId) return;
+
+  const currentUser = getCurrentUser();
+  if (typeof getDesignPermissions === 'function') {
+    const perms = getDesignPermissions(deck, currentUser);
+    if (!perms.canEdit) {
+      if (showIndicator && saveStatus) {
+        saveStatus.textContent = "Chỉ xem";
+        saveStatus.className = "text-[11px] text-amber-300 font-medium";
+      }
+      return;
+    }
+  }
+
+  if (showIndicator && saveStatus) {
+    saveStatus.textContent = "Đang lưu...";
+    saveStatus.className = "text-[11px] text-amber-400 font-medium";
+  }
+
+  const currentTitle = (deckTitleInput && deckTitleInput.value.trim()) || deck.filename || "Thiết kế không tên - Bài thuyết trình";
+
+  const payload = {
+    designId: deck.designId,
+    editToken: deck.editToken || 'token',
+    title: currentTitle,
+    owner: currentUser ? {
+      id: currentUser.id || currentUser.google_id || '',
+      name: currentUser.name || '',
+      email: currentUser.email || ''
+    } : (deck.owner || null),
+    slides: deck.slides || [],
+    customFonts: deck.customFonts || [],
+    thumbnailUrl: deck.slides?.[0]?.thumbnailUrl || deck.slides?.[0]?.renderPngUrl || '',
+    shareAccessLevel: deck.shareAccessLevel || 'private',
+    sharedMembers: deck.sharedMembers || []
+  };
+
+  try {
+    const res = await fetch(`/api/designs/${deck.designId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      if (showIndicator && saveStatus) {
+        saveStatus.textContent = "Đã lưu vào đám mây";
+        saveStatus.className = "text-[11px] text-emerald-400 font-medium";
+      }
+      if (presenceBroadcastChannel) {
+        try {
+          presenceBroadcastChannel.postMessage({
+            type: 'deck_data_sync',
+            designId: deck.designId,
+            title: currentTitle,
+            updatedAt: Date.now()
+          });
+        } catch (e) {}
+      }
+    } else {
+      if (showIndicator && saveStatus) {
+        saveStatus.textContent = "Đã lưu";
+        saveStatus.className = "text-[11px] text-slate-300 font-medium";
+      }
+    }
+  } catch (err) {
+    if (showIndicator && saveStatus) {
+      saveStatus.textContent = "Đã lưu (cục bộ)";
+      saveStatus.className = "text-[11px] text-slate-400 font-medium";
+    }
+  }
+}
+
+function saveDeck(deck, immediate = false) {
+  if (!deck || !deck.designId) return;
+
+  saveDeckToLocalStorage(deck);
+
+  if (autoSaveDebounceTimer) {
+    clearTimeout(autoSaveDebounceTimer);
+    autoSaveDebounceTimer = null;
+  }
+
+  if (immediate) {
+    apiSaveDeck(deck, true);
+  } else {
+    if (saveStatus) {
+      saveStatus.textContent = "Đang lưu...";
+      saveStatus.className = "text-[11px] text-amber-400 font-medium";
+    }
+    autoSaveDebounceTimer = setTimeout(() => {
+      apiSaveDeck(deck, true);
+    }, 600);
   }
 }
 
@@ -259,10 +417,8 @@ function initFabricCanvas() {
 function markSlideDirty() {
   if (currentDeck && currentDeck.slides[currentSlideIndex]) {
     currentDeck.slides[currentSlideIndex].isEdited = true;
-    saveStatus.textContent = "Đang lưu...";
-    setTimeout(() => {
-      saveStatus.textContent = "Đã lưu";
-    }, 1000);
+    updateCurrentSlideThumbnail();
+    saveDeck(currentDeck, false);
   }
 }
 
@@ -271,6 +427,15 @@ function setupCanvaNavRail() {
   navTabBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const targetTab = btn.getAttribute('data-tab');
+
+      if (currentDeck) {
+        const user = getCurrentUser();
+        const perms = getDesignPermissions(currentDeck, user);
+        if (!perms.canEdit && targetTab !== 'tab-slides') {
+          showToast("Bài thiết kế đang ở chế độ Chỉ xem. Bạn không thể chỉnh sửa hoặc thêm thành phần.", true);
+          return;
+        }
+      }
 
       // If drawer is collapsed, expand it
       if (canvaDrawer.classList.contains('w-0')) {
@@ -399,6 +564,158 @@ function hideLoader() {
   uploadLoader.classList.add('hidden');
 }
 
+// --- 3.5. ROLE-BASED ACCESS CONTROL (RBAC) ---
+function getDesignPermissions(deck, user) {
+  if (!deck) {
+    return {
+      isOwner: false,
+      canEdit: false,
+      canShare: false,
+      isViewer: true,
+      roleLabel: 'Khách xem',
+      accessLevel: 'private',
+      isDenied: false,
+      memberRecord: null
+    };
+  }
+
+  const userEmail = (user?.email || '').trim().toLowerCase();
+  const userId = user?.id || user?.google_id || '';
+  const ownerEmail = (deck.owner?.email || deck.ownerEmail || deck.owner_email || '').trim().toLowerCase();
+  const ownerId = deck.owner?.id || deck.ownerId || deck.owner_id || '';
+
+  // 1. Kiểm tra có phải Chủ sở hữu không
+  let isOwner = false;
+  if (userEmail && ownerEmail && userEmail === ownerEmail) {
+    isOwner = true;
+  } else if (userId && ownerId && userId === ownerId) {
+    isOwner = true;
+  } else if (!ownerEmail && userEmail) {
+    isOwner = true;
+    deck.owner = { id: userId, email: userEmail, name: user.name || userEmail.split('@')[0], picture: user.picture || '' };
+    deck.ownerEmail = userEmail;
+    deck.ownerName = user.name;
+    deck.owner_email = userEmail;
+    deck.owner_name = user.name;
+    apiSaveDeck(deck, false);
+  } else if (!ownerEmail && !userEmail) {
+    isOwner = true;
+  }
+
+  // 2. Tìm trong danh sách cộng tác viên
+  const sharedMembers = Array.isArray(deck.sharedMembers) ? deck.sharedMembers : [];
+  const memberRecord = userEmail
+    ? sharedMembers.find(m => (m.email || '').trim().toLowerCase() === userEmail)
+    : null;
+
+  const accessLevel = deck.shareAccessLevel || deck.share_access_level || 'private';
+
+  // 3. Quyền Chỉnh sửa (canEdit)
+  let canEdit = false;
+  let roleLabel = 'Khách xem';
+
+  if (isOwner) {
+    canEdit = true;
+    roleLabel = 'Chủ sở hữu';
+  } else if (memberRecord && memberRecord.role === 'editor') {
+    canEdit = true;
+    roleLabel = 'Người chỉnh sửa';
+  } else if (accessLevel === 'edit') {
+    canEdit = true;
+    roleLabel = 'Được phép chỉnh sửa';
+  } else if (memberRecord && memberRecord.role === 'viewer') {
+    canEdit = false;
+    roleLabel = 'Người xem';
+  } else if (accessLevel === 'view') {
+    canEdit = false;
+    roleLabel = 'Chỉ xem';
+  } else {
+    canEdit = false;
+    roleLabel = 'Không có quyền';
+  }
+
+  const canShare = isOwner;
+  const isDenied = !isOwner && !memberRecord && accessLevel === 'private';
+
+  return {
+    isOwner,
+    canEdit,
+    canShare,
+    roleLabel,
+    accessLevel,
+    isDenied,
+    memberRecord
+  };
+}
+
+function applyPermissionsToUI(deck) {
+  if (!deck) return;
+  const user = getCurrentUser();
+  const perms = getDesignPermissions(deck, user);
+
+  // 1. Kiểm tra Access Denied
+  if (perms.isDenied) {
+    if (accessDeniedOverlay) accessDeniedOverlay.classList.remove('hidden');
+  } else {
+    if (accessDeniedOverlay) accessDeniedOverlay.classList.add('hidden');
+  }
+
+  // 2. Header Role Badge
+  if (headerRoleBadge) {
+    headerRoleBadge.classList.remove('hidden');
+    if (perms.isOwner) {
+      headerRoleBadge.textContent = "Chủ sở hữu";
+      headerRoleBadge.className = "shrink-0 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-900/60 text-purple-300 border border-purple-500/40 shadow-sm";
+    } else if (perms.canEdit) {
+      headerRoleBadge.textContent = "Được sửa";
+      headerRoleBadge.className = "shrink-0 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-950/60 text-emerald-300 border border-emerald-500/40 shadow-sm";
+    } else {
+      headerRoleBadge.textContent = "Chỉ xem";
+      headerRoleBadge.className = "shrink-0 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-950/60 text-amber-300 border border-amber-500/40 shadow-sm";
+    }
+  }
+
+  // 3. Khóa tiêu đề nếu không có quyền sửa
+  if (deckTitleInput) {
+    deckTitleInput.readOnly = !perms.canEdit;
+    if (!perms.canEdit) {
+      deckTitleInput.title = "Bạn đang ở chế độ Chỉ xem (không thể đổi tên bài)";
+      deckTitleInput.classList.remove('hover:bg-white/10', 'focus:bg-white/20');
+      deckTitleInput.classList.add('cursor-default');
+    } else {
+      deckTitleInput.title = "Nhấp để đổi tên bài thuyết trình";
+      deckTitleInput.classList.add('hover:bg-white/10', 'focus:bg-white/20');
+      deckTitleInput.classList.remove('cursor-default');
+    }
+  }
+
+  // 4. Nút Sửa chữ trên slide
+  if (btnToggleEditOverlay) {
+    if (!perms.canEdit) {
+      btnToggleEditOverlay.classList.add('hidden');
+    } else {
+      btnToggleEditOverlay.classList.remove('hidden');
+    }
+  }
+
+  // 5. Nút thêm slide
+  if (btnAddSlide) btnAddSlide.style.display = perms.canEdit ? '' : 'none';
+  if (btnAddSlideBottom) btnAddSlideBottom.style.display = perms.canEdit ? '' : 'none';
+
+  // 6. Fabric Canvas
+  if (fabricCanvas) {
+    fabricCanvas.selection = perms.canEdit;
+    fabricCanvas.forEachObject(obj => {
+      obj.selectable = perms.canEdit;
+      obj.evented = perms.canEdit;
+    });
+    if (!perms.canEdit && typeof onObjectDeselected === 'function') {
+      onObjectDeselected();
+    }
+    fabricCanvas.renderAll();
+  }
+}
+
 // --- 4. DECK SETUP & FONT REGISTRATION ---
 function setupDeck(deck, updateUrl = true, toastMsgText = null) {
   currentDeck = deck;
@@ -417,7 +734,8 @@ function setupDeck(deck, updateUrl = true, toastMsgText = null) {
     updateBrowserUrlForDesign(currentDeck.designId, currentDeck.editToken);
   }
 
-  saveDeckToLocalStorage(currentDeck);
+  saveDeck(currentDeck, true);
+  applyPermissionsToUI(currentDeck);
 
   deckTitleInput.value = (deck.filename || "Thiết kế không tên - Bài thuyết trình").replace(/\.(pptx|ppt)$/i, '');
   slideTotalBadge.textContent = deck.slideCount || deck.slides.length;
@@ -440,6 +758,9 @@ function setupDeck(deck, updateUrl = true, toastMsgText = null) {
   } else {
     showToast(`Đã mở bài thiết kế: ${currentDeck.designId}`);
   }
+
+  // Khởi động Real-time Active Collaborators Presence
+  startPresenceHeartbeat();
 
   if (window.lucide) lucide.createIcons();
 }
@@ -507,6 +828,8 @@ function loadCustomFonts(customFonts) {
 function renderSlideThumbnails() {
   thumbnailContainer.innerHTML = '';
   if (!currentDeck || !currentDeck.slides) return;
+  const user = getCurrentUser();
+  const perms = getDesignPermissions(currentDeck, user);
 
   currentDeck.slides.forEach((slide, idx) => {
     const card = document.createElement('div');
@@ -564,7 +887,9 @@ function renderSlideThumbnails() {
 
     card.appendChild(frame);
     card.appendChild(titleP);
-    card.appendChild(hoverActions);
+    if (perms.canEdit) {
+      card.appendChild(hoverActions);
+    }
 
     card.addEventListener('click', () => {
       if (currentSlideIndex !== idx) {
@@ -596,7 +921,8 @@ function saveCurrentSlideState() {
   if (currentDeck.slides[currentSlideIndex].isEdited) {
     currentDeck.slides[currentSlideIndex].fabricJson = fabricCanvas.toJSON();
   }
-  saveDeckToLocalStorage(currentDeck);
+  updateCurrentSlideThumbnail();
+  saveDeck(currentDeck, true);
 }
 
 // --- 6. LOAD SLIDE (NEVER AUTO-WHITEWASH / 100% PRISTINE BACKGROUND) ---
@@ -649,16 +975,23 @@ function loadSlideToCanvas(idx) {
     fabricCanvas.backgroundColor = '#ffffff';
   }
 
+  const user = getCurrentUser();
+  const perms = getDesignPermissions(currentDeck, user);
+
   // Restore user-added objects if any
   if (slide.fabricJson && slide.fabricJson.objects && slide.fabricJson.objects.length > 0) {
     fabric.util.enlivenObjects(slide.fabricJson.objects, (enlivenedObjects) => {
       enlivenedObjects.forEach((obj) => {
         obj.isSystemLoaded = true;
+        obj.selectable = perms.canEdit;
+        obj.evented = perms.canEdit;
         fabricCanvas.add(obj);
       });
+      fabricCanvas.selection = perms.canEdit;
       fabricCanvas.renderAll();
     });
   } else {
+    fabricCanvas.selection = perms.canEdit;
     fabricCanvas.renderAll();
   }
 }
@@ -794,6 +1127,7 @@ function addNewSlide() {
   slideTotalBadge.textContent = currentDeck.slides.length;
   renderSlideThumbnails();
   loadSlideToCanvas(newIdx);
+  saveDeck(currentDeck, true);
   showToast("Đã thêm trang mới!");
 }
 
@@ -811,6 +1145,7 @@ function duplicateSlide(idx) {
   slideTotalBadge.textContent = currentDeck.slides.length;
   renderSlideThumbnails();
   loadSlideToCanvas(idx + 1);
+  saveDeck(currentDeck, true);
   showToast("Đã nhân bản slide!");
 }
 
@@ -825,6 +1160,7 @@ function deleteSlide(idx) {
   renderSlideThumbnails();
   const targetIdx = Math.min(idx, currentDeck.slides.length - 1);
   loadSlideToCanvas(targetIdx);
+  saveDeck(currentDeck, true);
   showToast("Đã xóa slide!");
 }
 
@@ -1559,6 +1895,7 @@ if (btnCreateBlankDeck) {
 if (btnHome) {
   btnHome.addEventListener('click', () => {
     saveCurrentSlideState();
+    stopPresenceHeartbeat();
     editorView.classList.add('hidden');
     uploadView.classList.remove('hidden');
     window.history.pushState({}, '', '/');
@@ -1569,7 +1906,7 @@ if (btnHome) {
 deckTitleInput.addEventListener('change', () => {
   if (currentDeck) {
     currentDeck.filename = deckTitleInput.value.trim() || "Thiết kế không tên - Bài thuyết trình";
-    saveDeckToLocalStorage(currentDeck);
+    saveDeck(currentDeck, true);
   }
 });
 
@@ -1639,38 +1976,70 @@ function closeAccountPage() {
 }
 
 // Hiển thị danh sách các bài trình chiếu trong trang quản lý tài khoản
-function renderRecentDecksInAccountPage() {
+async function renderRecentDecksInAccountPage() {
   if (!accountRecentDecksList) return;
-  accountRecentDecksList.innerHTML = '';
+  accountRecentDecksList.innerHTML = `
+    <div class="p-6 text-center text-slate-400">
+      <div class="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+      <p class="text-xs text-slate-500">Đang đồng bộ danh sách thiết kế từ máy chủ...</p>
+    </div>
+  `;
 
-  const decks = [];
+  const user = getCurrentUser();
+  const decksMap = new Map();
 
-  // 1. Bài hiện tại (nếu có)
-  if (currentDeck && currentDeck.designId) {
-    decks.push({
-      id: currentDeck.designId,
-      token: currentDeck.editToken || 'token',
-      title: currentDeck.filename || "Bài thuyết trình hiện tại",
-      slidesCount: (currentDeck.slides || []).length || 1,
-      badge: "Đang mở",
-      badgeColor: "bg-emerald-100 text-emerald-700",
-      deckObj: currentDeck
-    });
+  // 1. Quét từ SQLite Database của server nếu người dùng đã đăng nhập
+  if (user && user.email) {
+    try {
+      const res = await fetch(`/api/users/${encodeURIComponent(user.email)}/designs`);
+      if (res.ok) {
+        const data = await res.json();
+        const dbDesigns = data.designs || [];
+        dbDesigns.forEach(d => {
+          decksMap.set(d.design_id, {
+            id: d.design_id,
+            token: d.edit_token || 'token',
+            title: d.title || "Bài thuyết trình",
+            slidesCount: d.slide_count || 1,
+            badge: (currentDeck && currentDeck.designId === d.design_id) ? "Đang mở" : "Đám mây",
+            badgeColor: (currentDeck && currentDeck.designId === d.design_id) ? "bg-emerald-100 text-emerald-700" : "bg-purple-100 text-purple-700",
+            fromDb: true
+          });
+        });
+      }
+    } catch (e) {
+      console.warn("Failed to fetch user designs from DB:", e);
+    }
   }
 
-  // 2. Quét từ LocalStorage
+  // 2. Bài hiện tại (nếu có)
+  if (currentDeck && currentDeck.designId) {
+    if (!decksMap.has(currentDeck.designId)) {
+      decksMap.set(currentDeck.designId, {
+        id: currentDeck.designId,
+        token: currentDeck.editToken || 'token',
+        title: (deckTitleInput && deckTitleInput.value.trim()) || currentDeck.filename || "Bài thuyết trình hiện tại",
+        slidesCount: (currentDeck.slides || []).length || 1,
+        badge: "Đang mở",
+        badgeColor: "bg-emerald-100 text-emerald-700",
+        deckObj: currentDeck
+      });
+    }
+  }
+
+  // 3. Quét từ LocalStorage (bộ nhớ tạm của trình duyệt)
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && key.startsWith('deck_') && !key.endsWith('_backup')) {
+    if (key && (key.startsWith('canva_design_') || (key.startsWith('deck_') && !key.endsWith('_backup')))) {
       try {
         const item = JSON.parse(localStorage.getItem(key));
-        if (item && item.designId && (!currentDeck || currentDeck.designId !== item.designId)) {
-          decks.push({
+        if (item && item.designId && !decksMap.has(item.designId)) {
+          decksMap.set(item.designId, {
             id: item.designId,
             token: item.editToken || 'token',
             title: item.filename || "Bài thuyết trình đã lưu",
             slidesCount: (item.slides || []).length || 1,
-            badge: "Đã lưu",
+            badge: "Cục bộ",
             badgeColor: "bg-slate-100 text-slate-600",
             deckObj: item
           });
@@ -1678,6 +2047,9 @@ function renderRecentDecksInAccountPage() {
       } catch (e) {}
     }
   }
+
+  const decks = Array.from(decksMap.values());
+  accountRecentDecksList.innerHTML = '';
 
   if (decks.length === 0) {
     accountRecentDecksList.innerHTML = `
@@ -1713,9 +2085,37 @@ function renderRecentDecksInAccountPage() {
         <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
       </button>
     `;
-    itemEl.addEventListener('click', () => {
+    itemEl.addEventListener('click', async () => {
       closeAccountPage();
-      setupDeck(d.deckObj, false, `Đã mở: ${d.title}`);
+      if (d.deckObj) {
+        setupDeck(d.deckObj, true, `Đã mở: ${d.title}`);
+      } else {
+        showLoader(`Đang nạp "${d.title}" từ máy chủ...`);
+        try {
+          const res = await fetch(`/api/designs/${d.id}`);
+          if (res.ok) {
+            const dbData = await res.json();
+            const deck = {
+              id: dbData.design_id,
+              designId: dbData.design_id,
+              editToken: dbData.edit_token || d.token,
+              filename: dbData.title,
+              slides: dbData.slides || [],
+              customFonts: dbData.customFonts || [],
+              slideCount: dbData.slide_count || (dbData.slides ? dbData.slides.length : 1),
+              shareAccessLevel: dbData.share_access_level || 'private',
+              sharedMembers: dbData.sharedMembers || []
+            };
+            setupDeck(deck, true, `Đã mở: ${deck.filename}`);
+          } else {
+            showToast("Không tìm thấy bài thiết kế trên máy chủ", true);
+          }
+        } catch (err) {
+          showToast("Lỗi khi tải bài: " + err.message, true);
+        } finally {
+          hideLoader();
+        }
+      }
     });
     accountRecentDecksList.appendChild(itemEl);
   });
@@ -1737,6 +2137,16 @@ window.addEventListener('popstate', (e) => {
     return;
   }
 
+  if (window.location.pathname === '/projects' || window.location.pathname === '/projects/') {
+    openProjectsPage('upload');
+    return;
+  }
+
+  if (projectsPageView && !projectsPageView.classList.contains('hidden')) {
+    closeProjectsPage();
+    return;
+  }
+
   if (e.state && e.state.designId) {
     const deck = getDeckFromLocalStorage(e.state.designId);
     if (deck) {
@@ -1749,7 +2159,13 @@ window.addEventListener('popstate', (e) => {
 async function initAppRouting() {
   const path = window.location.pathname;
 
-  // 1. Kiểm tra route /account
+  // 1. Kiểm tra route /projects
+  if (path === '/projects' || path === '/projects/') {
+    openProjectsPage('upload');
+    return;
+  }
+
+  // 2. Kiểm tra route /account
   if (path === '/account' || path === '/account/') {
     const user = getCurrentUser();
     if (user) {
@@ -1760,23 +2176,56 @@ async function initAppRouting() {
     }
   }
 
-  // 2. Match /design/:designId/:editToken/edit
-  const match = path.match(/^\/design\/([A-Za-z0-9_-]+)\/([A-Za-z0-9_-]+)\/edit\/?$/);
+  // 2. Match /design/:designId/:editToken/(edit|view)?
+  const match = path.match(/^\/design\/([A-Za-z0-9_-]+)\/([A-Za-z0-9_-]+)(?:\/(edit|view))?\/?$/);
 
   if (match) {
     const designId = match[1];
     const editToken = match[2];
 
-    // 1. Try local storage first
+    showLoader("Đang tải bài thiết kế từ máy chủ...");
+
+    // Bước 1: Thử tải trực tiếp từ SQLite Database trung tâm
+    try {
+      const res = await fetch(`/api/designs/${designId}`);
+      if (res.ok) {
+        const dbData = await res.json();
+        if (dbData && dbData.design_id) {
+          const deck = {
+            id: dbData.design_id,
+            designId: dbData.design_id,
+            editToken: dbData.edit_token || editToken,
+            filename: dbData.title || "Thiết kế không tên - Bài thuyết trình",
+            slides: dbData.slides || [],
+            customFonts: dbData.customFonts || [],
+            slideCount: dbData.slide_count || (dbData.slides ? dbData.slides.length : 1),
+            shareAccessLevel: dbData.share_access_level || 'private',
+            sharedMembers: dbData.sharedMembers || [],
+            owner: {
+              id: dbData.owner_id,
+              name: dbData.owner_name,
+              email: dbData.owner_email
+            }
+          };
+          saveDeckToLocalStorage(deck);
+          setupDeck(deck, false, `Đã mở bài thiết kế: ${deck.filename}`);
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Could not fetch design from server DB:", err);
+    }
+
+    // Bước 2: Thử lấy từ bộ nhớ LocalStorage của trình duyệt này
     const cachedDeck = getDeckFromLocalStorage(designId);
     if (cachedDeck) {
       cachedDeck.editToken = editToken;
       setupDeck(cachedDeck, false, `Đã mở lại bài thiết kế: ${designId}`);
+      apiSaveDeck(cachedDeck, false);
       return;
     }
 
-    // 2. Fetch starter demo deck from backend
-    showLoader("Đang tải bài thiết kế...");
+    // Bước 3: Nếu chưa có ở cả 2 nơi: Khởi tạo từ file demo mẫu và lưu ngay vào Database
     try {
       const res = await fetch('/api/demo/sample', { method: 'POST' });
       if (res.ok) {
@@ -1784,6 +2233,7 @@ async function initAppRouting() {
         data.designId = designId;
         data.editToken = editToken;
         setupDeck(data, false, `Đã mở bài thiết kế: ${designId}`);
+        apiSaveDeck(data, false);
       } else {
         createNewBlankPresentation();
       }
@@ -1794,9 +2244,6 @@ async function initAppRouting() {
     }
   }
 }
-
-// Run routing check
-initAppRouting();
 
 // --- 15. GOOGLE AUTHENTICATION MODULE ---
 function loginWithGoogle() {
@@ -2016,18 +2463,9 @@ function toggleShareDesignDropdown() {
   const isHidden = shareDesignDropdown.classList.contains('hidden');
 
   if (isHidden) {
-    // Đóng các dropdown khác nếu đang mở
     if (userDropdownMenu) userDropdownMenu.classList.add('hidden');
     if (uploadUserDropdownMenu) uploadUserDropdownMenu.classList.add('hidden');
-
-    // Cập nhật thông tin chủ sở hữu
-    renderShareOwnerInfo();
-    // Render danh sách thành viên đã mời
-    renderDynamicSharedMembers();
-    // Cập nhật hiển thị quyền hiện tại
-    const currentLevel = (currentDeck && currentDeck.shareAccessLevel) ? currentDeck.shareAccessLevel : 'private';
-    updateAccessLevelUI(currentLevel);
-
+    renderShareModalUI();
     shareDesignDropdown.classList.remove('hidden');
   } else {
     shareDesignDropdown.classList.add('hidden');
@@ -2036,70 +2474,191 @@ function toggleShareDesignDropdown() {
   if (window.lucide) lucide.createIcons();
 }
 
-function renderShareOwnerInfo() {
+function renderShareModalUI() {
+  if (!currentDeck) return;
   const user = getCurrentUser();
-  if (user && user.picture) {
-    if (shareOwnerAvatarImg) {
-      shareOwnerAvatarImg.src = user.picture;
-      shareOwnerAvatarImg.classList.remove('hidden');
+  const perms = getDesignPermissions(currentDeck, user);
+
+  // 1. Role Status Banner
+  if (shareRoleStatusBanner) {
+    if (perms.isOwner) {
+      shareRoleStatusBanner.className = "mb-3.5 p-2.5 rounded-xl text-xs flex items-center gap-2 font-medium bg-purple-50 border border-purple-200 text-purple-900";
+      shareRoleStatusBanner.innerHTML = `
+        <i data-lucide="crown" class="w-4 h-4 text-purple-600 shrink-0"></i>
+        <span>Bạn là <strong>Chủ sở hữu</strong> bài thiết kế này (toàn quyền quản trị).</span>
+      `;
+    } else if (perms.canEdit) {
+      shareRoleStatusBanner.className = "mb-3.5 p-2.5 rounded-xl text-xs flex items-center gap-2 font-medium bg-emerald-50 border border-emerald-200 text-emerald-900";
+      shareRoleStatusBanner.innerHTML = `
+        <i data-lucide="edit-3" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+        <span>Bạn có quyền <strong>Chỉnh sửa</strong> nội dung bài thiết kế này.</span>
+      `;
+    } else {
+      shareRoleStatusBanner.className = "mb-3.5 p-2.5 rounded-xl text-xs flex items-center gap-2 font-medium bg-amber-50 border border-amber-200 text-amber-900";
+      shareRoleStatusBanner.innerHTML = `
+        <i data-lucide="eye" class="w-4 h-4 text-amber-600 shrink-0"></i>
+        <span>Bạn đang xem bài thiết kế này ở chế độ <strong>Chỉ đọc</strong>.</span>
+      `;
     }
-    if (shareOwnerInitial) shareOwnerInitial.classList.add('hidden');
-    if (shareOwnerAvatarContainer) shareOwnerAvatarContainer.title = `Chủ sở hữu: ${user.name || user.email}`;
-  } else if (user && user.name) {
-    if (shareOwnerAvatarImg) shareOwnerAvatarImg.classList.add('hidden');
-    if (shareOwnerInitial) {
-      shareOwnerInitial.textContent = user.name.charAt(0).toUpperCase();
-      shareOwnerInitial.classList.remove('hidden');
-    }
-    if (shareOwnerAvatarContainer) shareOwnerAvatarContainer.title = `Chủ sở hữu: ${user.name}`;
-  } else {
-    if (shareOwnerAvatarImg) shareOwnerAvatarImg.classList.add('hidden');
-    if (shareOwnerInitial) {
-      shareOwnerInitial.textContent = 'T';
-      shareOwnerInitial.classList.remove('hidden');
-    }
-    if (shareOwnerAvatarContainer) shareOwnerAvatarContainer.title = "Chủ sở hữu";
   }
+
+  // 2. Mời người (chỉ Chủ sở hữu mới được mời)
+  if (shareInviteSection && shareGuestNotice) {
+    if (perms.isOwner) {
+      shareInviteSection.classList.remove('hidden');
+      shareGuestNotice.classList.add('hidden');
+    } else {
+      shareInviteSection.classList.add('hidden');
+      shareGuestNotice.classList.remove('hidden');
+    }
+  }
+
+  // 3. Render danh sách thành viên chi tiết
+  renderDetailedMembersList(perms);
+
+  // 4. Cấp độ truy cập
+  updateAccessLevelUI(perms.accessLevel, perms.isOwner);
+  if (accessLevelMenu) accessLevelMenu.classList.add('hidden');
+
+  if (window.lucide) lucide.createIcons();
 }
 
-function renderDynamicSharedMembers() {
-  if (!dynamicSharedMembers) return;
-  dynamicSharedMembers.innerHTML = '';
+function renderDetailedMembersList(perms) {
+  if (!shareMembersDetailedList) return;
+  shareMembersDetailedList.innerHTML = '';
 
-  const members = (currentDeck && Array.isArray(currentDeck.sharedMembers)) ? currentDeck.sharedMembers : [];
-  const bgColors = ['bg-blue-600', 'bg-emerald-600', 'bg-purple-600', 'bg-pink-600', 'bg-orange-600', 'bg-cyan-600'];
+  const owner = currentDeck.owner || {};
+  const ownerName = owner.name || currentDeck.ownerName || currentDeck.owner_name || "Chủ sở hữu";
+  const ownerEmail = owner.email || currentDeck.ownerEmail || currentDeck.owner_email || "";
+  const ownerPic = owner.picture || "";
+  const ownerInitial = (ownerName || ownerEmail || 'C').charAt(0).toUpperCase();
 
+  const members = Array.isArray(currentDeck.sharedMembers) ? currentDeck.sharedMembers : [];
+  if (shareMembersCountBadge) {
+    shareMembersCountBadge.textContent = 1 + members.length;
+  }
+
+  // --- Dòng 1: CHỦ SỞ HỮU ---
+  const ownerEl = document.createElement('div');
+  ownerEl.className = "flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100 hover:bg-slate-100/60 transition";
+
+  let ownerAvatarHtml = '';
+  if (ownerPic) {
+    ownerAvatarHtml = `<img src="${escapeHtml(ownerPic)}" class="w-8 h-8 rounded-full object-cover border border-white shadow-sm shrink-0" />`;
+  } else {
+    ownerAvatarHtml = `<div class="w-8 h-8 rounded-full bg-purple-700 text-white font-bold text-xs flex items-center justify-center border border-white shadow-sm shrink-0">${escapeHtml(ownerInitial)}</div>`;
+  }
+
+  ownerEl.innerHTML = `
+    <div class="flex items-center gap-2.5 overflow-hidden">
+      ${ownerAvatarHtml}
+      <div class="overflow-hidden">
+        <p class="font-bold text-slate-800 text-xs truncate">${escapeHtml(ownerName)}</p>
+        <p class="text-[10px] text-slate-400 truncate">${escapeHtml(ownerEmail || 'Tài khoản tạo bài')}</p>
+      </div>
+    </div>
+    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 shrink-0">
+      Chủ sở hữu
+    </span>
+  `;
+  shareMembersDetailedList.appendChild(ownerEl);
+
+  // --- Dòng 2..n: CỘNG TÁC VIÊN ĐƯỢC MỜI ---
   members.forEach((m, idx) => {
-    const color = bgColors[idx % bgColors.length];
-    const initial = (m.name || m.email || '?').charAt(0).toUpperCase();
+    const memberName = m.name || (m.email ? m.email.split('@')[0] : 'Cộng tác viên');
+    const memberEmail = m.email || '';
+    const initial = (memberName || '?').charAt(0).toUpperCase();
+    const role = m.role || 'editor';
 
-    const div = document.createElement('div');
-    div.className = `relative group/member w-8 h-8 rounded-full ${color} text-white font-bold text-xs flex items-center justify-center border-2 border-white shadow-sm cursor-pointer select-none transition transform hover:scale-105`;
-    div.title = `${m.email || m.name} (Có quyền truy cập)`;
-    div.innerHTML = `
-      <span>${escapeHtml(initial)}</span>
-      <button class="remove-member-btn absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-600 text-white flex items-center justify-center text-[10px] opacity-0 group-hover/member:opacity-100 transition shadow leading-none" title="Xóa quyền truy cập">
-        ×
-      </button>
-    `;
+    const mEl = document.createElement('div');
+    mEl.className = "flex items-center justify-between p-2 rounded-xl bg-white border border-slate-200 hover:border-purple-200 transition";
 
-    const removeBtn = div.querySelector('.remove-member-btn');
-    if (removeBtn) {
-      removeBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        removeShareMember(idx);
-      });
+    let roleControlHtml = '';
+    if (perms.isOwner) {
+      roleControlHtml = `
+        <div class="flex items-center gap-1.5 shrink-0">
+          <select class="member-role-select bg-slate-50 border border-slate-200 text-slate-700 text-[11px] rounded-lg px-2 py-1 outline-none font-medium focus:border-purple-400 cursor-pointer" data-index="${idx}">
+            <option value="editor" ${role === 'editor' ? 'selected' : ''}>Chỉnh sửa</option>
+            <option value="viewer" ${role === 'viewer' ? 'selected' : ''}>Chỉ xem</option>
+          </select>
+          <button class="remove-collab-btn p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition cursor-pointer" title="Xóa quyền truy cập" data-index="${idx}">
+            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      `;
+    } else {
+      const badgeStyle = role === 'editor' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600';
+      const roleText = role === 'editor' ? 'Chỉnh sửa' : 'Chỉ xem';
+      roleControlHtml = `
+        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${badgeStyle} shrink-0">
+          ${roleText}
+        </span>
+      `;
     }
 
-    dynamicSharedMembers.appendChild(div);
+    mEl.innerHTML = `
+      <div class="flex items-center gap-2.5 overflow-hidden">
+        <div class="w-8 h-8 rounded-full bg-cyan-700 text-white font-bold text-xs flex items-center justify-center border border-white shadow-sm shrink-0">
+          ${escapeHtml(initial)}
+        </div>
+        <div class="overflow-hidden">
+          <p class="font-bold text-slate-800 text-xs truncate">${escapeHtml(memberName)}</p>
+          <p class="text-[10px] text-slate-400 truncate">${escapeHtml(memberEmail)}</p>
+        </div>
+      </div>
+      ${roleControlHtml}
+    `;
+
+    if (perms.isOwner) {
+      const select = mEl.querySelector('.member-role-select');
+      if (select) {
+        select.addEventListener('change', (e) => {
+          e.stopPropagation();
+          changeMemberRole(idx, select.value);
+        });
+      }
+      const removeBtn = mEl.querySelector('.remove-collab-btn');
+      if (removeBtn) {
+        removeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          removeShareMember(idx);
+        });
+      }
+    }
+
+    shareMembersDetailedList.appendChild(mEl);
   });
+}
+
+function changeMemberRole(index, newRole) {
+  if (!currentDeck || !currentDeck.sharedMembers || !currentDeck.sharedMembers[index]) return;
+  currentDeck.sharedMembers[index].role = newRole;
+  const memberEmail = currentDeck.sharedMembers[index].email;
+  saveDeck(currentDeck, true);
+
+  if (memberEmail) {
+    fetch(`/api/designs/${currentDeck.designId}/collaborators`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: memberEmail,
+        name: currentDeck.sharedMembers[index].name,
+        role: newRole
+      })
+    }).then(() => {
+      showToast(`Đã đổi quyền của ${memberEmail} sang: ${newRole === 'editor' ? 'Chỉnh sửa' : 'Chỉ xem'}`);
+      renderShareModalUI();
+    }).catch(err => {
+      showToast("Lỗi khi cập nhật quyền: " + err.message, true);
+    });
+  }
 }
 
 function addShareMemberFromInput() {
   if (!inputShareMemberEmail) return;
   const value = inputShareMemberEmail.value.trim();
   if (!value) {
-    showToast("Vui lòng nhập email hoặc tên người muốn thêm", true);
+    showToast("Vui lòng nhập email người muốn thêm", true);
     inputShareMemberEmail.focus();
     return;
   }
@@ -2109,64 +2668,117 @@ function addShareMemberFromInput() {
     return;
   }
 
+  const role = selectShareRole ? selectShareRole.value : 'editor';
   currentDeck.sharedMembers = currentDeck.sharedMembers || [];
 
-  // Tránh thêm trùng
-  const exists = currentDeck.sharedMembers.some(m => m.email && m.email.toLowerCase() === value.toLowerCase());
-  if (exists) {
-    showToast(`Thành viên ${value} đã có trong danh sách!`, true);
-    return;
+  const existsIdx = currentDeck.sharedMembers.findIndex(m => m.email && m.email.toLowerCase() === value.toLowerCase());
+  if (existsIdx >= 0) {
+    currentDeck.sharedMembers[existsIdx].role = role;
+    showToast(`Đã cập nhật quyền của ${value} thành: ${role === 'editor' ? 'Chỉnh sửa' : 'Chỉ xem'}`);
+  } else {
+    currentDeck.sharedMembers.push({
+      email: value,
+      name: value.split('@')[0],
+      role: role,
+      addedAt: new Date().toISOString()
+    });
+    showToast(`Đã cấp quyền (${role === 'editor' ? 'Chỉnh sửa' : 'Chỉ xem'}) cho ${value}!`);
   }
 
-  currentDeck.sharedMembers.push({
-    email: value,
-    name: value.split('@')[0],
-    role: 'editor',
-    addedAt: new Date().toISOString()
-  });
-
-  saveDeckToLocalStorage(currentDeck);
-  renderDynamicSharedMembers();
+  saveDeck(currentDeck, true);
+  renderShareModalUI();
   inputShareMemberEmail.value = '';
-  showToast(`Đã cấp quyền truy cập cho ${value}!`);
+
+  fetch(`/api/designs/${currentDeck.designId}/collaborators`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: value, name: value.split('@')[0], role: role })
+  }).catch(() => {});
 }
 
 function removeShareMember(index) {
   if (!currentDeck || !currentDeck.sharedMembers) return;
   const removed = currentDeck.sharedMembers.splice(index, 1);
-  saveDeckToLocalStorage(currentDeck);
-  renderDynamicSharedMembers();
+  saveDeck(currentDeck, true);
+  renderShareModalUI();
   if (removed && removed[0]) {
-    showToast(`Đã thu hồi quyền truy cập của ${removed[0].email || removed[0].name}`);
+    const memberEmail = removed[0].email || removed[0].name;
+    showToast(`Đã thu hồi quyền truy cập của ${memberEmail}`);
+    if (removed[0].email) {
+      fetch(`/api/designs/${currentDeck.designId}/collaborators`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: removed[0].email })
+      }).catch(() => {});
+    }
   }
 }
 
-function updateAccessLevelUI(level) {
+function updateAccessLevelUI(level, isOwner = true) {
   if (!accessLevelText || !accessLevelIcon) return;
 
   if (level === 'view') {
     accessLevelText.textContent = "Bất kỳ ai có liên kết đều có thể xem";
+    if (accessLevelSubText) accessLevelSubText.textContent = "Không cần đăng nhập, chỉ xem chế độ trình chiếu";
     accessLevelIcon.setAttribute('data-lucide', 'eye');
+    if (accessLevelIconWrapper) {
+      accessLevelIconWrapper.className = "w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shrink-0";
+    }
   } else if (level === 'edit') {
     accessLevelText.textContent = "Bất kỳ ai có liên kết đều có thể chỉnh sửa";
+    if (accessLevelSubText) accessLevelSubText.textContent = "Mọi người có liên kết đều có toàn quyền sửa đổi";
     accessLevelIcon.setAttribute('data-lucide', 'edit-3');
+    if (accessLevelIconWrapper) {
+      accessLevelIconWrapper.className = "w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0";
+    }
   } else {
-    accessLevelText.textContent = "Chỉ bạn mới có quyền truy cập";
+    accessLevelText.textContent = "Chỉ bạn và người được thêm mới có quyền truy cập";
+    if (accessLevelSubText) accessLevelSubText.textContent = "Chỉ thành viên được mời mới có thể mở liên kết này";
     accessLevelIcon.setAttribute('data-lucide', 'lock');
+    if (accessLevelIconWrapper) {
+      accessLevelIconWrapper.className = "w-8 h-8 rounded-full bg-slate-200/70 flex items-center justify-center text-slate-700 shrink-0";
+    }
   }
+
+  if (accessLevelSelector) {
+    if (isOwner) {
+      accessLevelSelector.classList.remove('opacity-75', 'cursor-default');
+      accessLevelSelector.classList.add('cursor-pointer');
+      if (accessLevelChevron) accessLevelChevron.classList.remove('hidden');
+      if (accessLevelDisabledNote) accessLevelDisabledNote.classList.add('hidden');
+    } else {
+      accessLevelSelector.classList.add('opacity-75', 'cursor-default');
+      accessLevelSelector.classList.remove('cursor-pointer');
+      if (accessLevelChevron) accessLevelChevron.classList.add('hidden');
+      if (accessLevelDisabledNote) accessLevelDisabledNote.classList.remove('hidden');
+    }
+  }
+
   if (window.lucide) lucide.createIcons();
 }
 
 function setAccessLevel(level) {
+  const user = getCurrentUser();
+  const perms = getDesignPermissions(currentDeck, user);
+  if (!perms.isOwner) {
+    showToast("Chỉ chủ sở hữu mới có quyền thay đổi cấp độ truy cập này", true);
+    return;
+  }
+
   if (currentDeck) {
     currentDeck.shareAccessLevel = level;
-    saveDeckToLocalStorage(currentDeck);
+    saveDeck(currentDeck, true);
+    fetch(`/api/designs/${currentDeck.designId}/access-level`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ accessLevel: level })
+    }).catch(() => {});
   }
-  updateAccessLevelUI(level);
+  updateAccessLevelUI(level, true);
   if (accessLevelMenu) accessLevelMenu.classList.add('hidden');
 
   const labels = {
-    'private': 'Chỉ bạn mới có quyền truy cập',
+    'private': 'Chỉ bạn và người được thêm mới có quyền truy cập',
     'view': 'Bất kỳ ai có liên kết đều có thể xem',
     'edit': 'Bất kỳ ai có liên kết đều có thể chỉnh sửa'
   };
@@ -2241,16 +2853,15 @@ if (inputShareMemberEmail) {
   });
 }
 
-if (btnTriggerAddMember) {
-  btnTriggerAddMember.addEventListener('click', (e) => {
-    e.stopPropagation();
-    if (inputShareMemberEmail) inputShareMemberEmail.focus();
-  });
-}
-
 if (accessLevelSelector) {
   accessLevelSelector.addEventListener('click', (e) => {
     e.stopPropagation();
+    const user = getCurrentUser();
+    const perms = getDesignPermissions(currentDeck, user);
+    if (!perms.isOwner) {
+      showToast("Chỉ chủ sở hữu mới có quyền thay đổi cấp độ truy cập này", true);
+      return;
+    }
     if (accessLevelMenu) accessLevelMenu.classList.toggle('hidden');
   });
 }
@@ -2269,3 +2880,978 @@ if (btnCopyShareLinkModal) {
     copyShareLinkModal();
   });
 }
+
+// Access Denied Listeners
+if (btnDeniedLoginGoogle) {
+  btnDeniedLoginGoogle.addEventListener('click', () => {
+    loginWithGoogle();
+  });
+}
+
+if (btnDeniedGoHome) {
+  btnDeniedGoHome.addEventListener('click', () => {
+    window.location.href = '/';
+  });
+}
+
+// --- 17. REAL-TIME MULTI-USER COLLABORATION PRESENCE ---
+let presenceHeartbeatTimer = null;
+let presenceBroadcastChannel = null;
+let localCollaboratorsMap = new Map(); // Lưu trữ danh sách cộng tác viên từ BroadcastChannel
+
+function getOrCreateTabSessionId() {
+  let sId = sessionStorage.getItem('ppt_tab_session_id');
+  if (!sId) {
+    sId = 'sess_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36).slice(-4);
+    sessionStorage.setItem('ppt_tab_session_id', sId);
+  }
+  return sId;
+}
+
+const currentTabSessionId = getOrCreateTabSessionId();
+
+function getCollaboratorColor(seed) {
+  const colors = [
+    '#7d2ae8', '#00c4cc', '#f59e0b', '#10b981', '#ec4899',
+    '#3b82f6', '#8b5cf6', '#ef4444', '#14b8a6', '#f97316'
+  ];
+  if (!seed) return colors[0];
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = seed.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+}
+
+function getMyPresencePayload() {
+  const user = getCurrentUser();
+  const userName = user ? (user.name || user.email) : `Khách (${currentTabSessionId.slice(-4)})`;
+  const userEmail = user ? (user.email || '') : '';
+  const userPic = user ? (user.picture || '') : '';
+  const userColor = getCollaboratorColor(user ? (user.email || user.name) : currentTabSessionId);
+
+  return {
+    sessionId: currentTabSessionId,
+    name: userName,
+    email: userEmail,
+    picture: userPic,
+    color: userColor
+  };
+}
+
+// Khởi tạo kênh BroadcastChannel giao tiếp tức thì giữa các tab/cửa sổ cùng trình duyệt
+function initPresenceBroadcastChannel(designId) {
+  if (presenceBroadcastChannel) {
+    try { presenceBroadcastChannel.close(); } catch (e) {}
+    presenceBroadcastChannel = null;
+  }
+  localCollaboratorsMap.clear();
+
+  if (!window.BroadcastChannel) return;
+
+  try {
+    presenceBroadcastChannel = new BroadcastChannel('ppt_presence_channel_' + designId);
+    presenceBroadcastChannel.onmessage = (event) => {
+      const data = event.data;
+      if (!data || !data.type) return;
+
+      if (data.type === 'ping') {
+        // Tab khác vừa mở, gửi lại thông tin của mình
+        if (data.sessionId !== currentTabSessionId) {
+          presenceBroadcastChannel.postMessage({
+            type: 'pong',
+            user: getMyPresencePayload()
+          });
+        }
+      } else if (data.type === 'pong' || data.type === 'heartbeat') {
+        if (data.user && data.user.sessionId !== currentTabSessionId) {
+          localCollaboratorsMap.set(data.user.sessionId, { ...data.user, lastSeen: Date.now() });
+          refreshCollaboratorsUI();
+        }
+      } else if (data.type === 'leave') {
+        if (data.sessionId) {
+          localCollaboratorsMap.delete(data.sessionId);
+          refreshCollaboratorsUI();
+        }
+      } else if (data.type === 'deck_data_sync') {
+        if (data.designId === currentDeck?.designId && data.title) {
+          if (deckTitleInput && deckTitleInput.value !== data.title) {
+            deckTitleInput.value = data.title;
+          }
+        }
+      }
+    };
+
+    // Vừa vào, phát ping và thông tin của mình
+    presenceBroadcastChannel.postMessage({ type: 'ping', sessionId: currentTabSessionId });
+    presenceBroadcastChannel.postMessage({ type: 'heartbeat', user: getMyPresencePayload() });
+  } catch (err) {
+    console.debug("BroadcastChannel error:", err);
+  }
+}
+
+async function sendPresenceHeartbeat() {
+  if (!currentDeck || !currentDeck.designId) return;
+
+  const myData = getMyPresencePayload();
+
+  // Phát tín hiệu qua BroadcastChannel cho các tab khác cùng máy nhận tức thì
+  if (presenceBroadcastChannel) {
+    try {
+      presenceBroadcastChannel.postMessage({ type: 'heartbeat', user: myData });
+    } catch (e) {}
+  }
+
+  // Dọn dẹp local collaborators quá 15 giây không ping
+  const now = Date.now();
+  for (const [sId, colab] of localCollaboratorsMap.entries()) {
+    if (now - (colab.lastSeen || 0) > 15000) {
+      localCollaboratorsMap.delete(sId);
+    }
+  }
+
+  try {
+    const res = await fetch('/api/presence/heartbeat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        designId: currentDeck.designId,
+        sessionId: currentTabSessionId,
+        user: myData
+      })
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const serverUsers = data.activeUsers || [];
+      // Hợp nhất server users vào local map
+      serverUsers.forEach(su => {
+        if (su.sessionId !== currentTabSessionId) {
+          localCollaboratorsMap.set(su.sessionId, { ...su, lastSeen: Date.now() });
+        }
+      });
+      refreshCollaboratorsUI();
+    } else {
+      refreshCollaboratorsUI();
+    }
+  } catch (err) {
+    refreshCollaboratorsUI();
+  }
+}
+
+function refreshCollaboratorsUI() {
+  const usersList = Array.from(localCollaboratorsMap.values());
+  renderActiveCollaborators(usersList);
+}
+
+function renderActiveCollaborators(otherUsersList) {
+  if (!activeCollaboratorsStack) return;
+  activeCollaboratorsStack.innerHTML = '';
+
+  const user = getCurrentUser();
+  const myData = getMyPresencePayload();
+
+  if (btnGoogleLoginHeader) {
+    if (user) {
+      btnGoogleLoginHeader.classList.add('hidden');
+    } else {
+      btnGoogleLoginHeader.classList.remove('hidden');
+    }
+  }
+
+  // 1. Luôn đưa Avatar của chính mình lên đầu tiên (Self Avatar)
+  const allUsers = [
+    { ...myData, isSelf: true },
+    ...otherUsersList.map(u => ({ ...u, isSelf: false }))
+  ];
+
+  allUsers.forEach((u, index) => {
+    const initial = (u.name || '?').charAt(0).toUpperCase();
+
+    const wrapper = document.createElement('div');
+    wrapper.className = "relative group select-none transition-transform hover:scale-110 hover:z-30 cursor-pointer";
+    wrapper.style.zIndex = 30 - index;
+
+    let avatarInner = '';
+    if (u.picture) {
+      avatarInner = `
+        <img src="${escapeHtml(u.picture)}" alt="${escapeHtml(u.name)}" 
+             class="w-7 h-7 sm:w-8 sm:h-8 rounded-full object-cover border-2 border-white shadow-md"
+             style="box-shadow: 0 0 0 2px ${u.color};" />
+      `;
+    } else {
+      avatarInner = `
+        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-white text-xs font-bold border-2 border-white shadow-md"
+             style="background-color: ${u.color}; box-shadow: 0 0 0 2px ${u.color};">
+          ${escapeHtml(initial)}
+        </div>
+      `;
+    }
+
+    // Chấm xanh Online ở góc dưới avatar
+    const onlineBadge = `
+      <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
+    `;
+
+    // Tooltip tên người dùng khi hover (Canva Presence Tooltip)
+    const tooltip = `
+      <div class="absolute top-full mt-2 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900/95 text-white text-[11px] font-semibold py-1 px-2.5 rounded-lg shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition duration-150 z-50 flex items-center gap-1.5 border border-slate-700/80">
+        <span class="w-2 h-2 rounded-full" style="background-color: ${u.color}"></span>
+        <span>${escapeHtml(u.name)}</span>
+        <span class="text-slate-400 font-normal">${u.isSelf ? '(Bạn)' : '(Đang xem)'}</span>
+      </div>
+    `;
+
+    wrapper.innerHTML = avatarInner + onlineBadge + tooltip;
+
+    // Click vào Avatar
+    wrapper.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (u.isSelf) {
+        if (user) {
+          if (userDropdownMenu) userDropdownMenu.classList.toggle('hidden');
+        } else {
+          loginWithGoogle();
+        }
+      } else {
+        showToast(`${u.name} đang cùng xem & chỉnh sửa bài thiết kế này`);
+      }
+    });
+
+    activeCollaboratorsStack.appendChild(wrapper);
+  });
+}
+
+function startPresenceHeartbeat() {
+  // Chỉ xóa timer cũ, KHÔNG gửi leave
+  if (presenceHeartbeatTimer) {
+    clearInterval(presenceHeartbeatTimer);
+    presenceHeartbeatTimer = null;
+  }
+
+  if (currentDeck && currentDeck.designId) {
+    // Khởi tạo kênh BroadcastChannel thời gian thực tức thì cho design này
+    initPresenceBroadcastChannel(currentDeck.designId);
+  }
+
+  // Render ngay tức thì avatar của chính mình để header không bao giờ bị rỗng
+  refreshCollaboratorsUI();
+
+  // Gửi heartbeat ngay lập tức
+  sendPresenceHeartbeat();
+
+  // Chu kỳ gửi lại mỗi 2 giây
+  presenceHeartbeatTimer = setInterval(sendPresenceHeartbeat, 2000);
+}
+
+function stopPresenceHeartbeat() {
+  if (presenceHeartbeatTimer) {
+    clearInterval(presenceHeartbeatTimer);
+    presenceHeartbeatTimer = null;
+  }
+
+  if (presenceBroadcastChannel) {
+    try {
+      presenceBroadcastChannel.postMessage({ type: 'leave', sessionId: currentTabSessionId });
+      presenceBroadcastChannel.close();
+    } catch (e) {}
+    presenceBroadcastChannel = null;
+  }
+
+  if (currentDeck && currentDeck.designId) {
+    const payload = JSON.stringify({ designId: currentDeck.designId, sessionId: currentTabSessionId });
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon('/api/presence/leave', payload);
+    } else {
+      fetch('/api/presence/leave', { method: 'POST', body: payload, keepalive: true }).catch(() => {});
+    }
+  }
+}
+
+// Bắt sự kiện thoát tab/trình duyệt để dọn dẹp presence
+window.addEventListener('beforeunload', stopPresenceHeartbeat);
+window.addEventListener('pagehide', stopPresenceHeartbeat);
+
+// --- 18. PROJECTS DASHBOARD MODULE (TRANG DỰ ÁN CANVA-STYLE) ---
+
+// Định dạng thời gian thân thiện (Tiếng Việt)
+function formatTimeAgoVi(dateInput) {
+  if (!dateInput) return "Gần đây";
+  const date = new Date(dateInput);
+  if (isNaN(date.getTime())) return "Gần đây";
+  
+  const now = new Date();
+  const diffSec = Math.floor((now - date) / 1000);
+  
+  if (diffSec < 60) return "Vừa xong";
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} phút trước`;
+  const diffHour = Math.floor(diffMin / 60);
+  if (diffHour < 24) return `${diffHour} giờ trước`;
+  const diffDay = Math.floor(diffHour / 24);
+  if (diffDay === 1) return "Hôm qua";
+  if (diffDay < 7) return `${diffDay} ngày trước`;
+  
+  const d = String(date.getDate()).padStart(2, '0');
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const y = date.getFullYear();
+  return `${d}/${m}/${y}`;
+}
+
+// Mở trang Dự án
+function openProjectsPage(fromView) {
+  previousViewBeforeProjects = fromView || (editorView && !editorView.classList.contains('hidden') ? 'editor' : 'upload');
+
+  // Đóng các dropdown menu đang mở
+  if (uploadUserDropdownMenu) uploadUserDropdownMenu.classList.add('hidden');
+  if (userDropdownMenu) userDropdownMenu.classList.add('hidden');
+  if (accountPageView) accountPageView.classList.add('hidden');
+
+  // Chuyển view
+  if (uploadView) uploadView.classList.add('hidden');
+  if (editorView) editorView.classList.add('hidden');
+  if (projectsPageView) projectsPageView.classList.remove('hidden');
+
+  // Cập nhật thông tin tài khoản trên header trang dự án
+  const user = getCurrentUser();
+  if (user) {
+    if (projectsUserAvatar) projectsUserAvatar.src = user.picture || 'https://www.gravatar.com/avatar?d=mp';
+    if (projectsUserName) projectsUserName.textContent = user.name || 'Người dùng';
+  } else {
+    if (projectsUserAvatar) projectsUserAvatar.src = 'https://lh3.googleusercontent.com/a/default-user';
+    if (projectsUserName) projectsUserName.textContent = 'Khách';
+  }
+
+  // Đổi URL trên trình duyệt sang /projects
+  if (window.location.pathname !== '/projects') {
+    window.history.pushState({ page: 'projects' }, '', '/projects');
+  }
+
+  // Nạp dữ liệu dự án từ máy chủ SQLite và local
+  loadProjectsData();
+
+  if (window.lucide) lucide.createIcons();
+}
+
+// Đóng trang Dự án và quay lại view trước đó
+function closeProjectsPage() {
+  if (projectsPageView) projectsPageView.classList.add('hidden');
+
+  if (previousViewBeforeProjects === 'editor' && currentDeck && currentDeck.designId) {
+    if (editorView) editorView.classList.remove('hidden');
+    if (uploadView) uploadView.classList.add('hidden');
+    window.history.pushState({ designId: currentDeck.designId }, '', `/design/${currentDeck.designId}/${currentDeck.editToken}/edit`);
+  } else {
+    if (uploadView) uploadView.classList.remove('hidden');
+    if (editorView) editorView.classList.add('hidden');
+    window.history.pushState({}, '', '/');
+  }
+
+  if (window.lucide) lucide.createIcons();
+}
+
+// Tải dữ liệu dự án từ SQLite server & LocalStorage
+async function loadProjectsData() {
+  if (projectsLoadingState) projectsLoadingState.classList.remove('hidden');
+  if (projectsEmptyState) projectsEmptyState.classList.add('hidden');
+  if (projectsGrid) projectsGrid.innerHTML = '';
+
+  const user = getCurrentUser();
+  const projectsMap = new Map();
+
+  // 1. Quét từ SQLite Database qua API
+  try {
+    const url = user && user.email ? `/api/designs?user_email=${encodeURIComponent(user.email)}` : `/api/designs`;
+    const res = await fetch(url);
+    if (res.ok) {
+      const data = await res.json();
+      const serverDesigns = data.designs || [];
+      serverDesigns.forEach(d => {
+        projectsMap.set(d.design_id, {
+          id: d.design_id,
+          token: d.edit_token || 'token',
+          title: d.title || 'Bài thuyết trình',
+          slidesCount: d.slide_count || 1,
+          updated_at: d.updated_at || d.created_at || new Date().toISOString(),
+          created_by: d.created_by || '',
+          user_role: d.user_role || (user && d.created_by === user.email ? 'owner' : (user ? 'editor' : 'viewer')),
+          share_access_level: d.share_access_level || 'public_edit',
+          thumbnail: d.thumbnail || null,
+          fromDb: true
+        });
+      });
+    }
+  } catch (err) {
+    console.warn("Không thể tải danh sách dự án từ máy chủ:", err);
+  }
+
+  // 2. Bài hiện tại đang mở trong phiên làm việc
+  if (currentDeck && currentDeck.designId) {
+    const isOwner = !currentDeck.ownerEmail || (user && currentDeck.ownerEmail === user.email);
+    if (!projectsMap.has(currentDeck.designId)) {
+      projectsMap.set(currentDeck.designId, {
+        id: currentDeck.designId,
+        token: currentDeck.editToken || 'token',
+        title: (deckTitleInput && deckTitleInput.value.trim()) || currentDeck.filename || 'Bài thuyết trình hiện tại',
+        slidesCount: (currentDeck.slides || []).length || 1,
+        updated_at: new Date().toISOString(),
+        created_by: currentDeck.ownerEmail || (user ? user.email : ''),
+        user_role: isOwner ? 'owner' : (currentDeck.userRole || 'editor'),
+        share_access_level: currentDeck.shareAccessLevel || 'public_edit',
+        deckObj: currentDeck
+      });
+    } else {
+      const existing = projectsMap.get(currentDeck.designId);
+      existing.deckObj = currentDeck;
+      if (deckTitleInput && deckTitleInput.value.trim()) {
+        existing.title = deckTitleInput.value.trim();
+      }
+    }
+  }
+
+  // 3. Quét các bài lưu trong LocalStorage của trình duyệt
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && (key.startsWith('canva_design_') || (key.startsWith('deck_') && !key.endsWith('_backup')))) {
+      try {
+        const item = JSON.parse(localStorage.getItem(key));
+        if (item && item.designId && !projectsMap.has(item.designId)) {
+          projectsMap.set(item.designId, {
+            id: item.designId,
+            token: item.editToken || 'token',
+            title: item.filename || 'Bài thuyết trình đã lưu',
+            slidesCount: (item.slides || []).length || 1,
+            updated_at: item.savedAt || new Date().toISOString(),
+            created_by: item.ownerEmail || '',
+            user_role: (user && item.ownerEmail === user.email) ? 'owner' : 'owner',
+            share_access_level: item.shareAccessLevel || 'public_edit',
+            deckObj: item
+          });
+        }
+      } catch (e) {}
+    }
+  }
+
+  cachedProjectsList = Array.from(projectsMap.values());
+
+  // Cập nhật các huy hiệu số lượng
+  const totalCount = cachedProjectsList.length;
+  let mineCount = 0;
+  let sharedCount = 0;
+
+  cachedProjectsList.forEach(d => {
+    if (d.user_role === 'owner' || (!d.user_role && (!d.created_by || (user && d.created_by === user.email)))) {
+      mineCount++;
+    } else {
+      sharedCount++;
+    }
+  });
+
+  if (projectsTotalCountBadge) projectsTotalCountBadge.textContent = totalCount;
+  if (tabCountAll) tabCountAll.textContent = totalCount;
+  if (tabCountMine) tabCountMine.textContent = mineCount;
+  if (tabCountShared) tabCountShared.textContent = sharedCount;
+
+  if (projectsLoadingState) projectsLoadingState.classList.add('hidden');
+
+  renderProjectsGrid();
+}
+
+// Render lưới thẻ dự án
+function renderProjectsGrid() {
+  if (!projectsGrid) return;
+  projectsGrid.innerHTML = '';
+
+  const user = getCurrentUser();
+
+  // 1. Áp dụng bộ lọc Tabs
+  let filtered = cachedProjectsList.filter(d => {
+    const isOwner = d.user_role === 'owner' || (!d.user_role && (!d.created_by || (user && d.created_by === user.email)));
+    if (currentProjectsFilter === 'mine') return isOwner;
+    if (currentProjectsFilter === 'shared') return !isOwner;
+    return true; // 'all'
+  });
+
+  // 2. Áp dụng tìm kiếm
+  if (currentProjectsSearch.trim()) {
+    const q = currentProjectsSearch.toLowerCase().trim();
+    filtered = filtered.filter(d => (d.title || '').toLowerCase().includes(q));
+  }
+
+  // 3. Sắp xếp
+  filtered.sort((a, b) => {
+    if (currentProjectsSort === 'recent') {
+      return new Date(b.updated_at || 0) - new Date(a.updated_at || 0);
+    }
+    if (currentProjectsSort === 'oldest') {
+      return new Date(a.updated_at || 0) - new Date(b.updated_at || 0);
+    }
+    if (currentProjectsSort === 'name_asc') {
+      return (a.title || '').localeCompare(b.title || '');
+    }
+    if (currentProjectsSort === 'name_desc') {
+      return (b.title || '').localeCompare(a.title || '');
+    }
+    return 0;
+  });
+
+  // Kiểm tra rỗng
+  if (filtered.length === 0) {
+    if (projectsEmptyState) projectsEmptyState.classList.remove('hidden');
+    projectsGrid.classList.add('hidden');
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+
+  if (projectsEmptyState) projectsEmptyState.classList.add('hidden');
+  projectsGrid.classList.remove('hidden');
+
+  // Render từng Card
+  filtered.forEach((d, idx) => {
+    const isOwner = d.user_role === 'owner' || (!d.user_role && (!d.created_by || (user && d.created_by === user.email)));
+    const isCurrent = currentDeck && currentDeck.designId === d.id;
+    const timeText = formatTimeAgoVi(d.updated_at);
+
+    // Huy hiệu vai trò
+    let roleBadgeHtml = '';
+    if (isOwner) {
+      roleBadgeHtml = `
+        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1 shadow-sm backdrop-blur-md">
+          <i data-lucide="crown" class="w-3 h-3 text-emerald-400"></i>
+          <span>Chủ sở hữu</span>
+        </span>
+      `;
+    } else if (d.user_role === 'editor') {
+      roleBadgeHtml = `
+        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center gap-1 shadow-sm backdrop-blur-md">
+          <i data-lucide="edit-3" class="w-3 h-3 text-indigo-400"></i>
+          <span>Được sửa</span>
+        </span>
+      `;
+    } else {
+      roleBadgeHtml = `
+        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-700/60 text-slate-300 border border-slate-600/40 flex items-center gap-1 shadow-sm backdrop-blur-md">
+          <i data-lucide="eye" class="w-3 h-3 text-slate-400"></i>
+          <span>Chỉ xem</span>
+        </span>
+      `;
+    }
+
+    // Card Element
+    const card = document.createElement('div');
+    card.className = "group relative bg-[#131b2e] hover:bg-[#18233d] border border-slate-800 hover:border-purple-500/50 rounded-2xl overflow-hidden transition-all duration-200 shadow-md hover:shadow-xl hover:shadow-purple-900/15 flex flex-col cursor-pointer";
+
+    // Palette gradient ngẫu nhiên cho mockup preview slide
+    const gradients = [
+      'from-purple-900/50 via-indigo-950/40 to-slate-900',
+      'from-blue-900/50 via-cyan-950/40 to-slate-900',
+      'from-fuchsia-900/50 via-purple-950/40 to-slate-900',
+      'from-emerald-900/50 via-teal-950/40 to-slate-900',
+      'from-rose-900/50 via-slate-900 to-slate-900'
+    ];
+    const gradientClass = gradients[idx % gradients.length];
+
+    card.innerHTML = `
+      <!-- Thumbnail Preview Slide -->
+      <div class="relative h-44 bg-gradient-to-tr ${gradientClass} border-b border-slate-800/80 p-4 flex flex-col justify-between overflow-hidden">
+        <!-- Background Grid Pattern -->
+        <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#a855f7_1px,transparent_1px)] [background-size:16px_16px]"></div>
+        
+        <!-- Top Row: Badge & Current Status -->
+        <div class="relative z-10 flex items-center justify-between">
+          ${roleBadgeHtml}
+          ${isCurrent ? `
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-purple-500/30 text-purple-200 border border-purple-400/30 animate-pulse flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+              <span>Đang mở</span>
+            </span>
+          ` : ''}
+        </div>
+
+        <!-- Center: Slide Mini Mockup Content -->
+        <div class="relative z-10 my-auto text-center px-4">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mx-auto mb-2 shadow-inner group-hover:scale-110 transition duration-300">
+            <i data-lucide="presentation" class="w-5 h-5"></i>
+          </div>
+          <p class="text-xs font-semibold text-slate-200 line-clamp-1 group-hover:text-purple-200 transition">${escapeHtml(d.title)}</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">${d.slidesCount} slide</p>
+        </div>
+
+        <!-- Hover Overlay with Open Button -->
+        <div class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 backdrop-blur-xs flex items-center justify-center gap-2 z-20">
+          <button class="btn-card-open px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold shadow-lg shadow-purple-600/40 flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition duration-200">
+            <i data-lucide="play" class="w-3.5 h-3.5 fill-current"></i>
+            <span>Mở bài</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Card Footer Information -->
+      <div class="p-3.5 flex items-center justify-between gap-3 bg-[#0f1626]/80">
+        <div class="flex-1 min-w-0">
+          <h3 class="text-xs font-bold text-white truncate group-hover:text-purple-300 transition" title="${escapeHtml(d.title)}">
+            ${escapeHtml(d.title)}
+          </h3>
+          <div class="flex items-center gap-2 mt-1 text-[11px] text-slate-400">
+            <span>${d.slidesCount} trang</span>
+            <span class="text-slate-600">•</span>
+            <span>${timeText}</span>
+          </div>
+        </div>
+
+        <!-- Action 3-dots Menu Button -->
+        <div class="relative">
+          <button class="btn-project-menu p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition" title="Thao tác khác">
+            <i data-lucide="more-vertical" class="w-4 h-4"></i>
+          </button>
+
+          <!-- Dropdown Context Menu -->
+          <div class="project-action-dropdown absolute right-0 bottom-full mb-1.5 w-44 bg-slate-900 border border-slate-700/80 rounded-xl shadow-2xl py-1.5 z-40 hidden text-xs">
+            <button class="action-item-open w-full text-left px-3.5 py-2 hover:bg-purple-500/20 hover:text-purple-300 text-slate-200 flex items-center gap-2.5 transition">
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+              <span>Mở chỉnh sửa</span>
+            </button>
+            <button class="action-item-copylink w-full text-left px-3.5 py-2 hover:bg-slate-800 text-slate-200 flex items-center gap-2.5 transition">
+              <i data-lucide="link-2" class="w-3.5 h-3.5"></i>
+              <span>Sao chép liên kết</span>
+            </button>
+            <button class="action-item-duplicate w-full text-left px-3.5 py-2 hover:bg-slate-800 text-slate-200 flex items-center gap-2.5 transition">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              <span>Nhân bản bài này</span>
+            </button>
+            ${isOwner ? `
+              <div class="my-1 border-t border-slate-800"></div>
+              <button class="action-item-delete w-full text-left px-3.5 py-2 hover:bg-rose-500/20 text-rose-400 flex items-center gap-2.5 transition">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                <span>Xóa bài này</span>
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Click vào card để mở bài
+    card.addEventListener('click', (e) => {
+      // Bỏ qua nếu click vào nút 3 chấm hoặc menu dropdown
+      if (e.target.closest('.btn-project-menu') || e.target.closest('.project-action-dropdown')) {
+        return;
+      }
+      openSpecificProject(d);
+    });
+
+    // Mở popup 3 chấm
+    const btnMenu = card.querySelector('.btn-project-menu');
+    const dropdown = card.querySelector('.project-action-dropdown');
+
+    if (btnMenu && dropdown) {
+      btnMenu.addEventListener('click', (e) => {
+        e.stopPropagation();
+        // Đóng các dropdown khác trước
+        document.querySelectorAll('.project-action-dropdown').forEach(el => {
+          if (el !== dropdown) el.classList.add('hidden');
+        });
+        dropdown.classList.toggle('hidden');
+      });
+
+      // Thao tác: Mở chỉnh sửa
+      const btnActionOpen = dropdown.querySelector('.action-item-open');
+      if (btnActionOpen) {
+        btnActionOpen.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dropdown.classList.add('hidden');
+          openSpecificProject(d);
+        });
+      }
+
+      // Thao tác: Sao chép link
+      const btnActionCopy = dropdown.querySelector('.action-item-copylink');
+      if (btnActionCopy) {
+        btnActionCopy.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dropdown.classList.add('hidden');
+          const shareUrl = `${window.location.origin}/design/${d.id}/${d.token}/edit`;
+          navigator.clipboard.writeText(shareUrl).then(() => {
+            showToast("Đã sao chép liên kết bài thiết kế");
+          }).catch(() => {
+            showToast(shareUrl);
+          });
+        });
+      }
+
+      // Thao tác: Nhân bản bài này
+      const btnActionDuplicate = dropdown.querySelector('.action-item-duplicate');
+      if (btnActionDuplicate) {
+        btnActionDuplicate.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dropdown.classList.add('hidden');
+          duplicateProjectAction(d);
+        });
+      }
+
+      // Thao tác: Xóa bài
+      const btnActionDelete = dropdown.querySelector('.action-item-delete');
+      if (btnActionDelete) {
+        btnActionDelete.addEventListener('click', (e) => {
+          e.stopPropagation();
+          dropdown.classList.add('hidden');
+          openDeleteProjectConfirm(d);
+        });
+      }
+    }
+
+    projectsGrid.appendChild(card);
+  });
+
+  if (window.lucide) lucide.createIcons();
+}
+
+// Mở một bài thiết kế cụ thể từ Projects Grid
+async function openSpecificProject(d) {
+  closeProjectsPage();
+
+  if (d.deckObj) {
+    setupDeck(d.deckObj, true, `Đã mở: ${d.title}`);
+    return;
+  }
+
+  showLoader(`Đang nạp "${d.title}" từ máy chủ...`);
+  try {
+    const res = await fetch(`/api/designs/${d.id}`);
+    if (res.ok) {
+      const dbData = await res.json();
+      const deck = {
+        id: dbData.design_id,
+        designId: dbData.design_id,
+        editToken: dbData.edit_token || d.token,
+        filename: dbData.title || d.title,
+        slides: dbData.slides || [],
+        customFonts: dbData.customFonts || [],
+        slideCount: dbData.slide_count || (dbData.slides ? dbData.slides.length : 1),
+        shareAccessLevel: dbData.share_access_level || 'private',
+        sharedMembers: dbData.sharedMembers || []
+      };
+      setupDeck(deck, true, `Đã mở: ${deck.filename}`);
+    } else {
+      showToast("Không tìm thấy bài thiết kế trên máy chủ", true);
+    }
+  } catch (err) {
+    showToast("Lỗi kết nối máy chủ: " + err.message, true);
+  } finally {
+    hideLoader();
+  }
+}
+
+// Nhân bản bài thiết kế
+async function duplicateProjectAction(d) {
+  showLoader(`Đang nhân bản "${d.title}"...`);
+  try {
+    const res = await fetch(`/api/designs/${d.id}/duplicate`, {
+      method: 'POST'
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const dupTitle = (data.design && data.design.title) || data.title || "Bản sao";
+      showToast(`Đã tạo bản sao: ${dupTitle}`);
+      await loadProjectsData();
+    } else {
+      showToast("Không thể nhân bản bài thiết kế", true);
+    }
+  } catch (err) {
+    showToast("Lỗi khi nhân bản: " + err.message, true);
+  } finally {
+    hideLoader();
+  }
+}
+
+// Mở modal xác nhận xóa bài thiết kế
+function openDeleteProjectConfirm(d) {
+  pendingDeleteProject = d;
+  if (deleteProjectTargetTitle) deleteProjectTargetTitle.textContent = `"${d.title}"`;
+  if (deleteProjectModal) deleteProjectModal.classList.remove('hidden');
+}
+
+function closeDeleteProjectConfirm() {
+  pendingDeleteProject = null;
+  if (deleteProjectModal) deleteProjectModal.classList.add('hidden');
+}
+
+// Xác nhận xóa bài thiết kế
+async function executeDeleteProject() {
+  if (!pendingDeleteProject) return;
+  const targetId = pendingDeleteProject.id;
+  const targetTitle = pendingDeleteProject.title;
+  closeDeleteProjectConfirm();
+
+  showLoader(`Đang xóa bài "${targetTitle}"...`);
+  try {
+    const res = await fetch(`/api/designs/${targetId}`, {
+      method: 'DELETE'
+    });
+    if (res.ok) {
+      // Xóa khỏi localStorage nếu có
+      localStorage.removeItem(`canva_design_${targetId}`);
+      localStorage.removeItem(`deck_${targetId}`);
+
+      // Nếu đang mở chính bài này thì reset
+      if (currentDeck && currentDeck.designId === targetId) {
+        currentDeck = null;
+      }
+
+      showToast(`Đã xóa bài "${targetTitle}"`);
+      await loadProjectsData();
+    } else {
+      showToast("Không thể xóa bài thiết kế khỏi máy chủ", true);
+    }
+  } catch (err) {
+    showToast("Lỗi khi xóa bài: " + err.message, true);
+  } finally {
+    hideLoader();
+  }
+}
+
+// Bắt sự kiện Modal Xác nhận Xóa
+if (btnCancelDeleteProject) {
+  btnCancelDeleteProject.addEventListener('click', closeDeleteProjectConfirm);
+}
+if (btnConfirmDeleteProject) {
+  btnConfirmDeleteProject.addEventListener('click', executeDeleteProject);
+}
+
+// Đóng action dropdown khi click ra ngoài
+document.addEventListener('click', () => {
+  document.querySelectorAll('.project-action-dropdown').forEach(el => el.classList.add('hidden'));
+});
+
+// Bắt sự kiện chuyển sang trang Projects từ Upload screen & Editor header
+if (btnGoToProjectsFromUpload) {
+  btnGoToProjectsFromUpload.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openProjectsPage('upload');
+  });
+}
+
+if (btnGoToProjectsFromEditor) {
+  btnGoToProjectsFromEditor.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openProjectsPage('editor');
+  });
+}
+
+if (btnUploadGoToProjects) {
+  btnUploadGoToProjects.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openProjectsPage('upload');
+  });
+}
+
+if (btnMenuGoToProjects) {
+  btnMenuGoToProjects.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openProjectsPage('editor');
+  });
+}
+
+// Nút quay lại từ trang Dự Án
+if (btnProjectsBackHome) {
+  btnProjectsBackHome.addEventListener('click', closeProjectsPage);
+}
+
+// Avatar người dùng trên trang Dự Án click để sang trang Tài Khoản
+if (projectsUserBadge) {
+  projectsUserBadge.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openAccountPage('projects');
+  });
+}
+
+// Nút Refresh danh sách
+if (btnProjectsRefresh) {
+  btnProjectsRefresh.addEventListener('click', () => {
+    loadProjectsData();
+    showToast("Đã làm mới danh sách bài thiết kế");
+  });
+}
+
+// Nút Tạo bài mới trên Projects Page
+function triggerCreateNewFromProjects() {
+  closeProjectsPage();
+  createNewBlankDeck();
+}
+
+if (btnProjectsCreateNew) {
+  btnProjectsCreateNew.addEventListener('click', triggerCreateNewFromProjects);
+}
+if (btnEmptyCreateNew) {
+  btnEmptyCreateNew.addEventListener('click', triggerCreateNewFromProjects);
+}
+
+// Nút Nạp PPTX trên Projects Page
+function triggerImportPPTXFromProjects() {
+  closeProjectsPage();
+  if (fileInput) fileInput.click();
+}
+
+if (btnProjectsImportPPTX) {
+  btnProjectsImportPPTX.addEventListener('click', triggerImportPPTXFromProjects);
+}
+if (btnEmptyImportPPTX) {
+  btnEmptyImportPPTX.addEventListener('click', triggerImportPPTXFromProjects);
+}
+
+// Tìm kiếm dự án (Debounced)
+function handleProjectsSearch(value) {
+  clearTimeout(projectsSearchDebounceTimer);
+  projectsSearchDebounceTimer = setTimeout(() => {
+    currentProjectsSearch = value;
+    renderProjectsGrid();
+  }, 250);
+}
+
+if (inputProjectsSearch) {
+  inputProjectsSearch.addEventListener('input', (e) => {
+    handleProjectsSearch(e.target.value);
+  });
+}
+if (inputProjectsSearchMobile) {
+  inputProjectsSearchMobile.addEventListener('input', (e) => {
+    handleProjectsSearch(e.target.value);
+  });
+}
+
+// Bộ lọc Tabs
+function setupProjectTabs() {
+  const tabs = [
+    { btn: tabProjectsAll, filter: 'all' },
+    { btn: tabProjectsMine, filter: 'mine' },
+    { btn: tabProjectsShared, filter: 'shared' }
+  ];
+
+  tabs.forEach(({ btn, filter }) => {
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      tabs.forEach(t => {
+        if (!t.btn) return;
+        t.btn.classList.remove('active', 'bg-purple-600/20', 'text-purple-300', 'border-purple-500/30');
+        t.btn.classList.add('text-slate-400');
+      });
+      btn.classList.add('active', 'bg-purple-600/20', 'text-purple-300', 'border-purple-500/30');
+      btn.classList.remove('text-slate-400');
+
+      currentProjectsFilter = filter;
+      renderProjectsGrid();
+    });
+  });
+}
+setupProjectTabs();
+
+// Sắp xếp bài thiết kế
+if (selectProjectsSort) {
+  selectProjectsSort.addEventListener('change', (e) => {
+    currentProjectsSort = e.target.value;
+    renderProjectsGrid();
+  });
+}
+
+// Khởi chạy kiểm tra định tuyến URL ban đầu khi toàn bộ DOM & Modules đã sẵn sàng
+initAppRouting();
