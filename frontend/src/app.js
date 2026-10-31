@@ -109,7 +109,6 @@ const btnAdminUsersPrevPage = document.getElementById('btnAdminUsersPrevPage');
 const btnAdminUsersNextPage = document.getElementById('btnAdminUsersNextPage');
 
 const btnOpenCreateTemplateModal = document.getElementById('btnOpenCreateTemplateModal');
-const btnSeedDefaultTemplates = document.getElementById('btnSeedDefaultTemplates');
 const adminTemplatesCategoryFilter = document.getElementById('adminTemplatesCategoryFilter');
 const btnRefreshAdminTemplates = document.getElementById('btnRefreshAdminTemplates');
 const adminTemplatesGrid = document.getElementById('adminTemplatesGrid');
@@ -5621,20 +5620,6 @@ if (btnRefreshAdminTemplates) {
   });
 }
 
-if (btnSeedDefaultTemplates) {
-  btnSeedDefaultTemplates.addEventListener('click', async () => {
-    if (!confirm('Khôi phục 10 mẫu mặc định ban đầu vào hệ thống?')) return;
-    try {
-      const seedRes = await authAdminFetch('/api/admin/templates/seed', { method: 'POST' });
-      if (seedRes.ok) {
-        showToast('Đã khôi phục kho mẫu tiêu chuẩn thành công!');
-        loadAdminTemplates();
-      }
-    } catch (e) {
-      showToast('Lỗi khôi phục mẫu', true);
-    }
-  });
-}
 
 // Modal Thêm / Sửa Template
 function openEditTemplateModal(tmpl = null) {
