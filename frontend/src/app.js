@@ -17,7 +17,6 @@ const homeUserNameText = document.getElementById('homeUserNameText');
 const homeUserEmailText = document.getElementById('homeUserEmailText');
 const btnHomeContinue = document.getElementById('btnHomeContinue');
 const btnHomeContinueAnother = document.getElementById('btnHomeContinueAnother');
-const btnHomeRemoveAccount = document.getElementById('btnHomeRemoveAccount');
 const btnHomeGoogleLogin = document.getElementById('btnHomeGoogleLogin');
 const btnHomeTryImport = document.getElementById('btnHomeTryImport');
 const btnHomeTryBlank = document.getElementById('btnHomeTryBlank');
@@ -3968,13 +3967,6 @@ if (btnHomeContinue) {
 if (btnHomeContinueAnother) {
   btnHomeContinueAnother.addEventListener('click', () => {
     loginWithGoogle();
-  });
-}
-
-// Nút "Remove accounts" (Đăng xuất)
-if (btnHomeRemoveAccount) {
-  btnHomeRemoveAccount.addEventListener('click', () => {
-    logoutGoogle();
   });
 }
 
