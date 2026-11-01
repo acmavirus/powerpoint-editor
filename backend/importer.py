@@ -381,6 +381,43 @@ class PPTXImporter:
         else:
             logger.error(f"No PDF file found in {deck_output_dir} after LibreOffice conversion.")
 
+        # 5. Generate Clean Background Layer (Textless) for True In-place Canva Editing
+        try:
+            clean_prs = Presentation(pptx_path)
+            for s in clean_prs.slides:
+                for shp in s.shapes:
+                    self._clear_shape_text(shp)
+
+            clean_pptx_name = f"{deck_id}_clean_bg.pptx"
+            clean_pptx_path = os.path.join(deck_output_dir, clean_pptx_name)
+            clean_prs.save(clean_pptx_path)
+
+            self._convert_pptx_to_pdf(clean_pptx_path, deck_output_dir)
+            clean_pdf_name = f"{deck_id}_clean_bg.pdf"
+            clean_pdf_path = os.path.join(deck_output_dir, clean_pdf_name)
+
+            if os.path.exists(clean_pdf_path):
+                bg_pdf_doc = pymupdf.open(clean_pdf_path)
+                for page_idx in range(len(bg_pdf_doc)):
+                    if page_idx < len(slides_data):
+                        bg_page = bg_pdf_doc[page_idx]
+                        bg_pix = bg_page.get_pixmap(dpi=150)
+                        bg_png_path = os.path.join(deck_output_dir, f"slide_{page_idx}_bg.png")
+                        bg_pix.save(bg_png_path)
+                        slides_data[page_idx]["backgroundPngUrl"] = f"/api/slides/{deck_id}/{page_idx}/bg.png"
+                bg_pdf_doc.close()
+
+                try:
+                    os.remove(clean_pdf_path)
+                    os.remove(clean_pptx_path)
+                except Exception:
+                    pass
+                logger.info(f"Successfully generated clean background renders for deck {deck_id}")
+            else:
+                logger.warning(f"Clean background PDF not found at {clean_pdf_path}")
+        except Exception as ex:
+            logger.error(f"Error generating clean background renders for deck {deck_id}: {ex}")
+
         return {
             "id": deck_id,
             "filename": original_filename,
@@ -422,3 +459,15 @@ class PPTXImporter:
                 logger.error(f"LibreOffice stderr: {result.stderr.decode('utf-8', errors='ignore')}")
         except Exception as e:
             logger.error(f"Subprocess LibreOffice failed: {e}")
+
+    def _clear_shape_text(self, shape):
+        """Recursively clears all text from shapes and group shapes for clean background rendering."""
+        if shape.has_text_frame:
+            try:
+                shape.text_frame.clear()
+            except Exception:
+                pass
+        if shape.shape_type == MSO_SHAPE_TYPE.GROUP:
+            for child in shape.shapes:
+                self._clear_shape_text(child)
+

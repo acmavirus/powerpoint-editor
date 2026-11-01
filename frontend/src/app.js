@@ -1198,34 +1198,31 @@ function applyTemplateToDeck(template, replaceCurrent = false) {
 
   const slideData = template.slideData || {};
   const clonedFabricJson = slideData.fabricJson ? JSON.parse(JSON.stringify(slideData.fabricJson)) : { objects: [] };
-  const hasBgImg = !!slideData.renderPngUrl;
+  const backgroundPngUrl = slideData.backgroundPngUrl || null;
+  const renderPngUrl = slideData.renderPngUrl || null;
+  const elements = slideData.elements ? JSON.parse(JSON.stringify(slideData.elements)) : [];
+  const customFonts = slideData.customFonts || template.custom_fonts || [];
+
+  if (customFonts && customFonts.length > 0) {
+    loadCustomFonts(customFonts);
+  }
 
   if (replaceCurrent) {
     const targetSlide = currentDeck.slides[currentSlideIndex];
     if (!targetSlide) return;
     targetSlide.title = template.title;
-
-    if (hasBgImg) {
-      targetSlide.renderPngUrl = slideData.renderPngUrl;
-      targetSlide.renderSvgUrl = slideData.renderSvgUrl || null;
-      targetSlide.thumbnailUrl = slideData.renderPngUrl;
-      // Khi có ảnh nền gốc PPTX: chữ đã được burn vào ảnh, KHÔNG copy elements
-      // để tránh render textbox chồng lên ảnh gây nhân đôi chữ
-      targetSlide.elements = [];
-      targetSlide.useCustomColor = false;
-      targetSlide.customColor = null;
-      targetSlide.fabricJson = clonedFabricJson;
-      targetSlide.isEdited = false;
-    } else {
-      targetSlide.customColor = slideData.customColor || '#032030';
-      targetSlide.useCustomColor = true;
-      targetSlide.renderPngUrl = null;
-      targetSlide.renderSvgUrl = null;
-      targetSlide.thumbnailUrl = null;
-      targetSlide.elements = [];
-      targetSlide.fabricJson = clonedFabricJson;
-      targetSlide.isEdited = true;
-    }
+    targetSlide.width = slideData.width || 1920;
+    targetSlide.height = slideData.height || 1080;
+    targetSlide.backgroundPngUrl = backgroundPngUrl;
+    targetSlide.renderPngUrl = renderPngUrl;
+    targetSlide.renderSvgUrl = slideData.renderSvgUrl || null;
+    targetSlide.thumbnailUrl = renderPngUrl || backgroundPngUrl;
+    targetSlide.elements = elements;
+    targetSlide.customFonts = customFonts;
+    targetSlide.useCustomColor = !backgroundPngUrl && !renderPngUrl && !!slideData.customColor;
+    targetSlide.customColor = targetSlide.useCustomColor ? (slideData.customColor || '#032030') : null;
+    targetSlide.fabricJson = clonedFabricJson;
+    targetSlide.isEdited = false;
 
     loadSlideToCanvas(currentSlideIndex);
     renderSlideThumbnails();
@@ -1239,15 +1236,16 @@ function applyTemplateToDeck(template, replaceCurrent = false) {
       title: template.title,
       width: slideData.width || 1920,
       height: slideData.height || 1080,
-      renderPngUrl: hasBgImg ? slideData.renderPngUrl : null,
-      renderSvgUrl: hasBgImg ? (slideData.renderSvgUrl || null) : null,
-      thumbnailUrl: hasBgImg ? slideData.renderPngUrl : null,
-      // Khi có ảnh nền gốc PPTX: chữ đã được burn vào ảnh, KHÔNG copy elements để tránh chồng chữ
-      elements: [],
+      backgroundPngUrl: backgroundPngUrl,
+      renderPngUrl: renderPngUrl,
+      renderSvgUrl: slideData.renderSvgUrl || null,
+      thumbnailUrl: renderPngUrl || backgroundPngUrl,
+      elements: elements,
+      customFonts: customFonts,
       fabricJson: clonedFabricJson,
-      isEdited: !hasBgImg,
-      useCustomColor: !hasBgImg,
-      customColor: !hasBgImg ? (slideData.customColor || '#032030') : null
+      isEdited: false,
+      useCustomColor: !backgroundPngUrl && !renderPngUrl && !!slideData.customColor,
+      customColor: (!backgroundPngUrl && !renderPngUrl && !!slideData.customColor) ? (slideData.customColor || '#032030') : null
     };
 
     currentDeck.slides.push(newSlide);
@@ -2051,11 +2049,19 @@ function loadSlideToCanvas(idx, callback) {
   const targetH = 540;
 
 
+  // 1. Tải custom fonts nhúng nếu slide có
+  if (slide.customFonts && slide.customFonts.length > 0) {
+    loadCustomFonts(slide.customFonts);
+  }
+
+  // 2. Thiết lập ảnh nền / màu nền
+  // Ưu tiên backgroundPngUrl (ảnh nền sạch không chứa text bị burn) để hỗ trợ in-place editing Canva
+  const bgImgToUse = slide.backgroundPngUrl || slide.renderPngUrl;
+
   if (slide.useCustomColor && slide.customColor) {
     fabricCanvas.backgroundColor = slide.customColor;
-  } else if (slide.renderPngUrl) {
-    // 100% PRISTINE FULL COLOR ORIGINAL SLIDE
-    fabric.Image.fromURL(slide.renderPngUrl, (bgImg) => {
+  } else if (bgImgToUse) {
+    fabric.Image.fromURL(bgImgToUse, (bgImg) => {
       bgImg.set({
         scaleX: targetW / bgImg.width,
         scaleY: targetH / bgImg.height,
@@ -2063,7 +2069,7 @@ function loadSlideToCanvas(idx, callback) {
         originY: 'top',
         selectable: false,
         evented: false,
-        opacity: 1.0 // 100% sharp, zero bleach!
+        opacity: 1.0
       });
       fabricCanvas.setBackgroundImage(bgImg, fabricCanvas.renderAll.bind(fabricCanvas));
     });
@@ -2074,14 +2080,14 @@ function loadSlideToCanvas(idx, callback) {
   const user = getCurrentUser();
   const perms = getDesignPermissions(currentDeck, user);
 
-  // Xác định slide có ảnh nền gốc từ PPTX import hay không
-  const hasRenderedBg = !!slide.renderPngUrl && !slide.useCustomColor;
+  // Quy tắc nạp đối tượng lên Canvas:
+  // 1. Nếu slide đã có fabricJson (đã qua chỉnh sửa hoặc lưu trạng thái): enlivenObjects khôi phục lại
+  // 2. Nếu chưa có fabricJson nhưng có elements:
+  //    - Nếu có backgroundPngUrl (nền sạch): nạp toàn bộ elements thành các Textbox tương tác in-place Canva
+  //    - Nếu không có renderPngUrl (slide rỗng/thuần JSON): cũng nạp elements
+  //    - (Chỉ bỏ qua nếu chỉ có renderPngUrl mà không có backgroundPngUrl để tránh trùng text)
+  const canRenderElements = !!slide.backgroundPngUrl || !slide.renderPngUrl;
 
-  // Quy tắc render:
-  // 1. Nếu fabricJson.objects có dữ liệu → render fabricJson (ưu tiên cao nhất, kể cả khi có renderPngUrl)
-  // 2. Nếu slide CÓ renderPngUrl (ảnh PPTX gốc) và fabricJson rỗng → KHÔNG render elements
-  //    vì chữ đã được nhúng sẵn trong ảnh nền. Render elements sẽ gây trùng/chồng chữ.
-  // 3. Nếu slide KHÔNG có renderPngUrl (mẫu fabricJson thuần) → render elements nếu có
   if (slide.fabricJson && slide.fabricJson.objects && slide.fabricJson.objects.length > 0) {
     fabric.util.enlivenObjects(slide.fabricJson.objects, (enlivenedObjects) => {
       enlivenedObjects.forEach((obj) => {
@@ -2095,11 +2101,9 @@ function loadSlideToCanvas(idx, callback) {
       initUndoStackForSlide();
       if (typeof callback === 'function') callback();
     });
-  } else if (!hasRenderedBg && slide.elements && slide.elements.length > 0) {
-    // Chỉ render elements khi slide KHÔNG có ảnh nền gốc (tức là mẫu fabricJson thuần)
-    // Nếu có renderPngUrl thì chữ đã có trong ảnh → KHÔNG render thêm để tránh chồng chữ
-    const origW = currentDeck.canvas?.width || 1280;
-    const origH = currentDeck.canvas?.height || 720;
+  } else if (canRenderElements && slide.elements && slide.elements.length > 0) {
+    const origW = slide.width || currentDeck.canvas?.width || 1920;
+    const origH = slide.height || currentDeck.canvas?.height || 1080;
     const scaleX = targetW / origW;
     const scaleY = targetH / origH;
 

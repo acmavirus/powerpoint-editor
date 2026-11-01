@@ -141,6 +141,17 @@ def get_slide_render_png(deck_id: str, slide_index: int):
         raise HTTPException(status_code=404, detail="Ảnh render slide không tồn tại")
     return FileResponse(path, media_type="image/png")
 
+@app.get("/api/slides/{deck_id}/{slide_index}/bg.png")
+def get_slide_background_png(deck_id: str, slide_index: int):
+    """Returns clean background-only PNG (without text) for in-place canvas editing."""
+    path = os.path.join(STORAGE_DIR, "outputs", deck_id, f"slide_{slide_index}_bg.png")
+    if not os.path.exists(path):
+        # Fallback to render.png if bg.png is not yet generated
+        path = os.path.join(STORAGE_DIR, "outputs", deck_id, f"slide_{slide_index}_render.png")
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="Ảnh nền slide không tồn tại")
+    return FileResponse(path, media_type="image/png")
+
 @app.get("/api/slides/{deck_id}/{slide_index}/render.svg")
 def get_slide_render_svg(deck_id: str, slide_index: int):
     """Returns pure vector SVG rendering of the slide."""
@@ -669,6 +680,7 @@ async def admin_import_pptx_templates(
             slide_tags = list(dict.fromkeys(slide_tags))
 
             render_png_url = slide.get("renderPngUrl") or f"/api/slides/{deck_id}/{slide_idx}/render.png"
+            background_png_url = slide.get("backgroundPngUrl") or f"/api/slides/{deck_id}/{slide_idx}/bg.png"
             render_svg_url = slide.get("renderSvgUrl") or f"/api/slides/{deck_id}/{slide_idx}/render.svg"
 
             # High-res preview thumbnail
@@ -685,8 +697,10 @@ async def admin_import_pptx_templates(
                 "preview_html": preview_html,
                 "slide_data": {
                     "renderPngUrl": render_png_url,
+                    "backgroundPngUrl": background_png_url,
                     "renderSvgUrl": render_svg_url,
                     "elements": slide.get("elements", []),
+                    "customFonts": deck_data.get("customFonts", []),
                     "customColor": None,
                     "width": slide.get("width", 1920),
                     "height": slide.get("height", 1080),
