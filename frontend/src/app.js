@@ -1209,7 +1209,9 @@ function applyTemplateToDeck(template, replaceCurrent = false) {
       targetSlide.renderPngUrl = slideData.renderPngUrl;
       targetSlide.renderSvgUrl = slideData.renderSvgUrl || null;
       targetSlide.thumbnailUrl = slideData.renderPngUrl;
-      targetSlide.elements = slideData.elements ? JSON.parse(JSON.stringify(slideData.elements)) : [];
+      // Khi có ảnh nền gốc PPTX: chữ đã được burn vào ảnh, KHÔNG copy elements
+      // để tránh render textbox chồng lên ảnh gây nhân đôi chữ
+      targetSlide.elements = [];
       targetSlide.useCustomColor = false;
       targetSlide.customColor = null;
       targetSlide.fabricJson = clonedFabricJson;
@@ -1240,7 +1242,8 @@ function applyTemplateToDeck(template, replaceCurrent = false) {
       renderPngUrl: hasBgImg ? slideData.renderPngUrl : null,
       renderSvgUrl: hasBgImg ? (slideData.renderSvgUrl || null) : null,
       thumbnailUrl: hasBgImg ? slideData.renderPngUrl : null,
-      elements: (hasBgImg && slideData.elements) ? JSON.parse(JSON.stringify(slideData.elements)) : [],
+      // Khi có ảnh nền gốc PPTX: chữ đã được burn vào ảnh, KHÔNG copy elements để tránh chồng chữ
+      elements: [],
       fabricJson: clonedFabricJson,
       isEdited: !hasBgImg,
       useCustomColor: !hasBgImg,
@@ -2071,7 +2074,14 @@ function loadSlideToCanvas(idx, callback) {
   const user = getCurrentUser();
   const perms = getDesignPermissions(currentDeck, user);
 
-  // Khôi phục các đối tượng fabricJson hoặc tự động tạo In-place Editable Textboxes từ slide.elements
+  // Xác định slide có ảnh nền gốc từ PPTX import hay không
+  const hasRenderedBg = !!slide.renderPngUrl && !slide.useCustomColor;
+
+  // Quy tắc render:
+  // 1. Nếu fabricJson.objects có dữ liệu → render fabricJson (ưu tiên cao nhất, kể cả khi có renderPngUrl)
+  // 2. Nếu slide CÓ renderPngUrl (ảnh PPTX gốc) và fabricJson rỗng → KHÔNG render elements
+  //    vì chữ đã được nhúng sẵn trong ảnh nền. Render elements sẽ gây trùng/chồng chữ.
+  // 3. Nếu slide KHÔNG có renderPngUrl (mẫu fabricJson thuần) → render elements nếu có
   if (slide.fabricJson && slide.fabricJson.objects && slide.fabricJson.objects.length > 0) {
     fabric.util.enlivenObjects(slide.fabricJson.objects, (enlivenedObjects) => {
       enlivenedObjects.forEach((obj) => {
@@ -2085,8 +2095,9 @@ function loadSlideToCanvas(idx, callback) {
       initUndoStackForSlide();
       if (typeof callback === 'function') callback();
     });
-  } else if (slide.elements && slide.elements.length > 0) {
-    // Tự động nạp các khối text trực tiếp để người dùng có thể nhấp đúp sửa chữ ngay (Canva In-Place Editing)
+  } else if (!hasRenderedBg && slide.elements && slide.elements.length > 0) {
+    // Chỉ render elements khi slide KHÔNG có ảnh nền gốc (tức là mẫu fabricJson thuần)
+    // Nếu có renderPngUrl thì chữ đã có trong ảnh → KHÔNG render thêm để tránh chồng chữ
     const origW = currentDeck.canvas?.width || 1280;
     const origH = currentDeck.canvas?.height || 720;
     const scaleX = targetW / origW;
