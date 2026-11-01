@@ -1276,61 +1276,52 @@ function renderTemplatesGrid(query = '', category = 'all') {
   templatesGridContainer.classList.remove('hidden');
   if (templatesEmptyState) templatesEmptyState.classList.add('hidden');
 
-  // Render từng thẻ mẫu
-  filtered.forEach(tmpl => {
+  // Render từng thẻ mẫu theo phong cách mục Trang trong thiết kế
+  filtered.forEach((tmpl, idx) => {
     const card = document.createElement('div');
-    card.className = 'group relative flex flex-col gap-1.5 p-1.5 rounded-xl bg-slate-900/90 border border-slate-700/60 hover:border-cyan-400/80 transition-all cursor-pointer shadow-md hover:shadow-cyan-950/30';
-    card.title = `Bấm để thêm mẫu: ${tmpl.title}`;
+    card.className = 'p-1.5 rounded-lg border border-slate-700/60 bg-slate-900/90 hover:border-cyan-400 hover:bg-cyan-950/20 active:scale-[0.98] cursor-pointer flex flex-col gap-1 relative group transition-all shadow-sm';
+    card.title = `Nhấn để thêm vào danh sách trang: ${tmpl.title}`;
 
-    // Khung Preview thu nhỏ 16:9
-    const previewBox = document.createElement('div');
-    previewBox.className = 'w-full aspect-video rounded-lg overflow-hidden relative shadow-inner border border-slate-800 bg-slate-950 select-none';
-    previewBox.innerHTML = tmpl.previewHtml;
+    // Thumbnail Preview Frame (16:9)
+    const frame = document.createElement('div');
+    frame.className = 'w-full aspect-video bg-black rounded overflow-hidden relative shadow-sm border border-slate-800 flex items-center justify-center select-none';
 
-    // Badge Danh mục góc trên bên phải
+    // Nội dung preview: ưu tiên ảnh renderPngUrl từ file PPTX nếu có
+    if (tmpl.slideData && tmpl.slideData.renderPngUrl) {
+      const img = document.createElement('img');
+      img.src = tmpl.slideData.renderPngUrl;
+      img.alt = tmpl.title;
+      img.className = 'w-full h-full object-contain pointer-events-none';
+      img.loading = 'lazy';
+      frame.appendChild(img);
+    } else if (tmpl.previewHtml) {
+      const previewWrapper = document.createElement('div');
+      previewWrapper.className = 'w-full h-full pointer-events-none';
+      previewWrapper.innerHTML = tmpl.previewHtml;
+      frame.appendChild(previewWrapper);
+    } else {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'w-full h-full flex items-center justify-center text-[10px] font-bold text-white text-center p-1';
+      placeholder.style.background = tmpl.bgGradient || '#0f172a';
+      placeholder.textContent = tmpl.title;
+      frame.appendChild(placeholder);
+    }
+
+    // Badge số thứ tự ở góc dưới bên trái (giống hệt mục Trang trong thiết kế)
     const badge = document.createElement('span');
-    badge.className = 'absolute top-1 right-1 bg-black/75 backdrop-blur-sm text-[8px] font-semibold text-slate-300 px-1.5 py-0.5 rounded shadow pointer-events-none';
-    badge.textContent = tmpl.categoryName;
-    previewBox.appendChild(badge);
+    badge.className = 'absolute bottom-1 left-1 bg-black/80 text-[9px] text-white font-bold px-1 py-0.5 rounded pointer-events-none z-10';
+    badge.textContent = idx + 1;
+    frame.appendChild(badge);
 
-    // Hover Action Buttons Overlay (Canva Quick Actions)
-    const hoverOverlay = document.createElement('div');
-    hoverOverlay.className = 'absolute inset-0 bg-slate-950/85 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-1.5 p-2 z-10';
-
-    const btnAddSlideFromTmpl = document.createElement('button');
-    btnAddSlideFromTmpl.className = 'w-full py-1.5 px-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-[10px] rounded-lg shadow-sm transition flex items-center justify-center gap-1 cursor-pointer';
-    btnAddSlideFromTmpl.innerHTML = '<i data-lucide="plus" class="w-3 h-3"></i><span>+ Thêm trang mới</span>';
-    btnAddSlideFromTmpl.addEventListener('click', (e) => {
-      e.stopPropagation();
-      applyTemplateToDeck(tmpl, false);
-    });
-
-    const btnReplaceCurrentSlide = document.createElement('button');
-    btnReplaceCurrentSlide.className = 'w-full py-1.5 px-2 bg-slate-800/90 hover:bg-slate-700 text-slate-200 hover:text-white font-medium text-[10px] rounded-lg border border-slate-600/70 transition flex items-center justify-center gap-1 cursor-pointer';
-    btnReplaceCurrentSlide.innerHTML = '<i data-lucide="refresh-cw" class="w-2.5 h-2.5"></i><span>Thay trang này</span>';
-    btnReplaceCurrentSlide.addEventListener('click', (e) => {
-      e.stopPropagation();
-      applyTemplateToDeck(tmpl, true);
-    });
-
-    hoverOverlay.appendChild(btnAddSlideFromTmpl);
-    hoverOverlay.appendChild(btnReplaceCurrentSlide);
-    previewBox.appendChild(hoverOverlay);
-
-    // Tiêu đề mẫu bên dưới thẻ
-    const metaBox = document.createElement('div');
-    metaBox.className = 'px-0.5 flex flex-col';
-    
+    // Tiêu đề chữ in hoa bên dưới thẻ (giống mục Trang trong thiết kế)
     const titleP = document.createElement('p');
-    titleP.className = 'text-[11px] font-semibold text-slate-200 group-hover:text-cyan-300 truncate transition-colors';
-    titleP.textContent = tmpl.title;
+    titleP.className = 'text-[10px] font-bold text-slate-200 uppercase truncate px-0.5 group-hover:text-cyan-300 transition-colors';
+    titleP.textContent = tmpl.title || `Trang ${idx + 1}`;
 
-    metaBox.appendChild(titleP);
+    card.appendChild(frame);
+    card.appendChild(titleP);
 
-    card.appendChild(previewBox);
-    card.appendChild(metaBox);
-
-    // Khi bấm vào toàn card thì mặc định thêm trang mới
+    // Khi nhấn vào thì lập tức thêm vào danh sách trang, không cần nút nào cả
     card.addEventListener('click', () => {
       applyTemplateToDeck(tmpl, false);
     });
