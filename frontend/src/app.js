@@ -914,470 +914,7 @@ function expandDrawer() {
 // --- 2.1 KHO MẪU TRANG PPTX SẴN CỦA HỆ THỐNG (SYSTEM PPTX TEMPLATES LIBRARY) ---
 // ============================================================================
 
-const SYSTEM_PPTX_TEMPLATES = [
-  {
-    id: 'travel-beach',
-    title: 'Khám Phá Biển & Nghỉ Dưỡng Hè',
-    category: 'travel',
-    categoryName: 'Du lịch',
-    tags: ['travel', 'du lich', 'beach', 'bien', 'resort', 'nghi duong', 'tour', 'summer', 'he', 'kham pha', 'dao', 'phu quoc', 'ha long'],
-    bgGradient: 'linear-gradient(135deg, #032030 0%, #004d73 100%)',
-    previewBadge: 'SUMMER 2026',
-    previewHtml: `
-      <div class="w-full h-full p-2.5 flex flex-col justify-between text-white" style="background: linear-gradient(135deg, #032030 0%, #004d73 100%);">
-        <div>
-          <span class="inline-block px-1.5 py-0.5 rounded bg-cyan-500/80 text-[8px] font-bold tracking-wider mb-1">SUMMER 2026</span>
-          <p class="font-extrabold text-[11px] leading-tight text-white tracking-tight">HÀNH TRÌNH DU LỊCH</p>
-          <p class="text-[7px] text-cyan-200 mt-0.5 truncate">Khám phá thiên nhiên biển đảo & nghỉ dưỡng</p>
-        </div>
-        <div class="grid grid-cols-3 gap-1 my-auto">
-          <div class="bg-cyan-950/70 p-1 rounded border border-cyan-700/50 text-[6px]">
-            <span class="font-bold text-cyan-300 block">01. Phú Quốc</span>
-            <span class="text-slate-300 text-[5px]">Biển ngọc 5★</span>
-          </div>
-          <div class="bg-cyan-950/70 p-1 rounded border border-cyan-500 text-[6px]">
-            <span class="font-bold text-cyan-300 block">02. Hạ Long</span>
-            <span class="text-slate-300 text-[5px]">Du thuyền vịnh</span>
-          </div>
-          <div class="bg-cyan-950/70 p-1 rounded border border-cyan-700/50 text-[6px]">
-            <span class="font-bold text-cyan-300 block">03. Sapa</span>
-            <span class="text-slate-300 text-[5px]">Săn mây Fansipan</span>
-          </div>
-        </div>
-        <div class="text-[5px] text-cyan-300/80 border-t border-cyan-800/40 pt-0.5 truncate">
-          Hotline: 1900 8888 • travel-vietnam.vn
-        </div>
-      </div>
-    `,
-    slideData: {
-      customColor: '#032030',
-      fabricJson: {
-        objects: [
-          { type: 'rect', left: 80, top: 40, width: 140, height: 30, fill: '#00a8cc', rx: 6, ry: 6 },
-          { type: 'textbox', left: 92, top: 46, width: 120, text: 'SUMMER 2026', fontSize: 13, fontFamily: 'Inter', fontWeight: 'bold', fill: '#ffffff' },
-          { type: 'textbox', left: 80, top: 85, width: 800, text: 'HÀNH TRÌNH DU LỊCH & KHÁM PHÁ', fontSize: 34, fontFamily: 'Inter', fontWeight: 'bold', fill: '#ffffff' },
-          { type: 'textbox', left: 80, top: 135, width: 800, text: 'Trải nghiệm những bờ biển nguyên sơ, danh lam thắng cảnh và văn hóa bản địa độc đáo', fontSize: 16, fontFamily: 'Inter', fill: '#94d2bd' },
-          { type: 'rect', left: 80, top: 195, width: 245, height: 260, fill: '#003a52', rx: 12, ry: 12, stroke: '#005c53', strokeWidth: 1 },
-          { type: 'textbox', left: 100, top: 220, width: 205, text: '01. ĐẢO PHÚ QUỐC\n\n• Lặn ngắm san hô biển ngọc\n• Nghỉ dưỡng resort 5 sao\n• Trải nghiệm cáp treo vượt biển\n• Ẩm thực hải sản nướng than\n• Tour cano 4 đảo trọn gói', fontSize: 14, fontFamily: 'Inter', fill: '#ffffff', lineHeight: 1.4 },
-          { type: 'rect', left: 355, top: 195, width: 245, height: 260, fill: '#004766', rx: 12, ry: 12, stroke: '#00a8cc', strokeWidth: 2 },
-          { type: 'textbox', left: 375, top: 220, width: 205, text: '02. VỊNH HẠ LONG\n\n• Du thuyền ngủ đêm trên vịnh\n• Chèo kayak qua hang động\n• Ngắm hoàng hôn trên biển\n• Tham quan làng chài cổ\n• Tiệc BBQ buffet hải sản', fontSize: 14, fontFamily: 'Inter', fill: '#ffffff', lineHeight: 1.4 },
-          { type: 'rect', left: 630, top: 195, width: 245, height: 260, fill: '#003a52', rx: 12, ry: 12, stroke: '#005c53', strokeWidth: 1 },
-          { type: 'textbox', left: 650, top: 220, width: 205, text: '03. CAO NGUYÊN SAPA\n\n• Chinh phục đỉnh Fansipan\n• Bản Cát Cát mộng mơ\n• Thưởng thức lẩu cá hồi\n• Săn mây đèo Ô Quy Hồ\n• Giao lưu văn hóa bản địa', fontSize: 14, fontFamily: 'Inter', fill: '#ffffff', lineHeight: 1.4 },
-          { type: 'textbox', left: 80, top: 480, width: 800, text: 'Hotline đặt tour: 1900 8888  |  Email: contact@vietnam-travel.vn  |  Website: www.travel-vietnam.vn', fontSize: 13, fontFamily: 'Inter', fill: '#7dd3fc' }
-        ]
-      }
-    }
-  },
-  {
-    id: 'travel-itinerary',
-    title: 'Lịch Trình Tour Khám Phá 4N3Đ',
-    category: 'travel',
-    categoryName: 'Du lịch',
-    tags: ['travel', 'du lich', 'itinerary', 'lich trinh', 'tour', 'ke hoach', 'ngay', 'timeline', 'schedule', 'diem den', 'chuyen di'],
-    bgGradient: 'linear-gradient(135deg, #064e3b 0%, #022c22 100%)',
-    previewBadge: 'TIMELINE',
-    previewHtml: `
-      <div class="w-full h-full p-2.5 flex flex-col justify-between text-white" style="background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);">
-        <div>
-          <span class="inline-block px-1.5 py-0.5 rounded bg-emerald-500/80 text-[8px] font-bold tracking-wider mb-1">TOUR 4N3Đ</span>
-          <p class="font-extrabold text-[11px] leading-tight text-white tracking-tight">LỊCH TRÌNH CHI TIẾT</p>
-          <p class="text-[7px] text-emerald-200 mt-0.5 truncate">Hành trình khám phá trọn vẹn điểm đến</p>
-        </div>
-        <div class="grid grid-cols-4 gap-0.5 my-auto">
-          <div class="bg-emerald-950/80 p-1 rounded border border-emerald-700/60 text-[5px]">
-            <span class="font-bold text-emerald-300 block">N1: Đón đoàn</span>
-            <span class="text-slate-300">Check-in</span>
-          </div>
-          <div class="bg-emerald-900/80 p-1 rounded border border-emerald-400 text-[5px]">
-            <span class="font-bold text-emerald-200 block">N2: Vịnh biển</span>
-            <span class="text-slate-200">Lặn san hô</span>
-          </div>
-          <div class="bg-emerald-950/80 p-1 rounded border border-emerald-700/60 text-[5px]">
-            <span class="font-bold text-emerald-300 block">N3: Trekking</span>
-            <span class="text-slate-300">Ẩm thực</span>
-          </div>
-          <div class="bg-emerald-950/80 p-1 rounded border border-emerald-700/60 text-[5px]">
-            <span class="font-bold text-emerald-300 block">N4: Mua sắm</span>
-            <span class="text-slate-300">Tiễn khách</span>
-          </div>
-        </div>
-        <div class="text-[5px] text-emerald-300/80 border-t border-emerald-800/40 pt-0.5 truncate">
-          Tiêu chuẩn xe đưa đón & khách sạn 4-5 sao
-        </div>
-      </div>
-    `,
-    slideData: {
-      customColor: '#064e3b',
-      fabricJson: {
-        objects: [
-          { type: 'textbox', left: 80, top: 45, width: 800, text: 'LỊCH TRÌNH CHI TIẾT TOUR 4 NGÀY 3 ĐÊM', fontSize: 30, fontFamily: 'Inter', fontWeight: 'bold', fill: '#ffffff' },
-          { type: 'textbox', left: 80, top: 90, width: 800, text: 'Hành trình kết hợp tham quan danh lam thắng cảnh, ẩm thực bản địa và nghỉ dưỡng tiêu chuẩn quốc tế', fontSize: 15, fontFamily: 'Inter', fill: '#a7f3d0' },
-          { type: 'rect', left: 80, top: 145, width: 185, height: 320, fill: '#065f46', rx: 10, ry: 10 },
-          { type: 'textbox', left: 95, top: 165, width: 155, text: 'NGÀY 01\n\nĐón Đoàn & Check-in\n\n• 08:00: Đón tại sân bay\n• 11:30: Ăn trưa đặc sản\n• 14:00: Nhận phòng resort\n• 16:30: Tự do tắm biển\n• 18:30: Tiệc BBQ bãi biển', fontSize: 13, fontFamily: 'Inter', fill: '#ecfdf5', lineHeight: 1.4 },
-          { type: 'rect', left: 285, top: 145, width: 185, height: 320, fill: '#047857', rx: 10, ry: 10, stroke: '#34d399', strokeWidth: 2 },
-          { type: 'textbox', left: 300, top: 165, width: 155, text: 'NGÀY 02\n\nKhám Phá Vịnh Biển\n\n• 07:00: Buffet sáng\n• 08:30: Lên tàu cano ra đảo\n• 10:30: Lặn ngắm san hô\n• 12:30: Ăn trưa bè nổi\n• 16:00: Sunset check-in', fontSize: 13, fontFamily: 'Inter', fill: '#ffffff', lineHeight: 1.4 },
-          { type: 'rect', left: 490, top: 145, width: 185, height: 320, fill: '#065f46', rx: 10, ry: 10 },
-          { type: 'textbox', left: 505, top: 165, width: 155, text: 'NGÀY 03\n\nTrekking & Văn Hóa\n\n• 07:30: Thăm di tích lịch sử\n• 10:00: Trekking rừng nguyên sinh\n• 12:00: Ẩm thực cơm lam gà nướng\n• 15:00: Trải nghiệm làng nghề\n• 19:00: Chợ đêm dạo phố', fontSize: 13, fontFamily: 'Inter', fill: '#ecfdf5', lineHeight: 1.4 },
-          { type: 'rect', left: 695, top: 145, width: 185, height: 320, fill: '#064e3b', stroke: '#34d399', strokeWidth: 1.5, rx: 10, ry: 10 },
-          { type: 'textbox', left: 710, top: 165, width: 155, text: 'NGÀY 04\n\nMua Sắm & Tạm Biệt\n\n• 08:00: Cà phê ngắm bình minh\n• 10:00: Mua sắm đặc sản\n• 12:00: Check-out khách sạn\n• 14:00: Tiễn đoàn ra sân bay\n• Hẹn gặp lại quý khách!', fontSize: 13, fontFamily: 'Inter', fill: '#ecfdf5', lineHeight: 1.4 },
-          { type: 'textbox', left: 80, top: 485, width: 800, text: 'Lưu ý: Lịch trình có thể linh hoạt điều chỉnh theo thời tiết thực tế để đảm bảo trải nghiệm tốt nhất.', fontSize: 12, fontFamily: 'Inter', fill: '#6ee7b7' }
-        ]
-      }
-    }
-  },
-  {
-    id: 'travel-pricing',
-    title: 'Bảng Giá Gói Tour Nghỉ Dưỡng',
-    category: 'travel',
-    categoryName: 'Du lịch',
-    tags: ['travel', 'du lich', 'pricing', 'bang gia', 'gia', 'cost', 'goi tour', 'hotel', 'resort', 'package', 'dich vu'],
-    bgGradient: 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)',
-    previewBadge: 'BẢNG GIÁ',
-    previewHtml: `
-      <div class="w-full h-full p-2.5 flex flex-col justify-between text-white" style="background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);">
-        <div>
-          <span class="inline-block px-1.5 py-0.5 rounded bg-indigo-500/80 text-[8px] font-bold tracking-wider mb-1">GÓI DỊCH VỤ</span>
-          <p class="font-extrabold text-[11px] leading-tight text-white tracking-tight">BẢNG GIÁ TOUR 2026</p>
-          <p class="text-[7px] text-indigo-200 mt-0.5 truncate">Lựa chọn phù hợp cho gia đình & đoàn thể</p>
-        </div>
-        <div class="grid grid-cols-3 gap-1 my-auto">
-          <div class="bg-indigo-950/70 p-1 rounded border border-indigo-700/60 text-[6px]">
-            <span class="font-semibold text-slate-300 block">Tiêu Chuẩn</span>
-            <span class="font-bold text-indigo-300 text-[8px]">3.990k</span>
-          </div>
-          <div class="bg-indigo-900/90 p-1 rounded border border-amber-400 text-[6px]">
-            <span class="font-bold text-amber-300 block">Cao Cấp ★</span>
-            <span class="font-bold text-amber-300 text-[8px]">6.990k</span>
-          </div>
-          <div class="bg-indigo-950/70 p-1 rounded border border-indigo-700/60 text-[6px]">
-            <span class="font-semibold text-slate-300 block">VIP Luxury</span>
-            <span class="font-bold text-indigo-300 text-[8px]">12.990k</span>
-          </div>
-        </div>
-        <div class="text-[5px] text-indigo-300/80 border-t border-indigo-800/40 pt-0.5 truncate">
-          Đã bao gồm vé máy bay, khách sạn & bảo hiểm
-        </div>
-      </div>
-    `,
-    slideData: {
-      customColor: '#1e1b4b',
-      fabricJson: {
-        objects: [
-          { type: 'textbox', left: 80, top: 45, width: 800, text: 'BẢNG GIÁ DỊCH VỤ TOUR NGHỈ DƯỠNG TRỌN GÓI', fontSize: 28, fontFamily: 'Inter', fontWeight: 'bold', fill: '#ffffff' },
-          { type: 'textbox', left: 80, top: 90, width: 800, text: 'Chính sách giá minh bạch, trọn gói, không phát sinh phụ phí ẩn', fontSize: 15, fontFamily: 'Inter', fill: '#c7d2fe' },
-          { type: 'rect', left: 80, top: 145, width: 245, height: 320, fill: '#2e1065', rx: 12, ry: 12 },
-          { type: 'textbox', left: 100, top: 170, width: 205, text: 'GÓI TIÊU CHUẨN\n\n3.990.000 VNĐ / Khách\n\n• Khách sạn 3 sao trung tâm\n• Xe đưa đón máy lạnh\n• Ăn sáng buffet hàng ngày\n• Hướng dẫn viên nhiệt tình\n• Vé tham quan các điểm', fontSize: 13, fontFamily: 'Inter', fill: '#ede9fe', lineHeight: 1.4 },
-          { type: 'rect', left: 355, top: 140, width: 250, height: 330, fill: '#3730a3', stroke: '#fbbf24', strokeWidth: 2, rx: 12, ry: 12 },
-          { type: 'textbox', left: 375, top: 165, width: 210, text: 'GÓI CAO CẤP (PHỔ BIẾN NHẤT)\n\n6.990.000 VNĐ / Khách\n\n• Resort 4-5 sao view biển\n• Xe limousine đưa đón riêng\n• Vé máy bay khứ hồi gồm hành lý\n• Tiệc hải sản BBQ cao cấp\n• Cano riêng lặn ngắm san hô\n• Bảo hiểm du lịch 100 triệu', fontSize: 13, fontFamily: 'Inter', fill: '#ffffff', lineHeight: 1.4 },
-          { type: 'rect', left: 635, top: 145, width: 245, height: 320, fill: '#2e1065', rx: 12, ry: 12 },
-          { type: 'textbox', left: 655, top: 170, width: 205, text: 'GÓI VIP LUXURY\n\n12.990.000 VNĐ / Khách\n\n• Villa hồ bơi riêng 5 sao+\n• Du thuyền riêng tham quan\n• Quản gia và đầu bếp phục vụ\n• Spa & massage trị liệu hàng ngày\n• Trải nghiệm bay trực thăng', fontSize: 13, fontFamily: 'Inter', fill: '#ede9fe', lineHeight: 1.4 },
-          { type: 'textbox', left: 80, top: 490, width: 800, text: 'Ưu đãi: Giảm thêm 10% khi đăng ký nhóm từ 4 khách trước ngày 15 hàng tháng.', fontSize: 12, fontFamily: 'Inter', fill: '#a5b4fc' }
-        ]
-      }
-    }
-  },
-  {
-    id: 'travel-cuisine',
-    title: 'Cẩm Nang Ẩm Thực Vùng Miền',
-    category: 'travel',
-    categoryName: 'Du lịch',
-    tags: ['travel', 'du lich', 'am thuc', 'food', 'cuisine', 'mon an', 'dac san', 'chef', 'restaurant', 'nha hang'],
-    bgGradient: 'linear-gradient(135deg, #431407 0%, #7c2d12 100%)',
-    previewBadge: 'ẨM THỰC',
-    previewHtml: `
-      <div class="w-full h-full p-2.5 flex flex-col justify-between text-white" style="background: linear-gradient(135deg, #431407 0%, #7c2d12 100%);">
-        <div>
-          <span class="inline-block px-1.5 py-0.5 rounded bg-amber-500/80 text-[8px] font-bold tracking-wider mb-1">FOOD & TRAVEL</span>
-          <p class="font-extrabold text-[11px] leading-tight text-white tracking-tight">CẨM NANG ẨM THỰC</p>
-          <p class="text-[7px] text-amber-200 mt-0.5 truncate">Món ngon bản địa nhất định phải thử</p>
-        </div>
-        <div class="grid grid-cols-3 gap-1 my-auto">
-          <div class="bg-amber-950/70 p-1 rounded border border-amber-700/60 text-[6px]">
-            <span class="font-bold text-amber-300 block">Hải Sản Nướng</span>
-            <span class="text-slate-300 text-[5px]">Tươi sống tại bè</span>
-          </div>
-          <div class="bg-amber-950/70 p-1 rounded border border-amber-500 text-[6px]">
-            <span class="font-bold text-amber-300 block">Bún Quậy Đảo</span>
-            <span class="text-slate-300 text-[5px]">Nước dùng thanh ngọt</span>
-          </div>
-          <div class="bg-amber-950/70 p-1 rounded border border-amber-700/60 text-[6px]">
-            <span class="font-bold text-amber-300 block">Lẩu Cá Lá Giang</span>
-            <span class="text-slate-300 text-[5px]">Hương vị truyền thống</span>
-          </div>
-        </div>
-        <div class="text-[5px] text-amber-300/80 border-t border-amber-800/40 pt-0.5 truncate">
-          Gợi ý địa chỉ quán ăn ngon chuẩn vị người bản xứ
-        </div>
-      </div>
-    `,
-    slideData: {
-      customColor: '#431407',
-      fabricJson: {
-        objects: [
-          { type: 'textbox', left: 80, top: 45, width: 800, text: 'TOP ĐẶC SẢN ẨM THỰC KHÔNG THỂ BỎ LỠ', fontSize: 30, fontFamily: 'Inter', fontWeight: 'bold', fill: '#ffffff' },
-          { type: 'textbox', left: 80, top: 90, width: 800, text: 'Hành trình đánh thức vị giác với những tinh hoa ẩm thực địa phương đặc trưng', fontSize: 15, fontFamily: 'Inter', fill: '#fed7aa' },
-          { type: 'rect', left: 80, top: 150, width: 245, height: 300, fill: '#7c2d12', rx: 12, ry: 12 },
-          { type: 'textbox', left: 100, top: 175, width: 205, text: '01. HẢI SẢN NƯỚNG THAN\n\n• Tôm hùm bông & mực nhảy\n• Nướng trực tiếp tại bè nổi\n• Muối tiêu chanh ớt xanh\n• Độ tươi ngon tuyệt đối', fontSize: 14, fontFamily: 'Inter', fill: '#ffedd5', lineHeight: 1.4 },
-          { type: 'rect', left: 355, top: 150, width: 245, height: 300, fill: '#9a3412', stroke: '#fbbf24', strokeWidth: 2, rx: 12, ry: 12 },
-          { type: 'textbox', left: 375, top: 175, width: 205, text: '02. BÚN QUẬY TRUYỀN THỐNG\n\n• Chả tôm & cá tươi quậy tại tô\n• Nước dùng thanh ngọt tự nhiên\n• Tự pha nước chấm gia truyền\n• Món ăn sáng yêu thích', fontSize: 14, fontFamily: 'Inter', fill: '#ffffff', lineHeight: 1.4 },
-          { type: 'rect', left: 630, top: 150, width: 245, height: 300, fill: '#7c2d12', rx: 12, ry: 12 },
-          { type: 'textbox', left: 650, top: 175, width: 205, text: '03. LẨU CÁ BẢN ĐỊA\n\n• Nấu cùng lá giang rừng\n• Vị chua dịu, cay nồng ấm cúng\n• Kèm các loại rau sạch miệt vườn\n• Thích hợp cho bữa tiệc gia đình', fontSize: 14, fontFamily: 'Inter', fill: '#ffedd5', lineHeight: 1.4 },
-          { type: 'textbox', left: 80, top: 485, width: 800, text: 'Gợi ý: Đặt bàn trước tại các nhà hàng nổi tiếng vào cuối tuần để có vị trí đẹp nhất.', fontSize: 12, fontFamily: 'Inter', fill: '#fed7aa' }
-        ]
-      }
-    }
-  },
-  {
-    id: 'business-report',
-    title: 'Báo Cáo Doanh Thu & Tăng Trưởng Q3',
-    category: 'business',
-    categoryName: 'Doanh nghiệp',
-    tags: ['business', 'doanh nghiep', 'bao cao', 'report', 'doanh thu', 'kpi', 'revenue', 'growth', 'tai chinh', 'kinh doanh'],
-    bgGradient: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)',
-    previewBadge: 'BÁO CÁO Q3',
-    previewHtml: `
-      <div class="w-full h-full p-2.5 flex flex-col justify-between text-white" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);">
-        <div>
-          <span class="inline-block px-1.5 py-0.5 rounded bg-blue-500/80 text-[8px] font-bold tracking-wider mb-1">BUSINESS REPORT</span>
-          <p class="font-extrabold text-[11px] leading-tight text-white tracking-tight">KẾT QUẢ KINH DOANH Q3</p>
-          <p class="text-[7px] text-blue-200 mt-0.5 truncate">Tăng trưởng vượt 145% chỉ tiêu đề ra</p>
-        </div>
-        <div class="grid grid-cols-3 gap-1 my-auto">
-          <div class="bg-slate-900/90 p-1 rounded border border-blue-500/50 text-center">
-            <span class="font-extrabold text-blue-400 text-[10px] block">+145%</span>
-            <span class="text-[5px] text-slate-300">Doanh thu</span>
-          </div>
-          <div class="bg-slate-900/90 p-1 rounded border border-emerald-500/50 text-center">
-            <span class="font-extrabold text-emerald-400 text-[10px] block">2.8M</span>
-            <span class="text-[5px] text-slate-300">Khách hàng</span>
-          </div>
-          <div class="bg-slate-900/90 p-1 rounded border border-purple-500/50 text-center">
-            <span class="font-extrabold text-purple-400 text-[10px] block">98.5%</span>
-            <span class="text-[5px] text-slate-300">Hài lòng</span>
-          </div>
-        </div>
-        <div class="text-[5px] text-slate-400 border-t border-slate-700/60 pt-0.5 truncate">
-          Phòng Kế Hoạch & Tài Chính Chiến Lược
-        </div>
-      </div>
-    `,
-    slideData: {
-      customColor: '#0f172a',
-      fabricJson: {
-        objects: [
-          { type: 'textbox', left: 80, top: 45, width: 800, text: 'BÁO CÁO KẾT QUẢ KINH DOANH QUÝ 3 / 2026', fontSize: 30, fontFamily: 'Inter', fontWeight: 'bold', fill: '#ffffff' },
-          { type: 'textbox', left: 80, top: 90, width: 800, text: 'Tổng hợp các chỉ số tài chính, tăng trưởng thị phần và hiệu quả vận hành', fontSize: 15, fontFamily: 'Inter', fill: '#94a3b8' },
-          { type: 'rect', left: 80, top: 150, width: 245, height: 160, fill: '#1e293b', rx: 12, ry: 12, stroke: '#3b82f6', strokeWidth: 1.5 },
-          { type: 'textbox', left: 100, top: 175, width: 205, text: '+145% DOANH THU\n\nĐạt 48.5 tỷ VNĐ, vượt 25% so với kế hoạch quý 3 đã phê duyệt.', fontSize: 13, fontFamily: 'Inter', fill: '#60a5fa', lineHeight: 1.4 },
-          { type: 'rect', left: 355, top: 150, width: 245, height: 160, fill: '#1e293b', rx: 12, ry: 12, stroke: '#10b981', strokeWidth: 1.5 },
-          { type: 'textbox', left: 375, top: 175, width: 205, text: '2.8 TRIỆU NGƯỜI DÙNG\n\nLượng người dùng hoạt động hàng tháng (MAU) tăng trưởng 68% YoY.', fontSize: 13, fontFamily: 'Inter', fill: '#34d399', lineHeight: 1.4 },
-          { type: 'rect', left: 630, top: 150, width: 245, height: 160, fill: '#1e293b', rx: 12, ry: 12, stroke: '#a855f7', strokeWidth: 1.5 },
-          { type: 'textbox', left: 650, top: 175, width: 205, text: '98.5% HÀI LÒNG\n\nChỉ số NPS đạt kỷ lục nhờ cải tiến dịch vụ chăm sóc khách hàng 24/7.', fontSize: 13, fontFamily: 'Inter', fill: '#c084fc', lineHeight: 1.4 },
-          { type: 'rect', left: 80, top: 335, width: 795, height: 125, fill: '#1e293b', rx: 12, ry: 12 },
-          { type: 'textbox', left: 100, top: 355, width: 755, text: 'NHẬN ĐỊNH VÀ ĐỊNH HƯỚNG QUÝ 4:\n• Tiếp tục mở rộng hệ thống chi nhánh tại các thành phố trọng điểm\n• Đẩy mạnh tiếp thị số và chương trình tri ân khách hàng thân thiết\n• Tối ưu chi phí vận hành logistics để nâng biên lợi nhuận ròng lên trên 28%', fontSize: 13, fontFamily: 'Inter', fill: '#f1f5f9', lineHeight: 1.4 }
-        ]
-      }
-    }
-  },
-  {
-    id: 'pitch-deck',
-    title: 'Startup Pitch Deck - Công Nghệ AI',
-    category: 'pitch',
-    categoryName: 'Pitch Deck',
-    tags: ['pitch', 'pitch deck', 'startup', 'khoi nghiep', 'ai', 'cong nghe', 'goi von', 'investor', 'ke hoach'],
-    bgGradient: 'linear-gradient(135deg, #18181b 0%, #27272a 100%)',
-    previewBadge: 'PITCH DECK',
-    previewHtml: `
-      <div class="w-full h-full p-2.5 flex flex-col justify-between text-white" style="background: linear-gradient(135deg, #18181b 0%, #27272a 100%);">
-        <div>
-          <span class="inline-block px-1.5 py-0.5 rounded bg-purple-600 text-[8px] font-bold tracking-wider mb-1">STARTUP PITCH</span>
-          <p class="font-extrabold text-[11px] leading-tight text-white tracking-tight">CÔNG NGHỆ ĐỘT PHÁ</p>
-          <p class="text-[7px] text-zinc-400 mt-0.5 truncate">Nền tảng tự động hóa thông minh thế hệ mới</p>
-        </div>
-        <div class="grid grid-cols-2 gap-1 my-auto">
-          <div class="bg-red-950/40 p-1 rounded border border-red-500/40 text-[6px]">
-            <span class="font-bold text-red-400 block">Vấn Đề (Problem)</span>
-            <span class="text-zinc-300 text-[5px]">Quy trình thủ công chậm</span>
-          </div>
-          <div class="bg-emerald-950/40 p-1 rounded border border-emerald-500/40 text-[6px]">
-            <span class="font-bold text-emerald-400 block">Giải Pháp (Solution)</span>
-            <span class="text-zinc-300 text-[5px]">AI tự động hóa 10x</span>
-          </div>
-        </div>
-        <div class="text-[5px] text-purple-400 border-t border-zinc-800 pt-0.5 truncate">
-          Vòng gọi vốn Seed: 1.5M USD
-        </div>
-      </div>
-    `,
-    slideData: {
-      customColor: '#18181b',
-      fabricJson: {
-        objects: [
-          { type: 'textbox', left: 80, top: 45, width: 800, text: 'GIẢI PHÁP TỰ ĐỘNG HÓA DOANH NGHIỆP THẾ HỆ MỚI', fontSize: 28, fontFamily: 'Inter', fontWeight: 'bold', fill: '#ffffff' },
-          { type: 'textbox', left: 80, top: 90, width: 800, text: 'Rút ngắn 80% thời gian xử lý dữ liệu và tiết kiệm 60% chi phí vận hành', fontSize: 15, fontFamily: 'Inter', fill: '#a1a1aa' },
-          { type: 'rect', left: 80, top: 150, width: 380, height: 300, fill: '#27272a', rx: 12, ry: 12, stroke: '#ef4444', strokeWidth: 1.5 },
-          { type: 'textbox', left: 105, top: 175, width: 330, text: 'VẤN ĐỀ THỊ TRƯỜNG (PROBLEM)\n\n• Quy trình thủ công mất từ 4 - 6 giờ mỗi ngày\n• Tỷ lệ sai sót dữ liệu người nhập lên đến 14%\n• Chi phí tuyển dụng và đào tạo nhân sự tăng cao\n• Khó khăn trong việc mở rộng quy mô kinh doanh', fontSize: 13, fontFamily: 'Inter', fill: '#fca5a5', lineHeight: 1.5 },
-          { type: 'rect', left: 495, top: 150, width: 380, height: 300, fill: '#27272a', rx: 12, ry: 12, stroke: '#10b981', strokeWidth: 1.5 },
-          { type: 'textbox', left: 520, top: 175, width: 330, text: 'GIẢI PHÁP ĐỘT PHÁ (SOLUTION)\n\n• Tự động hóa thông minh tích hợp AI đa phương thức\n• Tốc độ xử lý chỉ trong 10 giây với độ chính xác 99.8%\n• Kết nối trực tiếp vào mọi hệ thống ERP & CRM hiện có\n• Giúp doanh nghiệp sẵn sàng tăng trưởng gấp 10 lần', fontSize: 13, fontFamily: 'Inter', fill: '#86efac', lineHeight: 1.5 },
-          { type: 'textbox', left: 80, top: 485, width: 800, text: 'Mục tiêu gọi vốn Vòng Seed: 1.500.000 USD phục vụ R&D và mở rộng thị trường Đông Nam Á.', fontSize: 12, fontFamily: 'Inter', fill: '#c084fc' }
-        ]
-      }
-    }
-  },
-  {
-    id: 'marketing-launch',
-    title: 'Kế Hoạch Ra Mắt Sản Phẩm Mới',
-    category: 'marketing',
-    categoryName: 'Marketing',
-    tags: ['marketing', 'tiep thi', 'launch', 'ra mat', 'san pham', 'campaign', 'chien dich', 'social', 'media'],
-    bgGradient: 'linear-gradient(135deg, #3b0764 0%, #581c87 100%)',
-    previewBadge: 'MARKETING',
-    previewHtml: `
-      <div class="w-full h-full p-2.5 flex flex-col justify-between text-white" style="background: linear-gradient(135deg, #3b0764 0%, #581c87 100%);">
-        <div>
-          <span class="inline-block px-1.5 py-0.5 rounded bg-pink-500 text-[8px] font-bold tracking-wider mb-1">CAMPAIGN 2026</span>
-          <p class="font-extrabold text-[11px] leading-tight text-white tracking-tight">KẾ HOẠCH RA MẮT</p>
-          <p class="text-[7px] text-fuchsia-200 mt-0.5 truncate">Chiến dịch tiếp thị đa kênh phủ sóng thương hiệu</p>
-        </div>
-        <div class="grid grid-cols-3 gap-1 my-auto text-[6px]">
-          <div class="bg-purple-950/70 p-1 rounded border border-pink-500/50">
-            <span class="font-bold text-pink-300 block">Giai đoạn 1</span>
-            <span class="text-slate-200 text-[5px]">Teaser & Hype</span>
-          </div>
-          <div class="bg-purple-900/80 p-1 rounded border border-pink-400">
-            <span class="font-bold text-pink-200 block">Giai đoạn 2</span>
-            <span class="text-white text-[5px]">Mega Launch</span>
-          </div>
-          <div class="bg-purple-950/70 p-1 rounded border border-pink-500/50">
-            <span class="font-bold text-pink-300 block">Giai đoạn 3</span>
-            <span class="text-slate-200 text-[5px]">Sustain & Scale</span>
-          </div>
-        </div>
-        <div class="text-[5px] text-fuchsia-300 border-t border-purple-800 pt-0.5 truncate">
-          Mục tiêu: Tiếp cận 10 triệu lượt xem trong 30 ngày
-        </div>
-      </div>
-    `,
-    slideData: {
-      customColor: '#3b0764',
-      fabricJson: {
-        objects: [
-          { type: 'textbox', left: 80, top: 45, width: 800, text: 'KẾ HOẠCH CHIẾN DỊCH RA MẮT SẢN PHẨM MỚI', fontSize: 30, fontFamily: 'Inter', fontWeight: 'bold', fill: '#ffffff' },
-          { type: 'textbox', left: 80, top: 90, width: 800, text: 'Chiến lược truyền thông đa kênh tập trung lan tỏa thương hiệu và chuyển đổi đơn hàng', fontSize: 15, fontFamily: 'Inter', fill: '#e9d5ff' },
-          { type: 'rect', left: 80, top: 150, width: 245, height: 300, fill: '#581c87', rx: 12, ry: 12 },
-          { type: 'textbox', left: 100, top: 175, width: 205, text: 'GIAI ĐOẠN 1: TEASER\n\n(Tuần 1 - 2)\n\n• Video viral gây tò mò\n• Đếm ngược ngày ra mắt\n• Mời trải nghiệm sớm (KOLs)\n• Minigame nhận quà độc quyền', fontSize: 13, fontFamily: 'Inter', fill: '#f3e8ff', lineHeight: 1.4 },
-          { type: 'rect', left: 355, top: 145, width: 245, height: 310, fill: '#701a75', stroke: '#f43f5e', strokeWidth: 2, rx: 12, ry: 12 },
-          { type: 'textbox', left: 375, top: 170, width: 205, text: 'GIAI ĐOẠN 2: BÙNG NỔ\n\n(Tuần 3 - 4)\n\n• Sự kiện ra mắt phát trực tiếp\n• Flash sale mở bán ưu đãi\n• Đánh giá từ 50+ chuyên gia\n• Phủ sóng quảng cáo đa nền tảng', fontSize: 13, fontFamily: 'Inter', fill: '#ffffff', lineHeight: 1.4 },
-          { type: 'rect', left: 630, top: 150, width: 245, height: 300, fill: '#581c87', rx: 12, ry: 12 },
-          { type: 'textbox', left: 650, top: 175, width: 205, text: 'GIAI ĐOẠN 3: DUY TRÌ\n\n(Tuần 5 - 8)\n\n• Thu thập phản hồi khách hàng\n• Nội dung do người dùng tạo (UGC)\n• Chương trình khách hàng thân thiết\n• Tối ưu chi phí chuyển đổi (CPA)', fontSize: 13, fontFamily: 'Inter', fill: '#f3e8ff', lineHeight: 1.4 },
-          { type: 'textbox', left: 80, top: 485, width: 800, text: 'KPI mục tiêu: 10.000 đơn hàng đầu tiên trong vòng 14 ngày kể từ thời điểm mở bán chính thức.', fontSize: 12, fontFamily: 'Inter', fill: '#f0abfc' }
-        ]
-      }
-    }
-  },
-  {
-    id: 'education-workshop',
-    title: 'Lộ Trình Khóa Học & Workshop',
-    category: 'education',
-    categoryName: 'Giáo dục',
-    tags: ['education', 'giao duc', 'khoa hoc', 'course', 'workshop', 'dao tao', 'hoc tap', 'training', 'giang day'],
-    bgGradient: 'linear-gradient(135deg, #083344 0%, #155e75 100%)',
-    previewBadge: 'GIÁO DỤC',
-    previewHtml: `
-      <div class="w-full h-full p-2.5 flex flex-col justify-between text-white" style="background: linear-gradient(135deg, #083344 0%, #155e75 100%);">
-        <div>
-          <span class="inline-block px-1.5 py-0.5 rounded bg-cyan-500 text-[8px] font-bold tracking-wider mb-1">EDUCATION</span>
-          <p class="font-extrabold text-[11px] leading-tight text-white tracking-tight">LỘ TRÌNH ĐÀO TẠO</p>
-          <p class="text-[7px] text-cyan-200 mt-0.5 truncate">Học tập thực chiến từ cơ bản đến nâng cao</p>
-        </div>
-        <div class="space-y-1 my-auto text-[6px]">
-          <div class="bg-cyan-950/80 p-1 rounded border border-cyan-700/60 flex justify-between">
-            <span class="font-bold text-cyan-300">Module 1: Nền tảng tư duy</span>
-            <span class="text-slate-300">2 Tuần</span>
-          </div>
-          <div class="bg-cyan-900/80 p-1 rounded border border-cyan-400 flex justify-between">
-            <span class="font-bold text-cyan-200">Module 2: Thực hành dự án</span>
-            <span class="text-white">4 Tuần</span>
-          </div>
-          <div class="bg-cyan-950/80 p-1 rounded border border-cyan-700/60 flex justify-between">
-            <span class="font-bold text-cyan-300">Module 3: Đồ án tốt nghiệp</span>
-            <span class="text-slate-300">2 Tuần</span>
-          </div>
-        </div>
-        <div class="text-[5px] text-cyan-300 border-t border-cyan-800 pt-0.5 truncate">
-          Cấp chứng chỉ hoàn thành khóa học chuẩn quốc tế
-        </div>
-      </div>
-    `,
-    slideData: {
-      customColor: '#083344',
-      fabricJson: {
-        objects: [
-          { type: 'textbox', left: 80, top: 45, width: 800, text: 'LỘ TRÌNH KHÓA HỌC THỰC CHIẾN 8 TUẦN', fontSize: 30, fontFamily: 'Inter', fontWeight: 'bold', fill: '#ffffff' },
-          { type: 'textbox', left: 80, top: 90, width: 800, text: 'Hệ thống hóa kiến thức bài bản, kết hợp thực hành trực tiếp trên các bài toán doanh nghiệp', fontSize: 15, fontFamily: 'Inter', fill: '#a5f3fc' },
-          { type: 'rect', left: 80, top: 150, width: 245, height: 300, fill: '#155e75', rx: 12, ry: 12 },
-          { type: 'textbox', left: 100, top: 175, width: 205, text: 'MODULE 1: NỀN TẢNG\n\n(Tuần 1 - 2)\n\n• Tư duy thiết kế bài thuyết trình\n• Nguyên lý màu sắc và bố cục\n• Typography & chọn phông chữ\n• Kỹ năng kể chuyện qua hình ảnh', fontSize: 13, fontFamily: 'Inter', fill: '#ecfeff', lineHeight: 1.4 },
-          { type: 'rect', left: 355, top: 145, width: 245, height: 310, fill: '#0e7490', stroke: '#22d3ee', strokeWidth: 2, rx: 12, ry: 12 },
-          { type: 'textbox', left: 375, top: 170, width: 205, text: 'MODULE 2: THỰC CHIẾN\n\n(Tuần 3 - 6)\n\n• Trực quan hóa dữ liệu biểu đồ\n• Thiết kế slide kinh doanh & pitch\n• Hoạt ảnh & hiệu ứng chuyển cảnh\n• Sửa bài 1:1 cùng chuyên gia', fontSize: 13, fontFamily: 'Inter', fill: '#ffffff', lineHeight: 1.4 },
-          { type: 'rect', left: 630, top: 150, width: 245, height: 300, fill: '#155e75', rx: 12, ry: 12 },
-          { type: 'textbox', left: 650, top: 175, width: 205, text: 'MODULE 3: TỐT NGHIỆP\n\n(Tuần 7 - 8)\n\n• Thực hiện đồ án thực tế\n• Thuyết trình bảo vệ đồ án\n• Nhận chứng nhận tốt nghiệp\n• Kết nối cơ hội việc làm', fontSize: 13, fontFamily: 'Inter', fill: '#ecfeff', lineHeight: 1.4 },
-          { type: 'textbox', left: 80, top: 485, width: 800, text: 'Hỗ trợ giải đáp thắc mắc 24/7 trong suốt quá trình học và 6 tháng sau tốt nghiệp.', fontSize: 12, fontFamily: 'Inter', fill: '#67e8f9' }
-        ]
-      }
-    }
-  },
-  {
-    id: 'creative-portfolio',
-    title: 'Hồ Sơ Năng Lực & Dự Án',
-    category: 'creative',
-    categoryName: 'Sáng tạo',
-    tags: ['creative', 'portfolio', 'ho so', 'nang luc', 'du an', 'thiet ke', 'ca nhan', 'profile', 'designer', 'agency'],
-    bgGradient: 'linear-gradient(135deg, #1c1917 0%, #292524 100%)',
-    previewBadge: 'PORTFOLIO',
-    previewHtml: `
-      <div class="w-full h-full p-2.5 flex flex-col justify-between text-white" style="background: linear-gradient(135deg, #1c1917 0%, #292524 100%);">
-        <div>
-          <span class="inline-block px-1.5 py-0.5 rounded bg-amber-600 text-[8px] font-bold tracking-wider mb-1">CREATIVE PROFILE</span>
-          <p class="font-extrabold text-[11px] leading-tight text-white tracking-tight">HỒ SƠ NĂNG LỰC</p>
-          <p class="text-[7px] text-stone-400 mt-0.5 truncate">Dự án thiết kế nhận diện & truyền thông tiêu biểu</p>
-        </div>
-        <div class="grid grid-cols-3 gap-1 my-auto text-[6px]">
-          <div class="bg-stone-900 p-1 rounded border border-stone-700">
-            <span class="font-bold text-amber-400 block">Dự án A</span>
-            <span class="text-stone-300 text-[5px]">Brand Identity</span>
-          </div>
-          <div class="bg-stone-800 p-1 rounded border border-amber-500">
-            <span class="font-bold text-amber-300 block">Dự án B</span>
-            <span class="text-stone-200 text-[5px]">UI/UX Design</span>
-          </div>
-          <div class="bg-stone-900 p-1 rounded border border-stone-700">
-            <span class="font-bold text-amber-400 block">Dự án C</span>
-            <span class="text-stone-300 text-[5px]">Marketing Art</span>
-          </div>
-        </div>
-        <div class="text-[5px] text-stone-400 border-t border-stone-800 pt-0.5 truncate">
-          Liên hệ: portfolio@agency-creative.vn
-        </div>
-      </div>
-    `,
-    slideData: {
-      customColor: '#1c1917',
-      fabricJson: {
-        objects: [
-          { type: 'textbox', left: 80, top: 45, width: 800, text: 'HỒ SƠ NĂNG LỰC & CÁC DỰ ÁN TIÊU BIỂU', fontSize: 30, fontFamily: 'Inter', fontWeight: 'bold', fill: '#ffffff' },
-          { type: 'textbox', left: 80, top: 90, width: 800, text: 'Hơn 5 năm kinh nghiệm sáng tạo giải pháp thị giác cho hơn 120+ thương hiệu uy tín', fontSize: 15, fontFamily: 'Inter', fill: '#d6d3d1' },
-          { type: 'rect', left: 80, top: 150, width: 245, height: 300, fill: '#292524', rx: 12, ry: 12 },
-          { type: 'textbox', left: 100, top: 175, width: 205, text: 'DỰ ÁN 01: NHẬN DIỆN THƯƠNG HIỆU\n\n• Khách hàng: TechCorp Global\n• Lĩnh vực: Công nghệ tài chính\n• Hạng mục: Logo, Bộ nhận diện, Ấn phẩm truyền thông & Website\n• Kết quả: Tăng 200% độ nhận diện', fontSize: 13, fontFamily: 'Inter', fill: '#f5f5f4', lineHeight: 1.4 },
-          { type: 'rect', left: 355, top: 145, width: 245, height: 310, fill: '#44403c', stroke: '#f59e0b', strokeWidth: 2, rx: 12, ry: 12 },
-          { type: 'textbox', left: 375, top: 170, width: 205, text: 'DỰ ÁN 02: THIẾT KẾ UI/UX APP\n\n• Khách hàng: TravelGo Mobile\n• Lĩnh vực: Du lịch & Đặt vé\n• Hạng mục: Giao diện ứng dụng iOS & Android, Design System\n• Kết quả: 500k+ lượt tải về', fontSize: 13, fontFamily: 'Inter', fill: '#ffffff', lineHeight: 1.4 },
-          { type: 'rect', left: 630, top: 150, width: 245, height: 300, fill: '#292524', rx: 12, ry: 12 },
-          { type: 'textbox', left: 650, top: 175, width: 205, text: 'DỰ ÁN 03: CHIẾN DỊCH QUẢNG CÁO\n\n• Khách hàng: EcoLife Organic\n• Lĩnh vực: Tiêu dùng bền vững\n• Hạng mục: Poster, Video đồ họa, Key visual đa kênh\n• Kết quả: Đạt giải Best Campaign', fontSize: 13, fontFamily: 'Inter', fill: '#f5f5f4', lineHeight: 1.4 },
-          { type: 'textbox', left: 80, top: 485, width: 800, text: 'Kết nối hợp tác: info@creative-studio.vn  |  Behance: behance.net/creativestudio', fontSize: 12, fontFamily: 'Inter', fill: '#fbbf24' }
-        ]
-      }
-    }
-  }
-];
+const SYSTEM_PPTX_TEMPLATES = [];
 
 let currentTemplateCategory = 'all';
 let currentTemplateSearchQuery = '';
@@ -1396,13 +933,14 @@ function normalizeSearchStr(str) {
 function initSystemTemplatesLibrary() {
   if (!templatesGridContainer) return;
 
-  // Render lần đầu toàn bộ danh sách mẫu
+  // Hiển thị trạng thái ban đầu dựa trên dữ liệu thật
   renderTemplatesGrid('', 'all');
 
-  // Nạp kho mẫu động từ SQLite Database Backend nếu khả dụng
+  // Nạp kho mẫu thực tế từ Database API (/api/templates)
   fetch('/api/templates')
     .then(res => res.ok ? res.json() : null)
     .then(data => {
+      SYSTEM_PPTX_TEMPLATES.length = 0;
       if (data && Array.isArray(data.templates) && data.templates.length > 0) {
         // Map database templates into SYSTEM_PPTX_TEMPLATES format
         const dynamicTemplates = data.templates.map(t => ({
@@ -1416,14 +954,14 @@ function initSystemTemplatesLibrary() {
           previewHtml: t.preview_html,
           slideData: t.slide_data || { customColor: '#032030', fabricJson: { objects: [] } }
         }));
-        // Update in-memory array and re-render
-        SYSTEM_PPTX_TEMPLATES.length = 0;
         SYSTEM_PPTX_TEMPLATES.push(...dynamicTemplates);
-        renderTemplatesGrid(currentTemplateSearchQuery, currentTemplateCategory);
       }
+      renderTemplatesGrid(currentTemplateSearchQuery, currentTemplateCategory);
     })
     .catch(err => {
-      console.warn("Could not sync templates from server DB, using local cache:", err);
+      console.warn("Could not sync templates from database:", err);
+      SYSTEM_PPTX_TEMPLATES.length = 0;
+      renderTemplatesGrid(currentTemplateSearchQuery, currentTemplateCategory);
     });
 
   // Gắn sự kiện ô tìm kiếm drawerSearchInput
@@ -1567,7 +1105,21 @@ function renderTemplatesGrid(query = '', category = 'all') {
   // Xử lý Empty State
   if (filtered.length === 0) {
     templatesGridContainer.classList.add('hidden');
-    if (templatesEmptyState) templatesEmptyState.classList.remove('hidden');
+    if (templatesEmptyState) {
+      templatesEmptyState.classList.remove('hidden');
+      const emptyTitle = templatesEmptyState.querySelector('p.font-semibold');
+      const emptyDesc = templatesEmptyState.querySelector('p.text-slate-500');
+      const resetBtn = document.getElementById('btnResetSearchFilters');
+      if (SYSTEM_PPTX_TEMPLATES.length === 0) {
+        if (emptyTitle) emptyTitle.textContent = "Chưa có mẫu nào trong hệ thống";
+        if (emptyDesc) emptyDesc.textContent = "Kho mẫu hiện đang trống. Hãy nhập thêm tệp PPTX để tạo mẫu mới.";
+        if (resetBtn) resetBtn.classList.add('hidden');
+      } else {
+        if (emptyTitle) emptyTitle.textContent = "Không tìm thấy mẫu phù hợp";
+        if (emptyDesc) emptyDesc.textContent = 'Thử tìm từ khóa khác như "travel", "du lịch", "báo cáo", hoặc chọn Tất cả';
+        if (resetBtn) resetBtn.classList.remove('hidden');
+      }
+    }
     return;
   }
 
