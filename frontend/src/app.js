@@ -474,9 +474,6 @@ const btnAddSlideFilmstrip = document.getElementById('btnAddSlideFilmstrip');
 const btnToggleFilmstrip = document.getElementById('btnToggleFilmstrip');
 const btnToggleFilmstripText = document.getElementById('btnToggleFilmstripText');
 
-// Toggle Edit Overlay
-const btnToggleEditOverlay = document.getElementById('btnToggleEditOverlay');
-const toggleEditText = document.getElementById('toggleEditText');
 
 // Drawer Element Buttons
 const btnAddHeading = document.getElementById('btnAddHeading');
@@ -1961,14 +1958,6 @@ function applyPermissionsToUI(deck) {
     }
   }
 
-  // 4. Nút Sửa chữ trên slide
-  if (btnToggleEditOverlay) {
-    if (!perms.canEdit) {
-      btnToggleEditOverlay.classList.add('hidden');
-    } else {
-      btnToggleEditOverlay.classList.remove('hidden');
-    }
-  }
 
   // 5. Nút thêm slide
   if (btnAddSlide) btnAddSlide.style.display = perms.canEdit ? '' : 'none';
@@ -2506,8 +2495,6 @@ function loadSlideToCanvas(idx, callback) {
   const targetW = 960;
   const targetH = 540;
 
-  slide.isEditOverlayActive = false;
-  toggleEditText.textContent = "Bật Sửa Chữ Trên Slide";
 
   if (slide.useCustomColor && slide.customColor) {
     fabricCanvas.backgroundColor = slide.customColor;
@@ -2606,73 +2593,6 @@ function initUndoStackForSlide() {
   }
 }
 
-// Toggle Extracted Text Overlay
-btnToggleEditOverlay.addEventListener('click', () => {
-  if (!currentDeck || !currentDeck.slides[currentSlideIndex]) return;
-  const slide = currentDeck.slides[currentSlideIndex];
-
-  if (slide.isEditOverlayActive) {
-    if (fabricCanvas) {
-      fabricCanvas.discardActiveObject();
-      const objects = fabricCanvas.getObjects().slice();
-      objects.forEach(obj => {
-        if (obj.isExtractedOverlay) fabricCanvas.remove(obj);
-      });
-      onObjectDeselected();
-      hideFloatingToolbar();
-      fabricCanvas.renderAll();
-    }
-    slide.isEditOverlayActive = false;
-    toggleEditText.textContent = "Bật Sửa Chữ Trên Slide";
-    updateCurrentSlideThumbnail();
-    saveCanvasState();
-    showToast("Đã tắt lớp sửa chữ, hiển thị slide gốc 100%");
-  } else {
-    if (!slide.elements || slide.elements.length === 0) {
-      showToast("Trang này không có văn bản nào bóc tách được", true);
-      return;
-    }
-
-    const origW = currentDeck.canvas.width || 1280;
-    const origH = currentDeck.canvas.height || 720;
-    const targetW = 960;
-    const targetH = 540;
-    const scaleX = targetW / origW;
-    const scaleY = targetH / origH;
-
-    let addedCount = 0;
-    slide.elements.forEach(el => {
-      if (el.type === 'text') {
-        const textObj = new fabric.Textbox(el.content || '', {
-          left: Math.round(el.x * scaleX),
-          top: Math.round(el.y * scaleY),
-          width: Math.max(80, Math.round(el.width * scaleX)),
-          fontSize: Math.max(12, Math.round((el.style.fontSize || 16) * scaleY)),
-          fontFamily: el.style.fontFamily || 'Inter',
-          fill: el.style.color || '#0f172a',
-          fontWeight: el.style.bold ? '700' : '400',
-          fontStyle: el.style.italic ? 'italic' : 'normal',
-          textAlign: el.style.align || 'left',
-          splitByGrapheme: false,
-          isExtractedOverlay: true,
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          padding: 4,
-          stroke: '#00c4cc',
-          strokeWidth: 1,
-          strokeDashArray: [3, 3],
-        });
-        textObj.isSystemLoaded = true;
-        fabricCanvas.add(textObj);
-        addedCount++;
-      }
-    });
-
-    slide.isEditOverlayActive = true;
-    toggleEditText.textContent = "Tắt Sửa Chữ Trên Slide";
-    fabricCanvas.renderAll();
-    showToast(`Đã bật ${addedCount} hộp chữ để chỉnh sửa trực tiếp!`);
-  }
-});
 
 // Restore Original Background
 btnRestoreOriginalBg.addEventListener('click', () => {
