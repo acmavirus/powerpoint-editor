@@ -1143,21 +1143,35 @@
             <!-- Right Universal Tools: Position/Layer & Delete -->
             <div id="ctxUniversalGroup" class="hidden items-center gap-1.5">
               <button
-                id="btnBringForward"
-                class="px-2 py-1 bg-slate-900 hover:bg-slate-800 rounded border border-slate-700 text-slate-300 text-[11px] flex items-center gap-1"
+                id="btnGroupObj"
+                class="hidden px-2 py-1 bg-slate-900 hover:bg-slate-800 rounded border border-slate-700 text-slate-300 text-[11px] items-center gap-1 cursor-pointer"
+                title="Nhóm đối tượng (Ctrl+G)"
               >
-                <i data-lucide="layers" class="w-3.5 h-3.5"></i> Lớp
+                <i data-lucide="layers" class="w-3.5 h-3.5"></i> Nhóm
+              </button>
+              <button
+                id="btnUngroupObj"
+                class="hidden px-2 py-1 bg-slate-900 hover:bg-slate-800 rounded border border-slate-700 text-slate-300 text-[11px] items-center gap-1 cursor-pointer"
+                title="Bỏ nhóm (Ctrl+Shift+G)"
+              >
+                <i data-lucide="ungroup" class="w-3.5 h-3.5"></i> Bỏ nhóm
+              </button>
+              <button
+                id="btnBringForward"
+                class="px-2 py-1 bg-slate-900 hover:bg-slate-800 rounded border border-slate-700 text-slate-300 text-[11px] flex items-center gap-1 cursor-pointer"
+              >
+                <i data-lucide="bring-to-front" class="w-3.5 h-3.5"></i> Lớp
               </button>
               <button
                 id="btnDuplicateObj"
-                class="p-1.5 hover:bg-slate-800 text-slate-300 rounded"
+                class="p-1.5 hover:bg-slate-800 text-slate-300 rounded cursor-pointer"
                 title="Nhân bản (Ctrl+D)"
               >
                 <i data-lucide="copy" class="w-3.5 h-3.5"></i>
               </button>
               <button
                 id="btnDeleteObj"
-                class="p-1.5 hover:bg-red-900/60 text-red-400 rounded"
+                class="p-1.5 hover:bg-red-900/60 text-red-400 rounded cursor-pointer"
                 title="Xóa (Delete)"
               >
                 <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
@@ -1258,8 +1272,26 @@
               <!-- Divider -->
               <div class="w-[1px] h-4 bg-slate-700/80 mx-0.5"></div>
 
-              <!-- Universal Action Buttons (Duplicate, Delete) -->
+              <!-- Universal Action Buttons (Duplicate, Group, Delete) -->
               <div class="flex items-center gap-1">
+                <!-- Group & Ungroup Buttons -->
+                <button
+                  id="btnFloatGroup"
+                  class="hidden px-2 py-1 bg-cyan-600/30 hover:bg-cyan-600/50 text-cyan-300 rounded-lg text-[11px] font-medium items-center gap-1 transition cursor-pointer"
+                  title="Nhóm các đối tượng đã chọn (Ctrl+G)"
+                >
+                  <i data-lucide="layers" class="w-3.5 h-3.5"></i>
+                  <span>Nhóm</span>
+                </button>
+                <button
+                  id="btnFloatUngroup"
+                  class="hidden px-2 py-1 bg-purple-600/30 hover:bg-purple-600/50 text-purple-300 rounded-lg text-[11px] font-medium items-center gap-1 transition cursor-pointer"
+                  title="Bỏ nhóm đối tượng (Ctrl+Shift+G)"
+                >
+                  <i data-lucide="ungroup" class="w-3.5 h-3.5"></i>
+                  <span>Bỏ nhóm</span>
+                </button>
+
                 <button
                   id="btnFloatDuplicate"
                   class="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
@@ -2462,6 +2494,6 @@
       <span id="toastMsg">Thành công!</span>
     </div>
 
-    <script src="/app.js?v=20261101_canva_editor_v4"></script>
+    <script src="/app.js?v=20261101_canva_editor_v5"></script>
   </body>
 </html>

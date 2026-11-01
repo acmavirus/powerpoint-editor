@@ -6,6 +6,11 @@ let currentZoom = 1.0;
 let undoStack = [];
 let redoStack = [];
 
+// Canva Smart Alignment Guides & Snapping
+let smartGuideLineV = null;
+let smartGuideLineH = null;
+const SNAP_THRESHOLD = 6;
+
 // DOM References
 const homeView = document.getElementById('homeView');
 const homeAuthBlock = document.getElementById('homeAuthBlock');
@@ -433,6 +438,8 @@ const imageOpacityInput = document.getElementById('imageOpacityInput');
 const btnBringForward = document.getElementById('btnBringForward');
 const btnDuplicateObj = document.getElementById('btnDuplicateObj');
 const btnDeleteObj = document.getElementById('btnDeleteObj');
+const btnGroupObj = document.getElementById('btnGroupObj');
+const btnUngroupObj = document.getElementById('btnUngroupObj');
 
 // Undo / Redo
 const btnUndo = document.getElementById('btnUndo');
@@ -455,6 +462,8 @@ const floatShapeGroup = document.getElementById('floatShapeGroup');
 const floatShapeFillPicker = document.getElementById('floatShapeFillPicker');
 const floatShapeStrokePicker = document.getElementById('floatShapeStrokePicker');
 
+const btnFloatGroup = document.getElementById('btnFloatGroup');
+const btnFloatUngroup = document.getElementById('btnFloatUngroup');
 const btnFloatDuplicate = document.getElementById('btnFloatDuplicate');
 const btnFloatDelete = document.getElementById('btnFloatDelete');
 
@@ -508,6 +517,217 @@ const menuDownloadPPTX = document.getElementById('menuDownloadPPTX');
 const toast = document.getElementById('toast');
 const toastMsg = document.getElementById('toastMsg');
 
+// --- CANVA SMART ALIGNMENT GUIDES & MAGNETIC SNAPPING ENGINE ---
+function ensureSmartGuideLines() {
+  if (!fabricCanvas) return;
+  if (!smartGuideLineV || !fabricCanvas.contains(smartGuideLineV)) {
+    smartGuideLineV = new fabric.Line([0, 0, 0, 540], {
+      stroke: '#ff007a', // Màu hồng neon Canva rực rỡ
+      strokeWidth: 1.5,
+      selectable: false,
+      evented: false,
+      isGuideLine: true,
+      excludeFromExport: true,
+      strokeDashArray: [4, 4],
+      visible: false,
+    });
+    smartGuideLineV.isSystemLoaded = true;
+    fabricCanvas.add(smartGuideLineV);
+  }
+  if (!smartGuideLineH || !fabricCanvas.contains(smartGuideLineH)) {
+    smartGuideLineH = new fabric.Line([0, 0, 960, 0], {
+      stroke: '#ff007a',
+      strokeWidth: 1.5,
+      selectable: false,
+      evented: false,
+      isGuideLine: true,
+      excludeFromExport: true,
+      strokeDashArray: [4, 4],
+      visible: false,
+    });
+    smartGuideLineH.isSystemLoaded = true;
+    fabricCanvas.add(smartGuideLineH);
+  }
+}
+
+function showVerticalGuide(x) {
+  ensureSmartGuideLines();
+  if (!smartGuideLineV) return;
+  smartGuideLineV.set({
+    x1: x,
+    y1: 0,
+    x2: x,
+    y2: 540,
+    visible: true,
+  });
+  smartGuideLineV.bringToFront();
+}
+
+function hideVerticalGuide() {
+  if (smartGuideLineV && smartGuideLineV.visible) {
+    smartGuideLineV.set({ visible: false });
+  }
+}
+
+function showHorizontalGuide(y) {
+  ensureSmartGuideLines();
+  if (!smartGuideLineH) return;
+  smartGuideLineH.set({
+    x1: 0,
+    y1: y,
+    x2: 960,
+    y2: y,
+    visible: true,
+  });
+  smartGuideLineH.bringToFront();
+}
+
+function hideHorizontalGuide() {
+  if (smartGuideLineH && smartGuideLineH.visible) {
+    smartGuideLineH.set({ visible: false });
+  }
+}
+
+function clearSmartAlignmentGuides() {
+  hideVerticalGuide();
+  hideHorizontalGuide();
+  if (fabricCanvas) {
+    fabricCanvas.requestRenderAll();
+  }
+}
+
+function handleSmartAlignmentGuides(e) {
+  const target = e.target;
+  if (!target || !fabricCanvas) return;
+  if (target.isGuideLine) return;
+
+  const canvasW = 960;
+  const canvasH = 540;
+
+  // Lấy bounding box hiện tại của đối tượng
+  const targetBound = target.getBoundingRect(true);
+  const targetLeft = targetBound.left;
+  const targetWidth = targetBound.width;
+  const targetRight = targetLeft + targetWidth;
+  const targetCenterX = targetLeft + targetWidth / 2;
+
+  const targetTop = targetBound.top;
+  const targetHeight = targetBound.height;
+  const targetBottom = targetTop + targetHeight;
+  const targetCenterY = targetTop + targetHeight / 2;
+
+  // 1. Mốc gióng Canvas (Tâm 480x270 & Biên an toàn 40px)
+  const verticalSnapPoints = [
+    { x: canvasW / 2, type: 'canvas_center' },
+    { x: 40, type: 'canvas_margin' },
+    { x: canvasW - 40, type: 'canvas_margin' }
+  ];
+
+  const horizontalSnapPoints = [
+    { y: canvasH / 2, type: 'canvas_center' },
+    { y: 40, type: 'canvas_margin' },
+    { y: canvasH - 40, type: 'canvas_margin' }
+  ];
+
+  // 2. Mốc gióng từ các đối tượng khác trên slide
+  const objects = fabricCanvas.getObjects();
+  for (const obj of objects) {
+    if (obj === target || obj.isGuideLine || obj.isExtractedOverlay || !obj.visible) continue;
+    const objBound = obj.getBoundingRect(true);
+    
+    verticalSnapPoints.push(
+      { x: objBound.left, type: 'obj_left' },
+      { x: objBound.left + objBound.width / 2, type: 'obj_center' },
+      { x: objBound.left + objBound.width, type: 'obj_right' }
+    );
+
+    horizontalSnapPoints.push(
+      { y: objBound.top, type: 'obj_top' },
+      { y: objBound.top + objBound.height / 2, type: 'obj_center' },
+      { y: objBound.top + objBound.height, type: 'obj_bottom' }
+    );
+  }
+
+  let snappedX = null;
+  let guideX = null;
+
+  for (const pt of verticalSnapPoints) {
+    if (Math.abs(targetCenterX - pt.x) <= SNAP_THRESHOLD) {
+      snappedX = target.left + (pt.x - targetCenterX);
+      guideX = pt.x;
+      break;
+    }
+    if (Math.abs(targetLeft - pt.x) <= SNAP_THRESHOLD) {
+      snappedX = target.left + (pt.x - targetLeft);
+      guideX = pt.x;
+      break;
+    }
+    if (Math.abs(targetRight - pt.x) <= SNAP_THRESHOLD) {
+      snappedX = target.left + (pt.x - targetRight);
+      guideX = pt.x;
+      break;
+    }
+  }
+
+  let snappedY = null;
+  let guideY = null;
+
+  for (const pt of horizontalSnapPoints) {
+    if (Math.abs(targetCenterY - pt.y) <= SNAP_THRESHOLD) {
+      snappedY = target.top + (pt.y - targetCenterY);
+      guideY = pt.y;
+      break;
+    }
+    if (Math.abs(targetTop - pt.y) <= SNAP_THRESHOLD) {
+      snappedY = target.top + (pt.y - targetTop);
+      guideY = pt.y;
+      break;
+    }
+    if (Math.abs(targetBottom - pt.y) <= SNAP_THRESHOLD) {
+      snappedY = target.top + (pt.y - targetBottom);
+      guideY = pt.y;
+      break;
+    }
+  }
+
+  if (snappedX !== null) {
+    target.set('left', snappedX);
+    showVerticalGuide(guideX);
+  } else {
+    hideVerticalGuide();
+  }
+
+  if (snappedY !== null) {
+    target.set('top', snappedY);
+    showHorizontalGuide(guideY);
+  } else {
+    hideHorizontalGuide();
+  }
+
+  if (snappedX !== null || snappedY !== null) {
+    target.setCoords();
+    fabricCanvas.requestRenderAll();
+  }
+}
+
+// Lấy JSON sạch loại bỏ các đường gióng tạm thời
+function getCleanCanvasJSON() {
+  if (!fabricCanvas) return null;
+  const wasVVisible = smartGuideLineV && smartGuideLineV.visible;
+  const wasHVisible = smartGuideLineH && smartGuideLineH.visible;
+  if (smartGuideLineV) smartGuideLineV.visible = false;
+  if (smartGuideLineH) smartGuideLineH.visible = false;
+
+  const json = fabricCanvas.toJSON();
+  if (json && Array.isArray(json.objects)) {
+    json.objects = json.objects.filter(o => !o.isGuideLine);
+  }
+
+  if (smartGuideLineV) smartGuideLineV.visible = wasVVisible;
+  if (smartGuideLineH) smartGuideLineH.visible = wasHVisible;
+  return json;
+}
+
 // --- 1. INITIALIZE FABRIC CANVAS ---
 function initFabricCanvas() {
   fabricCanvas = new fabric.Canvas('fabricCanvas', {
@@ -550,9 +770,16 @@ function initFabricCanvas() {
     updateFloatingToolbarPosition();
   });
 
-  fabricCanvas.on('object:moving', updateFloatingToolbarPosition);
+  fabricCanvas.on('object:moving', (e) => {
+    handleSmartAlignmentGuides(e);
+    updateFloatingToolbarPosition();
+  });
   fabricCanvas.on('object:scaling', updateFloatingToolbarPosition);
   fabricCanvas.on('object:rotating', updateFloatingToolbarPosition);
+
+  fabricCanvas.on('mouse:up', () => {
+    clearSmartAlignmentGuides();
+  });
 
   const canvasViewportEl = document.getElementById('canvasViewport');
   if (canvasViewportEl) {
@@ -561,18 +788,20 @@ function initFabricCanvas() {
   window.addEventListener('resize', updateFloatingToolbarPosition);
 
   fabricCanvas.on('object:modified', () => {
+    clearSmartAlignmentGuides();
     markSlideDirty();
     updateCurrentSlideThumbnail();
     saveCanvasState();
     updateFloatingToolbarPosition();
   });
   fabricCanvas.on('object:added', (e) => {
-    if (e.target && !e.target.isSystemLoaded) {
+    if (e.target && !e.target.isSystemLoaded && !e.target.isGuideLine) {
       markSlideDirty();
       saveCanvasState();
     }
   });
-  fabricCanvas.on('object:removed', () => {
+  fabricCanvas.on('object:removed', (e) => {
+    if (e.target && (e.target.isGuideLine || e.target.isSystemLoaded)) return;
     markSlideDirty();
     updateCurrentSlideThumbnail();
     saveCanvasState();
@@ -1399,7 +1628,7 @@ function applyTemplateToDeck(template, replaceCurrent = false) {
     return;
   }
 
-  saveCurrentSlideState();
+  recordDeckStructureBeforeChange(`Áp dụng mẫu: ${template.title || 'Mẫu thiết kế'}`);
 
   const slideData = template.slideData || {};
   const clonedFabricJson = slideData.fabricJson ? JSON.parse(JSON.stringify(slideData.fabricJson)) : { objects: [] };
@@ -1746,6 +1975,9 @@ function applyPermissionsToUI(deck) {
 function setupDeck(deck, updateUrl = true, toastMsgText = null) {
   currentDeck = deck;
   currentSlideIndex = 0;
+  undoStack = [];
+  redoStack = [];
+  updateUndoRedoButtonsState();
 
   // Đảm bảo có định danh Canva Design ID và Edit Token
   if (!currentDeck.designId) {
@@ -1871,8 +2103,8 @@ function reorderSlides(fromIndex, toIndex) {
     return;
   }
 
-  // 1. Lưu lại trạng thái slide hiện tại trên Canvas
-  saveCurrentSlideState();
+  // 1. Lưu lại trạng thái slide hiện tại trên Canvas và snapshot Undo
+  recordDeckStructureBeforeChange(`Di chuyển Trang ${fromIndex + 1} sang Trang ${toIndex + 1}`);
 
   // 2. Ghi nhớ slide đang active
   const activeSlide = currentDeck.slides[currentSlideIndex];
@@ -2215,13 +2447,13 @@ function updateCurrentSlideThumbnail() {
 
 function saveCurrentSlideState() {
   if (!fabricCanvas || !currentDeck || !currentDeck.slides[currentSlideIndex]) return;
-  currentDeck.slides[currentSlideIndex].fabricJson = fabricCanvas.toJSON();
+  currentDeck.slides[currentSlideIndex].fabricJson = getCleanCanvasJSON();
   updateCurrentSlideThumbnail();
   saveDeck(currentDeck, true);
 }
 
 // --- 6. LOAD SLIDE (NEVER AUTO-WHITEWASH / 100% PRISTINE BACKGROUND) ---
-function loadSlideToCanvas(idx) {
+function loadSlideToCanvas(idx, callback) {
   if (!currentDeck || !currentDeck.slides[idx]) return;
   currentSlideIndex = idx;
 
@@ -2252,6 +2484,7 @@ function loadSlideToCanvas(idx) {
 
   fabricCanvas.clear();
   fabricCanvas.backgroundColor = null; // Transparent, NO white bleaching!
+  ensureSmartGuideLines();
 
   const targetW = 960;
   const targetH = 540;
@@ -2294,6 +2527,7 @@ function loadSlideToCanvas(idx) {
       fabricCanvas.selection = perms.canEdit;
       fabricCanvas.renderAll();
       initUndoStackForSlide();
+      if (typeof callback === 'function') callback();
     });
   } else if (slide.elements && slide.elements.length > 0) {
     // Tự động nạp các khối text trực tiếp để người dùng có thể nhấp đúp sửa chữ ngay (Canva In-Place Editing)
@@ -2330,18 +2564,29 @@ function loadSlideToCanvas(idx) {
     fabricCanvas.selection = perms.canEdit;
     fabricCanvas.renderAll();
     initUndoStackForSlide();
+    if (typeof callback === 'function') callback();
   } else {
     fabricCanvas.selection = perms.canEdit;
     fabricCanvas.renderAll();
     initUndoStackForSlide();
+    if (typeof callback === 'function') callback();
   }
 }
 
 function initUndoStackForSlide() {
   if (!fabricCanvas) return;
-  undoStack = [JSON.stringify(fabricCanvas.toJSON())];
-  redoStack = [];
-  updateUndoRedoButtonsState();
+  // Với Deck-Level Global History, không reset stack khi chuyển slide!
+  // Chỉ lưu snapshot đầu tiên nếu stack đang rỗng (lần đầu nạp presentation)
+  if (undoStack.length === 0) {
+    const cleanJson = getCleanCanvasJSON();
+    undoStack = [{
+      kind: 'canvas',
+      slideIndex: currentSlideIndex,
+      json: JSON.stringify(cleanJson)
+    }];
+    redoStack = [];
+    updateUndoRedoButtonsState();
+  }
 }
 
 // Toggle Extracted Text Overlay
@@ -2462,7 +2707,7 @@ if (btnAddSlideBottom) btnAddSlideBottom.addEventListener('click', addNewSlide);
 
 function addNewSlide() {
   if (!currentDeck) return;
-  saveCurrentSlideState();
+  recordDeckStructureBeforeChange('Thêm trang mới');
   const newIdx = currentDeck.slides.length;
   const newSlide = {
     index: newIdx,
@@ -2482,7 +2727,7 @@ function addNewSlide() {
 
 function duplicateSlide(idx) {
   if (!currentDeck || !currentDeck.slides[idx]) return;
-  saveCurrentSlideState();
+  recordDeckStructureBeforeChange(`Nhân bản Trang ${idx + 1}`);
   const sourceSlide = currentDeck.slides[idx];
   const duplicated = JSON.parse(JSON.stringify(sourceSlide));
   duplicated.index = idx + 1;
@@ -2504,6 +2749,7 @@ function deleteSlide(idx) {
     showToast("Không thể xóa slide duy nhất!", true);
     return;
   }
+  recordDeckStructureBeforeChange(`Xóa Trang ${idx + 1}`);
   currentDeck.slides.splice(idx, 1);
   currentDeck.slides.forEach((s, i) => s.index = i);
   if (slideTotalBadge) slideTotalBadge.textContent = currentDeck.slides.length;
@@ -2515,7 +2761,71 @@ function deleteSlide(idx) {
   showToast("Đã xóa slide!");
 }
 
-// --- 7. CANVA CONTEXTUAL TOOLBARS (TOP BAR & FLOATING TOOLBAR) ---
+// --- 7. CANVA CONTEXTUAL TOOLBARS (TOP BAR & FLOATING TOOLBAR) & GROUPING ENGINE ---
+function groupActiveSelection() {
+  if (!fabricCanvas) return;
+  const activeObj = fabricCanvas.getActiveObject();
+  if (!activeObj) return;
+
+  if (activeObj.type !== 'activeSelection') {
+    showToast("Vui lòng giữ phím Shift hoặc kéo chuột chọn từ 2 đối tượng trở lên để nhóm", true);
+    return;
+  }
+
+  // Fabric.js built-in toGroup() chuyển activeSelection thành fabric.Group
+  const group = activeObj.toGroup();
+  group.set({
+    transparentCorners: false,
+    cornerColor: '#00c4cc',
+    cornerStrokeColor: '#ffffff',
+    borderColor: '#00c4cc',
+    cornerSize: 9,
+    cornerStyle: 'circle',
+    borderDashArray: [3, 3]
+  });
+
+  fabricCanvas.setActiveObject(group);
+  fabricCanvas.requestRenderAll();
+
+  markSlideDirty();
+  saveCanvasState();
+  onObjectSelected();
+  if (window.lucide) lucide.createIcons();
+  showToast("Đã nhóm các đối tượng thành công! (Ctrl+G)");
+}
+
+function ungroupActiveGroup() {
+  if (!fabricCanvas) return;
+  const activeObj = fabricCanvas.getActiveObject();
+  if (!activeObj) return;
+
+  if (activeObj.type !== 'group') {
+    showToast("Vui lòng chọn một nhóm để bỏ nhóm", true);
+    return;
+  }
+
+  // Fabric.js built-in toActiveSelection() tách group thành fabric.ActiveSelection
+  const activeSelection = activeObj.toActiveSelection();
+  activeSelection.set({
+    transparentCorners: false,
+    cornerColor: '#00c4cc',
+    cornerStrokeColor: '#ffffff',
+    borderColor: '#00c4cc',
+    cornerSize: 9,
+    cornerStyle: 'circle',
+    borderDashArray: [3, 3]
+  });
+
+  fabricCanvas.setActiveObject(activeSelection);
+  fabricCanvas.requestRenderAll();
+
+  markSlideDirty();
+  saveCanvasState();
+  onObjectSelected();
+  if (window.lucide) lucide.createIcons();
+  showToast("Đã bỏ nhóm đối tượng thành công! (Ctrl+Shift+G)");
+}
+
 function onObjectSelected() {
   const activeObj = fabricCanvas ? fabricCanvas.getActiveObject() : null;
   if (!activeObj) {
@@ -2528,6 +2838,60 @@ function onObjectSelected() {
   if (ctxCanvasGroup) ctxCanvasGroup.classList.add('hidden');
 
   const type = activeObj.type;
+
+  // Cập nhật trạng thái các nút Nhóm / Bỏ nhóm trên Top Bar & Floating Toolbar
+  if (type === 'activeSelection') {
+    if (btnGroupObj) {
+      btnGroupObj.classList.remove('hidden');
+      btnGroupObj.classList.add('flex');
+    }
+    if (btnUngroupObj) {
+      btnUngroupObj.classList.add('hidden');
+      btnUngroupObj.classList.remove('flex');
+    }
+    if (btnFloatGroup) {
+      btnFloatGroup.classList.remove('hidden');
+      btnFloatGroup.classList.add('flex');
+    }
+    if (btnFloatUngroup) {
+      btnFloatUngroup.classList.add('hidden');
+      btnFloatUngroup.classList.remove('flex');
+    }
+  } else if (type === 'group') {
+    if (btnGroupObj) {
+      btnGroupObj.classList.add('hidden');
+      btnGroupObj.classList.remove('flex');
+    }
+    if (btnUngroupObj) {
+      btnUngroupObj.classList.remove('hidden');
+      btnUngroupObj.classList.add('flex');
+    }
+    if (btnFloatGroup) {
+      btnFloatGroup.classList.add('hidden');
+      btnFloatGroup.classList.remove('flex');
+    }
+    if (btnFloatUngroup) {
+      btnFloatUngroup.classList.remove('hidden');
+      btnFloatUngroup.classList.add('flex');
+    }
+  } else {
+    if (btnGroupObj) {
+      btnGroupObj.classList.add('hidden');
+      btnGroupObj.classList.remove('flex');
+    }
+    if (btnUngroupObj) {
+      btnUngroupObj.classList.add('hidden');
+      btnUngroupObj.classList.remove('flex');
+    }
+    if (btnFloatGroup) {
+      btnFloatGroup.classList.add('hidden');
+      btnFloatGroup.classList.remove('flex');
+    }
+    if (btnFloatUngroup) {
+      btnFloatUngroup.classList.add('hidden');
+      btnFloatUngroup.classList.remove('flex');
+    }
+  }
 
   if (type === 'textbox' || type === 'text' || type === 'i-text') {
     if (ctxTextGroup) {
@@ -2580,11 +2944,17 @@ function onObjectSelected() {
     if (ctxShapeGroup) ctxShapeGroup.classList.add('hidden');
 
     if (imageOpacityInput) imageOpacityInput.value = Math.round((activeObj.opacity || 1) * 100);
+  } else {
+    // ActiveSelection hoặc Group
+    if (ctxTextGroup) ctxTextGroup.classList.add('hidden');
+    if (ctxShapeGroup) ctxShapeGroup.classList.add('hidden');
+    if (ctxImageGroup) ctxImageGroup.classList.add('hidden');
   }
 
   // Cập nhật và hiển thị Canva Floating Context Toolbar
   updateFloatingToolbarContent(activeObj);
   updateFloatingToolbarPosition();
+  if (window.lucide) lucide.createIcons();
 }
 
 function onObjectDeselected() {
@@ -2593,6 +2963,22 @@ function onObjectDeselected() {
   if (ctxShapeGroup) ctxShapeGroup.classList.add('hidden');
   if (ctxImageGroup) ctxImageGroup.classList.add('hidden');
   if (ctxUniversalGroup) ctxUniversalGroup.classList.add('hidden');
+  if (btnGroupObj) {
+    btnGroupObj.classList.add('hidden');
+    btnGroupObj.classList.remove('flex');
+  }
+  if (btnUngroupObj) {
+    btnUngroupObj.classList.add('hidden');
+    btnUngroupObj.classList.remove('flex');
+  }
+  if (btnFloatGroup) {
+    btnFloatGroup.classList.add('hidden');
+    btnFloatGroup.classList.remove('flex');
+  }
+  if (btnFloatUngroup) {
+    btnFloatUngroup.classList.add('hidden');
+    btnFloatUngroup.classList.remove('flex');
+  }
   hideFloatingToolbar();
 }
 
@@ -2995,6 +3381,10 @@ btnBringForward.addEventListener('click', () => {
 
 btnDuplicateObj.addEventListener('click', duplicateActiveObject);
 btnDeleteObj.addEventListener('click', deleteActiveObject);
+if (btnGroupObj) btnGroupObj.addEventListener('click', groupActiveSelection);
+if (btnUngroupObj) btnUngroupObj.addEventListener('click', ungroupActiveGroup);
+if (btnFloatGroup) btnFloatGroup.addEventListener('click', groupActiveSelection);
+if (btnFloatUngroup) btnFloatUngroup.addEventListener('click', ungroupActiveGroup);
 
 function duplicateActiveObject() {
   const activeObj = fabricCanvas.getActiveObject();
@@ -3005,7 +3395,15 @@ function duplicateActiveObject() {
       top: activeObj.top + 20,
       evented: true,
     });
-    fabricCanvas.add(cloned);
+    if (cloned.type === 'activeSelection') {
+      cloned.canvas = fabricCanvas;
+      cloned.forEachObject((obj) => {
+        fabricCanvas.add(obj);
+      });
+      cloned.setCoords();
+    } else {
+      fabricCanvas.add(cloned);
+    }
     fabricCanvas.setActiveObject(cloned);
     fabricCanvas.requestRenderAll();
     markSlideDirty();
@@ -3017,7 +3415,13 @@ function duplicateActiveObject() {
 function deleteActiveObject() {
   const activeObj = fabricCanvas.getActiveObject();
   if (activeObj) {
-    fabricCanvas.remove(activeObj);
+    if (activeObj.type === 'activeSelection') {
+      activeObj.forEachObject((obj) => {
+        fabricCanvas.remove(obj);
+      });
+    } else {
+      fabricCanvas.remove(activeObj);
+    }
     fabricCanvas.discardActiveObject();
     fabricCanvas.requestRenderAll();
     hideFloatingToolbar();
@@ -3026,7 +3430,7 @@ function deleteActiveObject() {
   }
 }
 
-// Bắt phím tắt bàn phím toàn cục (Undo, Redo, Delete, Duplicate, Present)
+// Bắt phím tắt bàn phím toàn cục (Undo, Redo, Delete, Duplicate, Group, Ungroup, Present)
 function handleGlobalKeydown(e) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
@@ -3047,6 +3451,13 @@ function handleGlobalKeydown(e) {
   } else if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
     e.preventDefault();
     duplicateActiveObject();
+  } else if ((e.ctrlKey || e.metaKey) && (e.key === 'g' || e.key === 'G')) {
+    e.preventDefault();
+    if (e.shiftKey) {
+      ungroupActiveGroup(); // Ctrl + Shift + G: Bỏ nhóm
+    } else {
+      groupActiveSelection(); // Ctrl + G: Nhóm
+    }
   } else if (e.key === 'F5') {
     e.preventDefault();
     openPresentationMode();
@@ -3273,7 +3684,22 @@ btnNextSlideBottom.addEventListener('click', () => {
 
 btnFullscreenBottom.addEventListener('click', openPresentationMode);
 
-// --- 10. STATE & UNDO/REDO ---
+// --- 10. STATE & DECK-LEVEL GLOBAL UNDO / REDO ---
+function recordDeckStructureBeforeChange(actionName = 'Thay đổi bài thuyết trình') {
+  if (!currentDeck || !currentDeck.slides) return;
+  saveCurrentSlideState();
+  const snapshot = {
+    kind: 'deck_structure',
+    actionName: actionName,
+    slides: JSON.parse(JSON.stringify(currentDeck.slides)),
+    slideIndex: currentSlideIndex,
+  };
+  undoStack.push(snapshot);
+  redoStack = [];
+  if (undoStack.length > 50) undoStack.shift();
+  updateUndoRedoButtonsState();
+}
+
 function updateUndoRedoButtonsState() {
   if (btnUndo) {
     if (undoStack.length > 1) {
@@ -3300,43 +3726,129 @@ function updateUndoRedoButtonsState() {
 }
 
 function saveCanvasState() {
-  if (!fabricCanvas) return;
-  undoStack.push(JSON.stringify(fabricCanvas.toJSON()));
+  if (!fabricCanvas || !currentDeck || !currentDeck.slides[currentSlideIndex]) return;
+  const cleanJson = getCleanCanvasJSON();
+  const jsonStr = JSON.stringify(cleanJson);
+
+  // Tránh push liên tục nếu trạng thái trùng lặp
+  const top = undoStack[undoStack.length - 1];
+  if (top && top.kind === 'canvas' && top.slideIndex === currentSlideIndex && top.json === jsonStr) {
+    return;
+  }
+
+  const snapshot = {
+    kind: 'canvas',
+    slideIndex: currentSlideIndex,
+    json: jsonStr,
+  };
+  undoStack.push(snapshot);
   redoStack = [];
-  if (undoStack.length > 30) undoStack.shift();
+  if (undoStack.length > 50) undoStack.shift();
   updateUndoRedoButtonsState();
-  saveCurrentSlideState();
+
+  currentDeck.slides[currentSlideIndex].fabricJson = cleanJson;
+  updateCurrentSlideThumbnail();
+  saveDeck(currentDeck, true);
 }
 
 btnUndo.addEventListener('click', handleUndo);
 btnRedo.addEventListener('click', handleRedo);
 
 function handleUndo() {
-  if (undoStack.length > 1) {
-    const current = undoStack.pop();
-    redoStack.push(current);
-    const prev = undoStack[undoStack.length - 1];
-    fabricCanvas.loadFromJSON(prev, () => {
+  if (undoStack.length <= 1) return;
+
+  const currentOp = undoStack.pop();
+  redoStack.push(currentOp);
+
+  const prevOp = undoStack[undoStack.length - 1];
+  if (!prevOp) return;
+
+  if (prevOp.kind === 'deck_structure') {
+    // Hoàn tác thao tác cấp Presentation (xóa slide, thêm slide, nhân bản slide, đổi thứ tự)
+    currentDeck.slides = JSON.parse(JSON.stringify(prevOp.slides));
+    if (slideTotalBadge) slideTotalBadge.textContent = currentDeck.slides.length;
+    renderSlideThumbnails();
+    renderBottomFilmstrip();
+    const targetIdx = Math.max(0, Math.min(prevOp.slideIndex, currentDeck.slides.length - 1));
+    loadSlideToCanvas(targetIdx);
+    saveDeck(currentDeck, true);
+    updateUndoRedoButtonsState();
+    showToast(`Đã hoàn tác: ${prevOp.actionName || 'Cấu trúc bài thuyết trình'}`);
+  } else if (prevOp.kind === 'canvas') {
+    const applyCanvasJson = () => {
+      fabricCanvas.loadFromJSON(JSON.parse(prevOp.json), () => {
+        fabricCanvas.renderAll();
+        updateCurrentSlideThumbnail();
+        updateUndoRedoButtonsState();
+        saveCurrentSlideState();
+        updateFloatingToolbarPosition();
+      });
+    };
+
+    if (prevOp.slideIndex !== currentSlideIndex && currentDeck.slides[prevOp.slideIndex]) {
+      loadSlideToCanvas(prevOp.slideIndex, applyCanvasJson);
+    } else {
+      applyCanvasJson();
+    }
+    updateUndoRedoButtonsState();
+    showToast("Đã hoàn tác thay đổi trên slide");
+  } else {
+    // Tương thích ngược
+    fabricCanvas.loadFromJSON(prevOp, () => {
       fabricCanvas.renderAll();
       updateCurrentSlideThumbnail();
       updateUndoRedoButtonsState();
       saveCurrentSlideState();
       updateFloatingToolbarPosition();
     });
+    updateUndoRedoButtonsState();
   }
 }
 
 function handleRedo() {
-  if (redoStack.length > 0) {
-    const next = redoStack.pop();
-    undoStack.push(next);
-    fabricCanvas.loadFromJSON(next, () => {
+  if (redoStack.length === 0) return;
+
+  const nextOp = redoStack.pop();
+  undoStack.push(nextOp);
+
+  if (nextOp.kind === 'deck_structure') {
+    currentDeck.slides = JSON.parse(JSON.stringify(nextOp.slides));
+    if (slideTotalBadge) slideTotalBadge.textContent = currentDeck.slides.length;
+    renderSlideThumbnails();
+    renderBottomFilmstrip();
+    const targetIdx = Math.max(0, Math.min(nextOp.slideIndex, currentDeck.slides.length - 1));
+    loadSlideToCanvas(targetIdx);
+    saveDeck(currentDeck, true);
+    updateUndoRedoButtonsState();
+    showToast(`Đã làm lại: ${nextOp.actionName || 'Cấu trúc bài thuyết trình'}`);
+  } else if (nextOp.kind === 'canvas') {
+    const applyCanvasJson = () => {
+      fabricCanvas.loadFromJSON(JSON.parse(nextOp.json), () => {
+        fabricCanvas.renderAll();
+        updateCurrentSlideThumbnail();
+        updateUndoRedoButtonsState();
+        saveCurrentSlideState();
+        updateFloatingToolbarPosition();
+      });
+    };
+
+    if (nextOp.slideIndex !== currentSlideIndex && currentDeck.slides[nextOp.slideIndex]) {
+      loadSlideToCanvas(nextOp.slideIndex, applyCanvasJson);
+    } else {
+      applyCanvasJson();
+    }
+    updateUndoRedoButtonsState();
+    showToast("Đã làm lại thay đổi trên slide");
+  } else {
+    // Tương thích ngược
+    fabricCanvas.loadFromJSON(nextOp, () => {
       fabricCanvas.renderAll();
       updateCurrentSlideThumbnail();
       updateUndoRedoButtonsState();
       saveCurrentSlideState();
       updateFloatingToolbarPosition();
     });
+    updateUndoRedoButtonsState();
   }
 }
 
@@ -3420,6 +3932,88 @@ async function fetchImageAsBase64(url) {
   }
 }
 
+// Helper: Đệ quy kết xuất các đối tượng (kể cả Group và Sub-objects) sang PptxGenJS
+async function renderObjectToPptxSlide(obj, pptxSlide, pptx, parentOffsetX = 0, parentOffsetY = 0) {
+  if (!obj || obj.isExtractedOverlay || obj.isGuideLine) return;
+
+  const realLeft = (obj.left || 0) + parentOffsetX;
+  const realTop = (obj.top || 0) + parentOffsetY;
+
+  if (obj.type === 'group' && Array.isArray(obj.objects)) {
+    const groupW = obj.width || 0;
+    const groupH = obj.height || 0;
+    const isOriginCenter = (obj.originX === 'center' || !obj.originX);
+    const offsetX = isOriginCenter ? (realLeft + groupW / 2) : realLeft;
+    const offsetY = isOriginCenter ? (realTop + groupH / 2) : realTop;
+
+    for (const sub of obj.objects) {
+      await renderObjectToPptxSlide(sub, pptxSlide, pptx, offsetX, offsetY);
+    }
+    return;
+  }
+
+  if (obj.type === 'textbox' || obj.type === 'text' || obj.type === 'i-text') {
+    const inchX = (realLeft / 960) * 13.333;
+    const inchY = (realTop / 540) * 7.5;
+    const inchW = ((obj.width || 200) / 960) * 13.333;
+    const inchH = ((obj.height || 40) / 540) * 7.5;
+
+    pptxSlide.addText(obj.text || '', {
+      x: inchX,
+      y: inchY,
+      w: Math.max(0.5, inchW),
+      h: Math.max(0.3, inchH),
+      fontSize: obj.fontSize ? Math.min(60, obj.fontSize * 0.75) : 16,
+      fontFace: obj.fontFamily || 'Arial',
+      color: (obj.fill || '#FFFFFF').replace('#', ''),
+      bold: !!(obj.fontWeight === 'bold' || obj.fontWeight === '700'),
+      italic: !!(obj.fontStyle === 'italic'),
+      align: obj.textAlign || 'left',
+      valign: 'middle',
+    });
+  } else if (obj.type === 'image' && obj.src) {
+    const imgBase64 = await fetchImageAsBase64(obj.src);
+    if (imgBase64) {
+      pptxSlide.addImage({
+        data: imgBase64,
+        x: (realLeft / 960) * 13.333,
+        y: (realTop / 540) * 7.5,
+        w: (((obj.width || 100) * (obj.scaleX || 1)) / 960) * 13.333,
+        h: (((obj.height || 100) * (obj.scaleY || 1)) / 540) * 7.5,
+      });
+    }
+  } else if (obj.type === 'rect') {
+    const inchX = (realLeft / 960) * 13.333;
+    const inchY = (realTop / 540) * 7.5;
+    const inchW = (((obj.width || 100) * (obj.scaleX || 1)) / 960) * 13.333;
+    const inchH = (((obj.height || 100) * (obj.scaleY || 1)) / 540) * 7.5;
+    if (pptx && pptx.shapes && pptx.shapes.RECTANGLE) {
+      pptxSlide.addShape(pptx.shapes.RECTANGLE, {
+        x: inchX,
+        y: inchY,
+        w: inchW,
+        h: inchH,
+        fill: { color: (obj.fill || '#00c4cc').replace('#', '') },
+        line: obj.stroke ? { color: obj.stroke.replace('#', ''), width: obj.strokeWidth || 1 } : undefined,
+      });
+    }
+  } else if (obj.type === 'circle') {
+    const inchX = (realLeft / 960) * 13.333;
+    const inchY = (realTop / 540) * 7.5;
+    const diam = (((obj.radius || 50) * 2 * (obj.scaleX || 1)) / 960) * 13.333;
+    if (pptx && pptx.shapes && pptx.shapes.OVAL) {
+      pptxSlide.addShape(pptx.shapes.OVAL, {
+        x: inchX,
+        y: inchY,
+        w: diam,
+        h: diam,
+        fill: { color: (obj.fill || '#10b981').replace('#', '') },
+        line: obj.stroke ? { color: obj.stroke.replace('#', ''), width: obj.strokeWidth || 1 } : undefined,
+      });
+    }
+  }
+}
+
 // --- 12. EXPORT ENGINE: EXPORT TO NATIVE .PPTX ---
 btnExportPPTX.addEventListener('click', exportDeckToPPTX);
 menuDownloadPPTX.addEventListener('click', exportDeckToPPTX);
@@ -3468,42 +4062,10 @@ async function exportDeckToPPTX() {
         }
       }
 
-      // 2. Kết xuất các đối tượng người dùng thêm vào (Text, Shape, Image...)
+      // 2. Kết xuất các đối tượng người dùng thêm vào (Text, Shape, Image, Group...)
       if (slide.fabricJson && slide.fabricJson.objects && slide.fabricJson.objects.length > 0) {
         for (const obj of slide.fabricJson.objects) {
-          if (obj.isExtractedOverlay) continue;
-
-          if (obj.type === 'textbox' || obj.type === 'text') {
-            const inchX = (obj.left / 960) * 13.333;
-            const inchY = (obj.top / 540) * 7.5;
-            const inchW = (obj.width / 960) * 13.333;
-            const inchH = (obj.height / 540) * 7.5;
-
-            pptxSlide.addText(obj.text || '', {
-              x: inchX,
-              y: inchY,
-              w: Math.max(1.0, inchW),
-              h: Math.max(0.4, inchH),
-              fontSize: obj.fontSize ? Math.min(60, obj.fontSize * 0.75) : 16,
-              fontFace: obj.fontFamily || 'Arial',
-              color: (obj.fill || '#FFFFFF').replace('#', ''),
-              bold: !!(obj.fontWeight === 'bold' || obj.fontWeight === '700'),
-              italic: !!(obj.fontStyle === 'italic'),
-              align: obj.textAlign || 'left',
-              valign: 'middle',
-            });
-          } else if (obj.type === 'image' && obj.src) {
-            const imgBase64 = await fetchImageAsBase64(obj.src);
-            if (imgBase64) {
-              pptxSlide.addImage({
-                data: imgBase64,
-                x: (obj.left / 960) * 13.333,
-                y: (obj.top / 540) * 7.5,
-                w: ((obj.width * (obj.scaleX || 1)) / 960) * 13.333,
-                h: ((obj.height * (obj.scaleY || 1)) / 540) * 7.5,
-              });
-            }
-          }
+          await renderObjectToPptxSlide(obj, pptxSlide, pptx);
         }
       }
     }
