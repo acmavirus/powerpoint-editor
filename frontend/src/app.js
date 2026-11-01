@@ -1553,7 +1553,7 @@ function showLoader(text, filename = null, subtitle = null) {
 
   if (globalLoadingOverlay) {
     if (globalLoadingTitle) {
-      globalLoadingTitle.textContent = text || "Đang nạp bài thuyết trình...";
+      globalLoadingTitle.textContent = text || "Đang tải bài thiết kế...";
     }
     if (globalLoadingFilename) {
       if (filename) {
@@ -1564,7 +1564,7 @@ function showLoader(text, filename = null, subtitle = null) {
       }
     }
     if (globalLoadingSubtitle) {
-      globalLoadingSubtitle.textContent = subtitle || "Hệ thống đang bóc tách slide, vector hóa hình ảnh và tối ưu font chữ...";
+      globalLoadingSubtitle.textContent = subtitle || "Hệ thống đang chuẩn bị bố cục và tài nguyên slide...";
     }
     globalLoadingOverlay.classList.remove('hidden');
   }
