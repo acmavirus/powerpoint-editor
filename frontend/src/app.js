@@ -1481,7 +1481,14 @@ function preventTabCloseDuringLoading(e) {
   }
 }
 
+let loaderWatchdogTimer = null;
+
 function showLoader(text, filename = null, subtitle = null) {
+  if (loaderWatchdogTimer) {
+    clearTimeout(loaderWatchdogTimer);
+    loaderWatchdogTimer = null;
+  }
+
   if (loaderText) loaderText.textContent = text;
   if (uploadLoader) uploadLoader.classList.remove('hidden');
 
@@ -1506,10 +1513,19 @@ function showLoader(text, filename = null, subtitle = null) {
   isGlobalOperationInProgress = true;
   window.addEventListener('beforeunload', preventTabCloseDuringLoading);
 
+  // Watchdog an toàn: tự động ẩn loader sau tối đa 12 giây nếu bất kỳ tác vụ nào bị treo
+  loaderWatchdogTimer = setTimeout(() => {
+    hideLoader();
+  }, 12000);
+
   if (window.lucide) lucide.createIcons();
 }
 
 function hideLoader() {
+  if (loaderWatchdogTimer) {
+    clearTimeout(loaderWatchdogTimer);
+    loaderWatchdogTimer = null;
+  }
   if (uploadLoader) uploadLoader.classList.add('hidden');
   if (globalLoadingOverlay) globalLoadingOverlay.classList.add('hidden');
 
@@ -1713,6 +1729,9 @@ function setupDeck(deck, updateUrl = true, toastMsgText = null) {
 
   // Khởi động Real-time Active Collaborators Presence
   startPresenceHeartbeat();
+
+  // Đảm bảo ẩn mọi màn hình loader khi bài thiết kế đã khởi tạo xong
+  hideLoader();
 
   if (window.lucide) lucide.createIcons();
 }
@@ -3269,60 +3288,62 @@ async function initAppRouting() {
 
     showLoader("Đang tải bài thiết kế từ máy chủ...");
 
-    // Bước 1: Thử tải trực tiếp từ SQLite Database trung tâm
     try {
-      const res = await fetch(`/api/designs/${designId}`);
-      if (res.ok) {
-        const dbData = await res.json();
-        if (dbData && dbData.design_id) {
-          const deck = {
-            id: dbData.design_id,
-            designId: dbData.design_id,
-            editToken: dbData.edit_token || editToken,
-            filename: dbData.title || "Thiết kế không tên - Bài thuyết trình",
-            slides: dbData.slides || [],
-            customFonts: dbData.customFonts || [],
-            slideCount: dbData.slide_count || (dbData.slides ? dbData.slides.length : 1),
-            shareAccessLevel: dbData.share_access_level || 'private',
-            sharedMembers: dbData.sharedMembers || [],
-            owner: {
-              id: dbData.owner_id,
-              name: dbData.owner_name,
-              email: dbData.owner_email
-            }
-          };
-          saveDeckToLocalStorage(deck);
-          setupDeck(deck, false, `Đã mở bài thiết kế: ${deck.filename}`);
-          return;
+      // Bước 1: Thử tải trực tiếp từ SQLite Database trung tâm
+      try {
+        const res = await fetch(`/api/designs/${designId}`);
+        if (res.ok) {
+          const dbData = await res.json();
+          if (dbData && dbData.design_id) {
+            const deck = {
+              id: dbData.design_id,
+              designId: dbData.design_id,
+              editToken: dbData.edit_token || editToken,
+              filename: dbData.title || "Thiết kế không tên - Bài thuyết trình",
+              slides: dbData.slides || [],
+              customFonts: dbData.customFonts || [],
+              slideCount: dbData.slide_count || (dbData.slides ? dbData.slides.length : 1),
+              shareAccessLevel: dbData.share_access_level || 'private',
+              sharedMembers: dbData.sharedMembers || [],
+              owner: {
+                id: dbData.owner_id,
+                name: dbData.owner_name,
+                email: dbData.owner_email
+              }
+            };
+            saveDeckToLocalStorage(deck);
+            setupDeck(deck, false, `Đã mở bài thiết kế: ${deck.filename}`);
+            return;
+          }
         }
+      } catch (err) {
+        console.warn("Could not fetch design from server DB:", err);
       }
-    } catch (err) {
-      console.warn("Could not fetch design from server DB:", err);
-    }
 
-    // Bước 2: Thử lấy từ bộ nhớ LocalStorage của trình duyệt này
-    const cachedDeck = getDeckFromLocalStorage(designId);
-    if (cachedDeck) {
-      cachedDeck.editToken = editToken;
-      setupDeck(cachedDeck, false, `Đã mở lại bài thiết kế: ${designId}`);
-      apiSaveDeck(cachedDeck, false);
-      return;
-    }
+      // Bước 2: Thử lấy từ bộ nhớ LocalStorage của trình duyệt này
+      const cachedDeck = getDeckFromLocalStorage(designId);
+      if (cachedDeck) {
+        cachedDeck.editToken = editToken;
+        setupDeck(cachedDeck, false, `Đã mở lại bài thiết kế: ${designId}`);
+        apiSaveDeck(cachedDeck, false);
+        return;
+      }
 
-    // Bước 3: Nếu chưa có ở cả 2 nơi: Khởi tạo từ file demo mẫu và lưu ngay vào Database
-    try {
-      const res = await fetch('/api/demo/sample', { method: 'POST' });
-      if (res.ok) {
-        const data = await res.json();
-        data.designId = designId;
-        data.editToken = editToken;
-        setupDeck(data, false, `Đã mở bài thiết kế: ${designId}`);
-        apiSaveDeck(data, false);
-      } else {
+      // Bước 3: Nếu chưa có ở cả 2 nơi: Khởi tạo từ file demo mẫu và lưu ngay vào Database
+      try {
+        const res = await fetch('/api/demo/sample', { method: 'POST' });
+        if (res.ok) {
+          const data = await res.json();
+          data.designId = designId;
+          data.editToken = editToken;
+          setupDeck(data, false, `Đã mở bài thiết kế: ${designId}`);
+          apiSaveDeck(data, false);
+        } else {
+          createNewBlankPresentation();
+        }
+      } catch (err) {
         createNewBlankPresentation();
       }
-    } catch (err) {
-      createNewBlankPresentation();
     } finally {
       hideLoader();
     }
