@@ -770,6 +770,23 @@ function initFabricCanvas() {
     updateFloatingToolbarPosition();
   });
 
+  // Tự động dọn dẹp xóa Textbox nếu người dùng xóa sạch chữ và kết thúc sửa chữ
+  fabricCanvas.on('text:editing:exited', (opt) => {
+    const target = opt.target;
+    if (target && (target.type === 'textbox' || target.type === 'i-text')) {
+      if (!target.text || target.text.trim() === '') {
+        fabricCanvas.discardActiveObject();
+        fabricCanvas.remove(target);
+        onObjectDeselected();
+        hideFloatingToolbar();
+        fabricCanvas.renderAll();
+        markSlideDirty();
+        updateCurrentSlideThumbnail();
+        saveCanvasState();
+      }
+    }
+  });
+
   fabricCanvas.on('object:moving', (e) => {
     handleSmartAlignmentGuides(e);
     updateFloatingToolbarPosition();
@@ -2595,12 +2612,20 @@ btnToggleEditOverlay.addEventListener('click', () => {
   const slide = currentDeck.slides[currentSlideIndex];
 
   if (slide.isEditOverlayActive) {
-    const objects = fabricCanvas.getObjects().slice();
-    objects.forEach(obj => {
-      if (obj.isExtractedOverlay) fabricCanvas.remove(obj);
-    });
+    if (fabricCanvas) {
+      fabricCanvas.discardActiveObject();
+      const objects = fabricCanvas.getObjects().slice();
+      objects.forEach(obj => {
+        if (obj.isExtractedOverlay) fabricCanvas.remove(obj);
+      });
+      onObjectDeselected();
+      hideFloatingToolbar();
+      fabricCanvas.renderAll();
+    }
     slide.isEditOverlayActive = false;
     toggleEditText.textContent = "Bật Sửa Chữ Trên Slide";
+    updateCurrentSlideThumbnail();
+    saveCanvasState();
     showToast("Đã tắt lớp sửa chữ, hiển thị slide gốc 100%");
   } else {
     if (!slide.elements || slide.elements.length === 0) {
@@ -3413,34 +3438,64 @@ function duplicateActiveObject() {
 }
 
 function deleteActiveObject() {
+  if (!fabricCanvas) return;
   const activeObj = fabricCanvas.getActiveObject();
-  if (activeObj) {
-    if (activeObj.type === 'activeSelection') {
-      activeObj.forEachObject((obj) => {
-        fabricCanvas.remove(obj);
-      });
-    } else {
-      fabricCanvas.remove(activeObj);
-    }
-    fabricCanvas.discardActiveObject();
-    fabricCanvas.requestRenderAll();
-    hideFloatingToolbar();
-    markSlideDirty();
-    saveCanvasState();
+  if (!activeObj) return;
+
+  // 1. Nếu đang ở chế độ gõ chữ, thoát chế độ soạn thảo trước
+  if (activeObj.isEditing) {
+    activeObj.exitEditing();
   }
+
+  // 2. Hủy chọn active object TRƯỚC TIÊN để Fabric giải phóng selection bounding box và control handles
+  fabricCanvas.discardActiveObject();
+
+  // 3. Xóa đối tượng khỏi Canvas (xử lý cả nhóm chọn nhiều ActiveSelection và đối tượng đơn lẻ)
+  if (activeObj.type === 'activeSelection') {
+    activeObj.forEachObject((obj) => {
+      fabricCanvas.remove(obj);
+    });
+  } else {
+    fabricCanvas.remove(activeObj);
+  }
+
+  // 4. Đồng bộ hóa UI thanh công cụ & ép Canvas vẽ lại ngay lập tức (Synchronous Render)
+  onObjectDeselected();
+  hideFloatingToolbar();
+  fabricCanvas.renderAll();
+
+  // 5. Cập nhật thumbnail và lưu lịch sử hoàn tác
+  markSlideDirty();
+  updateCurrentSlideThumbnail();
+  saveCanvasState();
 }
 
 // Bắt phím tắt bàn phím toàn cục (Undo, Redo, Delete, Duplicate, Group, Ungroup, Present)
 function handleGlobalKeydown(e) {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  // Nếu đang gõ trong input/textarea khác của trang (ví dụ ô tiêu đề slide, ô tìm kiếm):
+  if (e.target.tagName === 'INPUT' || (e.target.tagName === 'TEXTAREA' && !e.target.classList.contains('fabric-hidden-textarea'))) {
+    return;
+  }
 
-  // Nếu đang gõ sửa chữ trong Textbox trực tiếp (Direct In-Place Editing):
   const activeObj = fabricCanvas ? fabricCanvas.getActiveObject() : null;
+
+  // Nếu người dùng đang focus trong Fabric hidden textarea (đang gõ sửa chữ):
   if (activeObj && activeObj.isEditing) {
+    const textVal = activeObj.text || '';
+    const isAllSelected = (activeObj.selectionStart === 0 && activeObj.selectionEnd >= textVal.length && textVal.length > 0);
+    const isEmptyText = textVal.trim() === '';
+
+    // Nếu ô chữ đã trống hoặc đang bôi đen toàn bộ mà bấm Delete / Backspace -> Xóa luôn khối Textbox
+    if ((e.key === 'Delete' || e.key === 'Backspace') && (isEmptyText || isAllSelected)) {
+      e.preventDefault();
+      deleteActiveObject();
+      return;
+    }
     return; // Cho phép Fabric xử lý gõ ký tự, xóa backspace bình thường
   }
 
   if (e.key === 'Delete' || e.key === 'Backspace') {
+    e.preventDefault();
     deleteActiveObject();
   } else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
     e.preventDefault();
