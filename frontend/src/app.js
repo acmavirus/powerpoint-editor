@@ -638,9 +638,7 @@ function setupCanvaNavRail() {
 
   btnCollapseDrawer.addEventListener('click', toggleDrawer);
   btnGridToggle.addEventListener('click', () => {
-    // Open slides tab
-    expandDrawer();
-    navTabBtns[0].click();
+    toggleBottomFilmstrip();
   });
 
   // Khởi tạo Kho Mẫu Trang PPTX Sẵn Có & Lọc tìm kiếm thời gian thực
@@ -1904,6 +1902,7 @@ function reorderSlides(fromIndex, toIndex) {
 
 // --- 5. CANVA-STYLE SLIDE THUMBNAILS (2-COLUMN GRID) ---
 function renderSlideThumbnails() {
+  if (!thumbnailContainer) return;
   thumbnailContainer.innerHTML = '';
   if (!currentDeck || !currentDeck.slides) return;
   const user = getCurrentUser();
@@ -2458,8 +2457,8 @@ function applySolidBackgroundColor(color) {
 }
 
 // Add New Blank Slide
-btnAddSlide.addEventListener('click', addNewSlide);
-btnAddSlideBottom.addEventListener('click', addNewSlide);
+if (btnAddSlide) btnAddSlide.addEventListener('click', addNewSlide);
+if (btnAddSlideBottom) btnAddSlideBottom.addEventListener('click', addNewSlide);
 
 function addNewSlide() {
   if (!currentDeck) return;
