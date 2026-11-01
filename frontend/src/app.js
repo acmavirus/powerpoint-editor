@@ -438,6 +438,33 @@ const btnDeleteObj = document.getElementById('btnDeleteObj');
 const btnUndo = document.getElementById('btnUndo');
 const btnRedo = document.getElementById('btnRedo');
 
+// Canva Floating Context Toolbar DOM References
+const canvaFloatingToolbar = document.getElementById('canvaFloatingToolbar');
+const floatTextGroup = document.getElementById('floatTextGroup');
+const floatFontFamily = document.getElementById('floatFontFamily');
+const btnFloatFontDec = document.getElementById('btnFloatFontDec');
+const floatFontSizeInput = document.getElementById('floatFontSizeInput');
+const btnFloatFontInc = document.getElementById('btnFloatFontInc');
+const floatTextColorPicker = document.getElementById('floatTextColorPicker');
+const floatTextColorBar = document.getElementById('floatTextColorBar');
+const btnFloatBold = document.getElementById('btnFloatBold');
+const btnFloatItalic = document.getElementById('btnFloatItalic');
+const btnFloatAlign = document.getElementById('btnFloatAlign');
+
+const floatShapeGroup = document.getElementById('floatShapeGroup');
+const floatShapeFillPicker = document.getElementById('floatShapeFillPicker');
+const floatShapeStrokePicker = document.getElementById('floatShapeStrokePicker');
+
+const btnFloatDuplicate = document.getElementById('btnFloatDuplicate');
+const btnFloatDelete = document.getElementById('btnFloatDelete');
+
+// Canva Bottom Filmstrip Bar DOM References
+const bottomFilmstripBar = document.getElementById('bottomFilmstripBar');
+const bottomFilmstripTrack = document.getElementById('bottomFilmstripTrack');
+const btnAddSlideFilmstrip = document.getElementById('btnAddSlideFilmstrip');
+const btnToggleFilmstrip = document.getElementById('btnToggleFilmstrip');
+const btnToggleFilmstripText = document.getElementById('btnToggleFilmstripText');
+
 // Toggle Edit Overlay
 const btnToggleEditOverlay = document.getElementById('btnToggleEditOverlay');
 const toggleEditText = document.getElementById('toggleEditText');
@@ -504,10 +531,40 @@ function initFabricCanvas() {
   fabricCanvas.on('selection:updated', onObjectSelected);
   fabricCanvas.on('selection:cleared', onObjectDeselected);
 
+  // 1. Nhấp đúp trực tiếp sửa chữ tại chỗ (Canva Direct In-Place Text Editing)
+  fabricCanvas.on('mouse:dblclick', (opt) => {
+    const target = opt.target;
+    if (target && (target.type === 'textbox' || target.type === 'i-text')) {
+      target.enterEditing();
+      target.selectAll();
+      fabricCanvas.requestRenderAll();
+      updateFloatingToolbarPosition();
+    }
+  });
+
+  // Khi người dùng gõ sửa nội dung chữ trên canvas
+  fabricCanvas.on('text:changed', () => {
+    markSlideDirty();
+    updateCurrentSlideThumbnail();
+    saveCanvasState();
+    updateFloatingToolbarPosition();
+  });
+
+  fabricCanvas.on('object:moving', updateFloatingToolbarPosition);
+  fabricCanvas.on('object:scaling', updateFloatingToolbarPosition);
+  fabricCanvas.on('object:rotating', updateFloatingToolbarPosition);
+
+  const canvasViewportEl = document.getElementById('canvasViewport');
+  if (canvasViewportEl) {
+    canvasViewportEl.addEventListener('scroll', updateFloatingToolbarPosition);
+  }
+  window.addEventListener('resize', updateFloatingToolbarPosition);
+
   fabricCanvas.on('object:modified', () => {
     markSlideDirty();
     updateCurrentSlideThumbnail();
     saveCanvasState();
+    updateFloatingToolbarPosition();
   });
   fabricCanvas.on('object:added', (e) => {
     if (e.target && !e.target.isSystemLoaded) {
@@ -1377,6 +1434,7 @@ function applyTemplateToDeck(template, replaceCurrent = false) {
 
     loadSlideToCanvas(currentSlideIndex);
     renderSlideThumbnails();
+    renderBottomFilmstrip();
     saveDeck(currentDeck, true);
     showToast(`Đã áp dụng mẫu "${template.title}" cho trang hiện tại!`);
   } else {
@@ -1399,6 +1457,7 @@ function applyTemplateToDeck(template, replaceCurrent = false) {
     currentDeck.slides.push(newSlide);
     if (slideTotalBadge) slideTotalBadge.textContent = currentDeck.slides.length;
     renderSlideThumbnails();
+    renderBottomFilmstrip();
     loadSlideToCanvas(newIdx);
     saveDeck(currentDeck, true);
     showToast(`Đã thêm trang mẫu "${template.title}" vào thiết kế!`);
@@ -1719,6 +1778,7 @@ function setupDeck(deck, updateUrl = true, toastMsgText = null) {
   switchMainView('editor');
 
   renderSlideThumbnails();
+  renderBottomFilmstrip();
   loadSlideToCanvas(0);
 
   if (toastMsgText) {
@@ -1834,6 +1894,7 @@ function reorderSlides(fromIndex, toIndex) {
 
   // 6. Cập nhật giao diện
   renderSlideThumbnails();
+  renderBottomFilmstrip();
   loadSlideToCanvas(currentSlideIndex);
 
   // 7. Tự động lưu
@@ -1976,6 +2037,167 @@ function renderSlideThumbnails() {
   if (window.lucide) lucide.createIcons();
 }
 
+// --- CANVA BOTTOM FILMSTRIP THUMBNAILS (Dải thumbnail ngang chân trang) ---
+function renderBottomFilmstrip() {
+  if (!bottomFilmstripTrack) return;
+  bottomFilmstripTrack.innerHTML = '';
+  if (!currentDeck || !currentDeck.slides) return;
+
+  const user = getCurrentUser();
+  const perms = getDesignPermissions(currentDeck, user);
+
+  currentDeck.slides.forEach((slide, idx) => {
+    const card = document.createElement('div');
+    card.id = `filmstrip-thumb-${idx}`;
+    const isActive = (idx === currentSlideIndex);
+
+    card.className = `h-16 w-28 shrink-0 rounded-xl border flex flex-col relative group transition-all select-none overflow-hidden ${
+      isActive
+        ? 'border-2 border-cyan-400 ring-2 ring-cyan-500/30 shadow-lg shadow-cyan-950/60'
+        : 'border-slate-700/70 bg-slate-900/90 hover:border-slate-500'
+    } ${perms.canEdit ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`;
+
+    card.title = `Trang ${idx + 1}: ${slide.title || ''}`;
+
+    // Khung ảnh Thumbnail 16:9
+    const frame = document.createElement('div');
+    frame.className = 'w-full h-full bg-[#0a0e17] relative flex items-center justify-center overflow-hidden';
+
+    const imgSrc = (slide.isEdited && slide.thumbnailUrl) ? slide.thumbnailUrl : (slide.renderPngUrl || slide.thumbnailUrl || '');
+    if (imgSrc) {
+      const img = document.createElement('img');
+      img.id = `filmstrip-thumb-img-${idx}`;
+      img.src = imgSrc;
+      img.alt = `Trang ${idx + 1}`;
+      img.className = 'w-full h-full object-cover pointer-events-none';
+      frame.appendChild(img);
+    } else if (slide.customColor) {
+      frame.style.backgroundColor = slide.customColor;
+    }
+
+    // Badge số trang
+    const badge = document.createElement('span');
+    badge.className = 'absolute bottom-1 left-1.5 bg-black/85 text-[10px] text-white font-bold px-1.5 py-0.5 rounded shadow pointer-events-none';
+    badge.textContent = idx + 1;
+    frame.appendChild(badge);
+
+    // Nút nhân bản / xóa nhanh khi hover
+    if (perms.canEdit) {
+      const actions = document.createElement('div');
+      actions.className = 'absolute top-1 right-1 hidden group-hover:flex items-center gap-0.5 bg-slate-900/95 p-0.5 rounded border border-slate-700 z-10 shadow';
+
+      const btnDup = document.createElement('button');
+      btnDup.title = 'Nhân bản trang';
+      btnDup.className = 'p-0.5 hover:text-cyan-400 text-slate-300 cursor-pointer';
+      btnDup.innerHTML = '<i data-lucide="copy" class="w-3 h-3"></i>';
+      btnDup.addEventListener('click', (e) => {
+        e.stopPropagation();
+        duplicateSlide(idx);
+      });
+
+      const btnDel = document.createElement('button');
+      btnDel.title = 'Xóa trang';
+      btnDel.className = 'p-0.5 hover:text-red-400 text-slate-300 cursor-pointer';
+      btnDel.innerHTML = '<i data-lucide="trash-2" class="w-3 h-3"></i>';
+      btnDel.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteSlide(idx);
+      });
+
+      actions.appendChild(btnDup);
+      actions.appendChild(btnDel);
+      frame.appendChild(actions);
+    }
+
+    card.appendChild(frame);
+
+    // Kéo thả ngang đổi thứ tự
+    if (perms.canEdit) {
+      card.draggable = true;
+
+      card.addEventListener('dragstart', (e) => {
+        isDraggingSlide = true;
+        draggedSlideIndex = idx;
+        e.dataTransfer.setData('text/plain', idx.toString());
+        e.dataTransfer.effectAllowed = 'move';
+        card.classList.add('opacity-40', 'scale-95', 'border-dashed', 'border-cyan-400');
+      });
+
+      card.addEventListener('dragend', () => {
+        card.classList.remove('opacity-40', 'scale-95', 'border-dashed', 'border-cyan-400');
+        if (bottomFilmstripTrack) {
+          bottomFilmstripTrack.querySelectorAll('[id^="filmstrip-thumb-"]').forEach(el => {
+            el.classList.remove('ring-2', 'ring-cyan-400', 'bg-cyan-950/50', 'scale-[1.02]');
+          });
+        }
+        draggedSlideIndex = null;
+        setTimeout(() => {
+          isDraggingSlide = false;
+        }, 100);
+      });
+
+      card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+      });
+
+      card.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        if (draggedSlideIndex !== null && draggedSlideIndex !== idx) {
+          card.classList.add('ring-2', 'ring-cyan-400', 'bg-cyan-950/50', 'scale-[1.02]');
+        }
+      });
+
+      card.addEventListener('dragleave', (e) => {
+        if (!card.contains(e.relatedTarget)) {
+          card.classList.remove('ring-2', 'ring-cyan-400', 'bg-cyan-950/50', 'scale-[1.02]');
+        }
+      });
+
+      card.addEventListener('drop', (e) => {
+        e.preventDefault();
+        card.classList.remove('ring-2', 'ring-cyan-400', 'bg-cyan-950/50', 'scale-[1.02]');
+        const fromIdx = draggedSlideIndex !== null ? draggedSlideIndex : parseInt(e.dataTransfer.getData('text/plain'));
+        if (fromIdx !== null && !isNaN(fromIdx) && fromIdx !== idx) {
+          reorderSlides(fromIdx, idx);
+        }
+      });
+    }
+
+    card.addEventListener('click', () => {
+      if (isDraggingSlide) return;
+      if (currentSlideIndex !== idx) {
+        saveCurrentSlideState();
+        loadSlideToCanvas(idx);
+      }
+    });
+
+    bottomFilmstripTrack.appendChild(card);
+  });
+
+  if (window.lucide) lucide.createIcons();
+}
+
+function toggleBottomFilmstrip() {
+  if (!bottomFilmstripBar) return;
+  const isHidden = bottomFilmstripBar.classList.contains('hidden');
+  if (isHidden) {
+    bottomFilmstripBar.classList.remove('hidden');
+    if (btnToggleFilmstripText) btnToggleFilmstripText.textContent = "Thu gọn trang";
+    renderBottomFilmstrip();
+  } else {
+    bottomFilmstripBar.classList.add('hidden');
+    if (btnToggleFilmstripText) btnToggleFilmstripText.textContent = "Hiện trang";
+  }
+}
+
+if (btnToggleFilmstrip) {
+  btnToggleFilmstrip.addEventListener('click', toggleBottomFilmstrip);
+}
+if (btnAddSlideFilmstrip) {
+  btnAddSlideFilmstrip.addEventListener('click', addNewSlide);
+}
+
 function updateCurrentSlideThumbnail() {
   if (!fabricCanvas || !currentDeck || !currentDeck.slides[currentSlideIndex]) return;
   if (!currentDeck.slides[currentSlideIndex].isEdited) return;
@@ -1985,14 +2207,16 @@ function updateCurrentSlideThumbnail() {
   if (thumbImg) {
     thumbImg.src = dataUrl;
   }
+  const filmstripImg = document.getElementById(`filmstrip-thumb-img-${currentSlideIndex}`);
+  if (filmstripImg) {
+    filmstripImg.src = dataUrl;
+  }
   currentDeck.slides[currentSlideIndex].thumbnailUrl = dataUrl;
 }
 
 function saveCurrentSlideState() {
   if (!fabricCanvas || !currentDeck || !currentDeck.slides[currentSlideIndex]) return;
-  if (currentDeck.slides[currentSlideIndex].isEdited) {
-    currentDeck.slides[currentSlideIndex].fabricJson = fabricCanvas.toJSON();
-  }
+  currentDeck.slides[currentSlideIndex].fabricJson = fabricCanvas.toJSON();
   updateCurrentSlideThumbnail();
   saveDeck(currentDeck, true);
 }
@@ -2002,7 +2226,7 @@ function loadSlideToCanvas(idx) {
   if (!currentDeck || !currentDeck.slides[idx]) return;
   currentSlideIndex = idx;
 
-  // Update left thumbnail highlight
+  // Cập nhật Highlight Left Rails & Bottom Filmstrip
   currentDeck.slides.forEach((_, i) => {
     const el = document.getElementById(`slide-thumb-${i}`);
     if (el) {
@@ -2010,6 +2234,15 @@ function loadSlideToCanvas(idx) {
         el.className = 'p-1.5 rounded-lg border border-cyan-400 bg-cyan-950/40 ring-1 ring-cyan-400 cursor-pointer flex flex-col gap-1 relative group';
       } else {
         el.className = 'p-1.5 rounded-lg border border-slate-700/60 bg-slate-900/90 hover:border-slate-500 cursor-pointer flex flex-col gap-1 relative group';
+      }
+    }
+    const filmEl = document.getElementById(`filmstrip-thumb-${i}`);
+    if (filmEl) {
+      if (i === idx) {
+        filmEl.className = 'h-16 w-28 shrink-0 rounded-xl border-2 border-cyan-400 ring-2 ring-cyan-500/30 shadow-lg shadow-cyan-950/60 flex flex-col relative group transition-all select-none overflow-hidden cursor-grab active:cursor-grabbing';
+        filmEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      } else {
+        filmEl.className = 'h-16 w-28 shrink-0 rounded-xl border border-slate-700/70 bg-slate-900/90 hover:border-slate-500 flex flex-col relative group transition-all select-none overflow-hidden cursor-grab active:cursor-grabbing';
       }
     }
   });
@@ -2050,7 +2283,7 @@ function loadSlideToCanvas(idx) {
   const user = getCurrentUser();
   const perms = getDesignPermissions(currentDeck, user);
 
-  // Restore user-added objects if any
+  // Khôi phục các đối tượng fabricJson hoặc tự động tạo In-place Editable Textboxes từ slide.elements
   if (slide.fabricJson && slide.fabricJson.objects && slide.fabricJson.objects.length > 0) {
     fabric.util.enlivenObjects(slide.fabricJson.objects, (enlivenedObjects) => {
       enlivenedObjects.forEach((obj) => {
@@ -2061,11 +2294,55 @@ function loadSlideToCanvas(idx) {
       });
       fabricCanvas.selection = perms.canEdit;
       fabricCanvas.renderAll();
+      initUndoStackForSlide();
     });
+  } else if (slide.elements && slide.elements.length > 0) {
+    // Tự động nạp các khối text trực tiếp để người dùng có thể nhấp đúp sửa chữ ngay (Canva In-Place Editing)
+    const origW = currentDeck.canvas?.width || 1280;
+    const origH = currentDeck.canvas?.height || 720;
+    const scaleX = targetW / origW;
+    const scaleY = targetH / origH;
+
+    slide.elements.forEach(el => {
+      if (el.type === 'text') {
+        const textObj = new fabric.Textbox(el.content || '', {
+          left: Math.round(el.x * scaleX),
+          top: Math.round(el.y * scaleY),
+          width: Math.max(80, Math.round(el.width * scaleX)),
+          fontSize: Math.max(12, Math.round((el.style?.fontSize || 16) * scaleY)),
+          fontFamily: el.style?.fontFamily || 'Inter',
+          fill: el.style?.color || '#ffffff',
+          fontWeight: el.style?.bold ? '700' : '400',
+          fontStyle: el.style?.italic ? 'italic' : 'normal',
+          textAlign: el.style?.align || 'left',
+          splitByGrapheme: false,
+          isExtractedOverlay: true,
+          backgroundColor: 'transparent',
+          padding: 4,
+          editable: perms.canEdit,
+          selectable: perms.canEdit,
+          evented: perms.canEdit,
+        });
+        textObj.isSystemLoaded = true;
+        fabricCanvas.add(textObj);
+      }
+    });
+
+    fabricCanvas.selection = perms.canEdit;
+    fabricCanvas.renderAll();
+    initUndoStackForSlide();
   } else {
     fabricCanvas.selection = perms.canEdit;
     fabricCanvas.renderAll();
+    initUndoStackForSlide();
   }
+}
+
+function initUndoStackForSlide() {
+  if (!fabricCanvas) return;
+  undoStack = [JSON.stringify(fabricCanvas.toJSON())];
+  redoStack = [];
+  updateUndoRedoButtonsState();
 }
 
 // Toggle Extracted Text Overlay
@@ -2198,6 +2475,7 @@ function addNewSlide() {
   currentDeck.slides.push(newSlide);
   slideTotalBadge.textContent = currentDeck.slides.length;
   renderSlideThumbnails();
+  renderBottomFilmstrip();
   loadSlideToCanvas(newIdx);
   saveDeck(currentDeck, true);
   showToast("Đã thêm trang mới!");
@@ -2216,6 +2494,7 @@ function duplicateSlide(idx) {
   currentDeck.slides.forEach((s, i) => s.index = i);
   slideTotalBadge.textContent = currentDeck.slides.length;
   renderSlideThumbnails();
+  renderBottomFilmstrip();
   loadSlideToCanvas(idx + 1);
   saveDeck(currentDeck, true);
   showToast("Đã nhân bản slide!");
@@ -2230,83 +2509,350 @@ function deleteSlide(idx) {
   currentDeck.slides.forEach((s, i) => s.index = i);
   slideTotalBadge.textContent = currentDeck.slides.length;
   renderSlideThumbnails();
+  renderBottomFilmstrip();
   const targetIdx = Math.min(idx, currentDeck.slides.length - 1);
   loadSlideToCanvas(targetIdx);
   saveDeck(currentDeck, true);
   showToast("Đã xóa slide!");
 }
 
-// --- 7. CANVA CONTEXTUAL FLOATING TOOLBAR ---
+// --- 7. CANVA CONTEXTUAL TOOLBARS (TOP BAR & FLOATING TOOLBAR) ---
 function onObjectSelected() {
-  const activeObj = fabricCanvas.getActiveObject();
+  const activeObj = fabricCanvas ? fabricCanvas.getActiveObject() : null;
   if (!activeObj) {
     onObjectDeselected();
     return;
   }
 
-  ctxUniversalGroup.classList.remove('hidden');
-  ctxCanvasGroup.classList.add('hidden');
+  // Cập nhật Top Context Bar
+  if (ctxUniversalGroup) ctxUniversalGroup.classList.remove('hidden');
+  if (ctxCanvasGroup) ctxCanvasGroup.classList.add('hidden');
 
   const type = activeObj.type;
 
   if (type === 'textbox' || type === 'text' || type === 'i-text') {
-    ctxTextGroup.classList.remove('hidden');
-    ctxTextGroup.classList.add('flex');
-    ctxShapeGroup.classList.add('hidden');
-    ctxImageGroup.classList.add('hidden');
+    if (ctxTextGroup) {
+      ctxTextGroup.classList.remove('hidden');
+      ctxTextGroup.classList.add('flex');
+    }
+    if (ctxShapeGroup) ctxShapeGroup.classList.add('hidden');
+    if (ctxImageGroup) ctxImageGroup.classList.add('hidden');
 
-    fontFamilySelect.value = activeObj.fontFamily || 'Inter';
-    fontSizeInput.value = Math.round(activeObj.fontSize || 20);
-    textColorInput.value = activeObj.fill || '#0f172a';
+    if (fontFamilySelect) fontFamilySelect.value = activeObj.fontFamily || 'Inter';
+    if (fontSizeInput) fontSizeInput.value = Math.round(activeObj.fontSize || 20);
+    if (textColorInput) textColorInput.value = activeObj.fill || '#0f172a';
 
-    btnBold.className = activeObj.fontWeight === '700' || activeObj.fontWeight === 'bold'
-      ? 'w-7 h-7 flex items-center justify-center font-bold bg-cyan-600 rounded text-white'
-      : 'w-7 h-7 flex items-center justify-center font-bold hover:bg-slate-800 rounded text-slate-300';
+    if (btnBold) {
+      btnBold.className = activeObj.fontWeight === '700' || activeObj.fontWeight === 'bold'
+        ? 'w-7 h-7 flex items-center justify-center font-bold bg-cyan-600 rounded text-white'
+        : 'w-7 h-7 flex items-center justify-center font-bold hover:bg-slate-800 rounded text-slate-300';
+    }
 
-    btnItalic.className = activeObj.fontStyle === 'italic'
-      ? 'w-7 h-7 flex items-center justify-center italic bg-cyan-600 rounded text-white'
-      : 'w-7 h-7 flex items-center justify-center italic hover:bg-slate-800 rounded text-slate-300';
+    if (btnItalic) {
+      btnItalic.className = activeObj.fontStyle === 'italic'
+        ? 'w-7 h-7 flex items-center justify-center italic bg-cyan-600 rounded text-white'
+        : 'w-7 h-7 flex items-center justify-center italic hover:bg-slate-800 rounded text-slate-300';
+    }
 
-    btnUnderline.className = activeObj.underline
-      ? 'w-7 h-7 flex items-center justify-center underline bg-cyan-600 rounded text-white'
-      : 'w-7 h-7 flex items-center justify-center underline hover:bg-slate-800 rounded text-slate-300';
+    if (btnUnderline) {
+      btnUnderline.className = activeObj.underline
+        ? 'w-7 h-7 flex items-center justify-center underline bg-cyan-600 rounded text-white'
+        : 'w-7 h-7 flex items-center justify-center underline hover:bg-slate-800 rounded text-slate-300';
+    }
 
   } else if (type === 'rect' || type === 'circle' || type === 'triangle' || type === 'polygon' || type === 'line') {
-    ctxShapeGroup.classList.remove('hidden');
-    ctxShapeGroup.classList.add('flex');
-    ctxTextGroup.classList.add('hidden');
-    ctxImageGroup.classList.add('hidden');
+    if (ctxShapeGroup) {
+      ctxShapeGroup.classList.remove('hidden');
+      ctxShapeGroup.classList.add('flex');
+    }
+    if (ctxTextGroup) ctxTextGroup.classList.add('hidden');
+    if (ctxImageGroup) ctxImageGroup.classList.add('hidden');
 
-    shapeFillInput.value = activeObj.fill || '#3b82f6';
-    shapeStrokeInput.value = activeObj.stroke || '#000000';
-    shapeStrokeWidth.value = activeObj.strokeWidth || 0;
+    if (shapeFillInput) shapeFillInput.value = activeObj.fill || '#3b82f6';
+    if (shapeStrokeInput) shapeStrokeInput.value = activeObj.stroke || '#000000';
+    if (shapeStrokeWidth) shapeStrokeWidth.value = activeObj.strokeWidth || 0;
 
   } else if (type === 'image') {
-    ctxImageGroup.classList.remove('hidden');
-    ctxImageGroup.classList.add('flex');
-    ctxTextGroup.classList.add('hidden');
-    ctxShapeGroup.classList.add('hidden');
+    if (ctxImageGroup) {
+      ctxImageGroup.classList.remove('hidden');
+      ctxImageGroup.classList.add('flex');
+    }
+    if (ctxTextGroup) ctxTextGroup.classList.add('hidden');
+    if (ctxShapeGroup) ctxShapeGroup.classList.add('hidden');
 
-    imageOpacityInput.value = Math.round((activeObj.opacity || 1) * 100);
+    if (imageOpacityInput) imageOpacityInput.value = Math.round((activeObj.opacity || 1) * 100);
   }
+
+  // Cập nhật và hiển thị Canva Floating Context Toolbar
+  updateFloatingToolbarContent(activeObj);
+  updateFloatingToolbarPosition();
 }
 
 function onObjectDeselected() {
-  ctxCanvasGroup.classList.remove('hidden');
-  ctxTextGroup.classList.add('hidden');
-  ctxShapeGroup.classList.add('hidden');
-  ctxImageGroup.classList.add('hidden');
-  ctxUniversalGroup.classList.add('hidden');
+  if (ctxCanvasGroup) ctxCanvasGroup.classList.remove('hidden');
+  if (ctxTextGroup) ctxTextGroup.classList.add('hidden');
+  if (ctxShapeGroup) ctxShapeGroup.classList.add('hidden');
+  if (ctxImageGroup) ctxImageGroup.classList.add('hidden');
+  if (ctxUniversalGroup) ctxUniversalGroup.classList.add('hidden');
+  hideFloatingToolbar();
 }
 
-// Text Controls Listeners
+// Cập nhật nội dung trên Floating Toolbar
+function updateFloatingToolbarContent(activeObj) {
+  if (!canvaFloatingToolbar || !activeObj) return;
+
+  const type = activeObj.type;
+  if (type === 'textbox' || type === 'text' || type === 'i-text') {
+    if (floatTextGroup) floatTextGroup.classList.remove('hidden');
+    if (floatShapeGroup) floatShapeGroup.classList.add('hidden');
+
+    if (floatFontFamily) floatFontFamily.value = activeObj.fontFamily || 'Inter';
+    if (floatFontSizeInput) floatFontSizeInput.value = Math.round(activeObj.fontSize || 20);
+    if (floatTextColorBar) floatTextColorBar.style.backgroundColor = activeObj.fill || '#ffffff';
+    if (floatTextColorPicker) floatTextColorPicker.value = activeObj.fill || '#ffffff';
+
+    const isBold = activeObj.fontWeight === '700' || activeObj.fontWeight === 'bold';
+    if (btnFloatBold) {
+      btnFloatBold.className = isBold
+        ? 'w-6 h-6 flex items-center justify-center font-bold rounded-lg bg-cyan-600 text-white transition cursor-pointer'
+        : 'w-6 h-6 flex items-center justify-center font-bold rounded-lg hover:bg-slate-800 text-slate-300 transition cursor-pointer';
+    }
+
+    const isItalic = activeObj.fontStyle === 'italic';
+    if (btnFloatItalic) {
+      btnFloatItalic.className = isItalic
+        ? 'w-6 h-6 flex items-center justify-center italic font-serif rounded-lg bg-cyan-600 text-white transition cursor-pointer'
+        : 'w-6 h-6 flex items-center justify-center italic font-serif rounded-lg hover:bg-slate-800 text-slate-300 transition cursor-pointer';
+    }
+
+    if (btnFloatAlign) {
+      const align = activeObj.textAlign || 'left';
+      btnFloatAlign.innerHTML = `<i data-lucide="align-${align}" class="w-3.5 h-3.5"></i>`;
+      if (window.lucide) lucide.createIcons();
+    }
+
+  } else if (type === 'rect' || type === 'circle' || type === 'triangle' || type === 'polygon' || type === 'line') {
+    if (floatTextGroup) floatTextGroup.classList.add('hidden');
+    if (floatShapeGroup) {
+      floatShapeGroup.classList.remove('hidden');
+      floatShapeGroup.classList.add('flex');
+    }
+
+    if (floatShapeFillPicker) floatShapeFillPicker.value = activeObj.fill || '#3b82f6';
+    if (floatShapeStrokePicker) floatShapeStrokePicker.value = activeObj.stroke || '#000000';
+  } else {
+    if (floatTextGroup) floatTextGroup.classList.add('hidden');
+    if (floatShapeGroup) floatShapeGroup.classList.add('hidden');
+  }
+}
+
+// Căn chỉnh toạ độ nổi của Floating Toolbar ngay trên đối tượng
+function updateFloatingToolbarPosition() {
+  if (!canvaFloatingToolbar || !fabricCanvas) return;
+  const activeObj = fabricCanvas.getActiveObject();
+  if (!activeObj) {
+    hideFloatingToolbar();
+    return;
+  }
+
+  const viewport = document.getElementById('canvasViewport');
+  const wrapper = document.getElementById('canvasWrapper');
+  if (!viewport || !wrapper) return;
+
+  const bound = activeObj.getBoundingRect(true);
+  const wrapperRect = wrapper.getBoundingClientRect();
+  const viewportRect = viewport.getBoundingClientRect();
+
+  const objLeftInViewport = (wrapperRect.left - viewportRect.left) + bound.left;
+  const objTopInViewport = (wrapperRect.top - viewportRect.top) + bound.top;
+
+  const toolbarW = canvaFloatingToolbar.offsetWidth || 340;
+  const toolbarH = canvaFloatingToolbar.offsetHeight || 40;
+
+  // Đặt nổi lên phía trên đối tượng cách 10px
+  let top = objTopInViewport - toolbarH - 10;
+  if (top < 10) {
+    // Nếu sát mép trên viewport quá, chuyển xuống dưới đối tượng
+    top = objTopInViewport + bound.height + 10;
+  }
+
+  // Căn giữa theo chiều ngang đối tượng
+  let left = objLeftInViewport + (bound.width / 2) - (toolbarW / 2);
+  left = Math.max(10, Math.min(left, viewport.clientWidth - toolbarW - 10));
+
+  canvaFloatingToolbar.style.top = `${Math.round(top)}px`;
+  canvaFloatingToolbar.style.left = `${Math.round(left)}px`;
+  canvaFloatingToolbar.classList.remove('hidden');
+}
+
+function hideFloatingToolbar() {
+  if (canvaFloatingToolbar) {
+    canvaFloatingToolbar.classList.add('hidden');
+  }
+}
+
+// Gắn sự kiện cho các nút điều khiển trong Canva Floating Toolbar
+if (floatFontFamily) {
+  floatFontFamily.addEventListener('change', () => {
+    const activeObj = fabricCanvas ? fabricCanvas.getActiveObject() : null;
+    if (activeObj && activeObj.set) {
+      activeObj.set('fontFamily', floatFontFamily.value);
+      if (fontFamilySelect) fontFamilySelect.value = floatFontFamily.value;
+      fabricCanvas.requestRenderAll();
+      markSlideDirty();
+      saveCanvasState();
+      updateFloatingToolbarPosition();
+    }
+  });
+}
+
+if (btnFloatFontInc) {
+  btnFloatFontInc.addEventListener('click', () => {
+    const activeObj = fabricCanvas ? fabricCanvas.getActiveObject() : null;
+    if (activeObj && activeObj.set) {
+      const newSize = Math.round((activeObj.fontSize || 20) + 2);
+      activeObj.set('fontSize', newSize);
+      if (floatFontSizeInput) floatFontSizeInput.value = newSize;
+      if (fontSizeInput) fontSizeInput.value = newSize;
+      fabricCanvas.requestRenderAll();
+      markSlideDirty();
+      saveCanvasState();
+      updateFloatingToolbarPosition();
+    }
+  });
+}
+
+if (btnFloatFontDec) {
+  btnFloatFontDec.addEventListener('click', () => {
+    const activeObj = fabricCanvas ? fabricCanvas.getActiveObject() : null;
+    if (activeObj && activeObj.set) {
+      const newSize = Math.max(8, Math.round((activeObj.fontSize || 20) - 2));
+      activeObj.set('fontSize', newSize);
+      if (floatFontSizeInput) floatFontSizeInput.value = newSize;
+      if (fontSizeInput) fontSizeInput.value = newSize;
+      fabricCanvas.requestRenderAll();
+      markSlideDirty();
+      saveCanvasState();
+      updateFloatingToolbarPosition();
+    }
+  });
+}
+
+if (floatFontSizeInput) {
+  floatFontSizeInput.addEventListener('input', () => {
+    const activeObj = fabricCanvas ? fabricCanvas.getActiveObject() : null;
+    if (activeObj && activeObj.set) {
+      const newSize = Math.max(8, parseInt(floatFontSizeInput.value) || 16);
+      activeObj.set('fontSize', newSize);
+      if (fontSizeInput) fontSizeInput.value = newSize;
+      fabricCanvas.requestRenderAll();
+      markSlideDirty();
+      saveCanvasState();
+      updateFloatingToolbarPosition();
+    }
+  });
+}
+
+if (floatTextColorPicker) {
+  floatTextColorPicker.addEventListener('input', () => {
+    const activeObj = fabricCanvas ? fabricCanvas.getActiveObject() : null;
+    if (activeObj && activeObj.set) {
+      activeObj.set('fill', floatTextColorPicker.value);
+      if (floatTextColorBar) floatTextColorBar.style.backgroundColor = floatTextColorPicker.value;
+      if (textColorInput) textColorInput.value = floatTextColorPicker.value;
+      fabricCanvas.requestRenderAll();
+      markSlideDirty();
+      saveCanvasState();
+    }
+  });
+}
+
+if (btnFloatBold) {
+  btnFloatBold.addEventListener('click', () => {
+    const activeObj = fabricCanvas ? fabricCanvas.getActiveObject() : null;
+    if (activeObj && activeObj.set) {
+      const isBold = activeObj.fontWeight === 'bold' || activeObj.fontWeight === '700';
+      activeObj.set('fontWeight', isBold ? 'normal' : '700');
+      fabricCanvas.requestRenderAll();
+      onObjectSelected();
+      markSlideDirty();
+      saveCanvasState();
+    }
+  });
+}
+
+if (btnFloatItalic) {
+  btnFloatItalic.addEventListener('click', () => {
+    const activeObj = fabricCanvas ? fabricCanvas.getActiveObject() : null;
+    if (activeObj && activeObj.set) {
+      const isItalic = activeObj.fontStyle === 'italic';
+      activeObj.set('fontStyle', isItalic ? 'normal' : 'italic');
+      fabricCanvas.requestRenderAll();
+      onObjectSelected();
+      markSlideDirty();
+      saveCanvasState();
+    }
+  });
+}
+
+if (btnFloatAlign) {
+  btnFloatAlign.addEventListener('click', () => {
+    const activeObj = fabricCanvas ? fabricCanvas.getActiveObject() : null;
+    if (activeObj && activeObj.set) {
+      const currentAlign = activeObj.textAlign || 'left';
+      const nextAlign = currentAlign === 'left' ? 'center' : (currentAlign === 'center' ? 'right' : 'left');
+      activeObj.set('textAlign', nextAlign);
+      fabricCanvas.requestRenderAll();
+      onObjectSelected();
+      markSlideDirty();
+      saveCanvasState();
+    }
+  });
+}
+
+if (floatShapeFillPicker) {
+  floatShapeFillPicker.addEventListener('input', () => {
+    const activeObj = fabricCanvas ? fabricCanvas.getActiveObject() : null;
+    if (activeObj && activeObj.set) {
+      activeObj.set('fill', floatShapeFillPicker.value);
+      if (shapeFillInput) shapeFillInput.value = floatShapeFillPicker.value;
+      fabricCanvas.requestRenderAll();
+      markSlideDirty();
+      saveCanvasState();
+    }
+  });
+}
+
+if (floatShapeStrokePicker) {
+  floatShapeStrokePicker.addEventListener('input', () => {
+    const activeObj = fabricCanvas ? fabricCanvas.getActiveObject() : null;
+    if (activeObj && activeObj.set) {
+      activeObj.set('stroke', floatShapeStrokePicker.value);
+      if (shapeStrokeInput) shapeStrokeInput.value = floatShapeStrokePicker.value;
+      fabricCanvas.requestRenderAll();
+      markSlideDirty();
+      saveCanvasState();
+    }
+  });
+}
+
+if (btnFloatDuplicate) {
+  btnFloatDuplicate.addEventListener('click', duplicateActiveObject);
+}
+if (btnFloatDelete) {
+  btnFloatDelete.addEventListener('click', deleteActiveObject);
+}
+
+// Text Controls Listeners (Top Bar)
 fontFamilySelect.addEventListener('change', () => {
   const activeObj = fabricCanvas.getActiveObject();
   if (activeObj && activeObj.set) {
     activeObj.set('fontFamily', fontFamilySelect.value);
+    if (floatFontFamily) floatFontFamily.value = fontFamilySelect.value;
     fabricCanvas.requestRenderAll();
     markSlideDirty();
     saveCanvasState();
+    updateFloatingToolbarPosition();
   }
 });
 
@@ -2323,10 +2869,13 @@ fontSizeInput.addEventListener('input', updateFontSize);
 function updateFontSize() {
   const activeObj = fabricCanvas.getActiveObject();
   if (activeObj && activeObj.set) {
-    activeObj.set('fontSize', parseInt(fontSizeInput.value) || 16);
+    const newSize = parseInt(fontSizeInput.value) || 16;
+    activeObj.set('fontSize', newSize);
+    if (floatFontSizeInput) floatFontSizeInput.value = newSize;
     fabricCanvas.requestRenderAll();
     markSlideDirty();
     saveCanvasState();
+    updateFloatingToolbarPosition();
   }
 }
 
@@ -2334,6 +2883,8 @@ textColorInput.addEventListener('input', () => {
   const activeObj = fabricCanvas.getActiveObject();
   if (activeObj && activeObj.set) {
     activeObj.set('fill', textColorInput.value);
+    if (floatTextColorBar) floatTextColorBar.style.backgroundColor = textColorInput.value;
+    if (floatTextColorPicker) floatTextColorPicker.value = textColorInput.value;
     fabricCanvas.requestRenderAll();
     markSlideDirty();
     saveCanvasState();
@@ -2382,6 +2933,7 @@ btnAlignLeft.addEventListener('click', () => {
     const nextAlign = currentAlign === 'left' ? 'center' : (currentAlign === 'center' ? 'right' : 'left');
     activeObj.set('textAlign', nextAlign);
     fabricCanvas.requestRenderAll();
+    onObjectSelected();
     markSlideDirty();
     saveCanvasState();
   }
@@ -2392,6 +2944,7 @@ shapeFillInput.addEventListener('input', () => {
   const activeObj = fabricCanvas.getActiveObject();
   if (activeObj && activeObj.set) {
     activeObj.set('fill', shapeFillInput.value);
+    if (floatShapeFillPicker) floatShapeFillPicker.value = shapeFillInput.value;
     fabricCanvas.requestRenderAll();
     markSlideDirty();
     saveCanvasState();
@@ -2402,6 +2955,7 @@ shapeStrokeInput.addEventListener('input', () => {
   const activeObj = fabricCanvas.getActiveObject();
   if (activeObj && activeObj.set) {
     activeObj.set('stroke', shapeStrokeInput.value);
+    if (floatShapeStrokePicker) floatShapeStrokePicker.value = shapeStrokeInput.value;
     fabricCanvas.requestRenderAll();
     markSlideDirty();
     saveCanvasState();
@@ -2457,6 +3011,7 @@ function duplicateActiveObject() {
     fabricCanvas.requestRenderAll();
     markSlideDirty();
     saveCanvasState();
+    updateFloatingToolbarPosition();
   });
 }
 
@@ -2466,23 +3021,31 @@ function deleteActiveObject() {
     fabricCanvas.remove(activeObj);
     fabricCanvas.discardActiveObject();
     fabricCanvas.requestRenderAll();
+    hideFloatingToolbar();
     markSlideDirty();
     saveCanvasState();
   }
 }
 
+// Bắt phím tắt bàn phím toàn cục (Undo, Redo, Delete, Duplicate, Present)
 function handleGlobalKeydown(e) {
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
+  // Nếu đang gõ sửa chữ trong Textbox trực tiếp (Direct In-Place Editing):
+  const activeObj = fabricCanvas ? fabricCanvas.getActiveObject() : null;
+  if (activeObj && activeObj.isEditing) {
+    return; // Cho phép Fabric xử lý gõ ký tự, xóa backspace bình thường
+  }
+
   if (e.key === 'Delete' || e.key === 'Backspace') {
     deleteActiveObject();
-  } else if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+  } else if ((e.ctrlKey || e.metaKey) && (e.key === 'z' || e.key === 'Z') && !e.shiftKey) {
     e.preventDefault();
     handleUndo();
-  } else if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
+  } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || e.key === 'Y' || (e.shiftKey && (e.key === 'z' || e.key === 'Z')))) {
     e.preventDefault();
     handleRedo();
-  } else if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
+  } else if ((e.ctrlKey || e.metaKey) && (e.key === 'd' || e.key === 'D')) {
     e.preventDefault();
     duplicateActiveObject();
   } else if (e.key === 'F5') {
@@ -2712,11 +3275,37 @@ btnNextSlideBottom.addEventListener('click', () => {
 btnFullscreenBottom.addEventListener('click', openPresentationMode);
 
 // --- 10. STATE & UNDO/REDO ---
+function updateUndoRedoButtonsState() {
+  if (btnUndo) {
+    if (undoStack.length > 1) {
+      btnUndo.classList.remove('opacity-40', 'cursor-not-allowed');
+      btnUndo.classList.add('opacity-90', 'hover:opacity-100', 'cursor-pointer');
+      btnUndo.disabled = false;
+    } else {
+      btnUndo.classList.add('opacity-40', 'cursor-not-allowed');
+      btnUndo.classList.remove('opacity-90', 'hover:opacity-100', 'cursor-pointer');
+      btnUndo.disabled = true;
+    }
+  }
+  if (btnRedo) {
+    if (redoStack.length > 0) {
+      btnRedo.classList.remove('opacity-40', 'cursor-not-allowed');
+      btnRedo.classList.add('opacity-90', 'hover:opacity-100', 'cursor-pointer');
+      btnRedo.disabled = false;
+    } else {
+      btnRedo.classList.add('opacity-40', 'cursor-not-allowed');
+      btnRedo.classList.remove('opacity-90', 'hover:opacity-100', 'cursor-pointer');
+      btnRedo.disabled = true;
+    }
+  }
+}
+
 function saveCanvasState() {
   if (!fabricCanvas) return;
   undoStack.push(JSON.stringify(fabricCanvas.toJSON()));
   redoStack = [];
   if (undoStack.length > 30) undoStack.shift();
+  updateUndoRedoButtonsState();
   saveCurrentSlideState();
 }
 
@@ -2731,6 +3320,9 @@ function handleUndo() {
     fabricCanvas.loadFromJSON(prev, () => {
       fabricCanvas.renderAll();
       updateCurrentSlideThumbnail();
+      updateUndoRedoButtonsState();
+      saveCurrentSlideState();
+      updateFloatingToolbarPosition();
     });
   }
 }
@@ -2742,6 +3334,9 @@ function handleRedo() {
     fabricCanvas.loadFromJSON(next, () => {
       fabricCanvas.renderAll();
       updateCurrentSlideThumbnail();
+      updateUndoRedoButtonsState();
+      saveCurrentSlideState();
+      updateFloatingToolbarPosition();
     });
   }
 }

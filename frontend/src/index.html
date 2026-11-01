@@ -1201,6 +1201,113 @@
             id="canvasViewport"
             class="flex-1 overflow-auto flex items-center justify-center p-8 relative bg-[#0e131f]/90"
           >
+            <!-- CANVA FLOATING CONTEXT TOOLBAR -->
+            <div
+              id="canvaFloatingToolbar"
+              class="absolute z-30 hidden bg-[#1e2640]/95 backdrop-blur-md border border-slate-700/80 shadow-2xl rounded-xl px-2 py-1.5 flex items-center gap-1.5 transition-all duration-150 text-xs select-none pointer-events-auto"
+              style="top: 0px; left: 0px;"
+            >
+              <!-- Nhóm Text Tools -->
+              <div id="floatTextGroup" class="flex items-center gap-1">
+                <!-- Font Family Dropdown -->
+                <select
+                  id="floatFontFamily"
+                  class="bg-slate-900/90 border border-slate-700 hover:border-slate-500 text-slate-200 text-xs rounded-lg px-2 py-1 outline-none max-w-[110px] cursor-pointer"
+                >
+                  <option value="Inter">Inter</option>
+                  <option value="Arial">Arial</option>
+                  <option value="Roboto">Roboto</option>
+                  <option value="Playfair Display">Playfair</option>
+                  <option value="Montserrat">Montserrat</option>
+                  <option value="Lora">Lora</option>
+                  <option value="Cinzel">Cinzel</option>
+                  <option value="Times New Roman">Times New Roman</option>
+                  <option value="Courier New">Courier New</option>
+                </select>
+
+                <!-- Font Size Controls (- / input / +) -->
+                <div class="flex items-center bg-slate-900/90 border border-slate-700 rounded-lg overflow-hidden">
+                  <button
+                    id="btnFloatFontDec"
+                    class="w-6 h-6 flex items-center justify-center hover:bg-slate-800 text-slate-300 font-bold transition cursor-pointer"
+                    title="Giảm cỡ chữ"
+                  >−</button>
+                  <input
+                    id="floatFontSizeInput"
+                    type="number"
+                    min="8"
+                    max="160"
+                    value="24"
+                    class="w-10 bg-transparent text-center text-xs text-white outline-none border-x border-slate-800 font-medium py-0.5"
+                  />
+                  <button
+                    id="btnFloatFontInc"
+                    class="w-6 h-6 flex items-center justify-center hover:bg-slate-800 text-slate-300 font-bold transition cursor-pointer"
+                    title="Tăng cỡ chữ"
+                  >+</button>
+                </div>
+
+                <!-- Text Color Picker -->
+                <label class="relative w-6 h-6 rounded-lg border border-slate-700 hover:border-slate-500 flex flex-col items-center justify-center cursor-pointer overflow-hidden p-0.5 bg-slate-900/90" title="Màu chữ">
+                  <span class="font-extrabold text-[10px] text-white leading-none">A</span>
+                  <span id="floatTextColorBar" class="w-4 h-1 rounded-full mt-0.5 bg-white"></span>
+                  <input id="floatTextColorPicker" type="color" value="#ffffff" class="absolute opacity-0 w-0 h-0 pointer-events-none" />
+                </label>
+
+                <!-- Bold, Italic, Align -->
+                <button
+                  id="btnFloatBold"
+                  class="w-6 h-6 flex items-center justify-center font-bold rounded-lg hover:bg-slate-800 text-slate-300 transition cursor-pointer"
+                  title="Đậm (Ctrl+B)"
+                >B</button>
+                <button
+                  id="btnFloatItalic"
+                  class="w-6 h-6 flex items-center justify-center italic font-serif rounded-lg hover:bg-slate-800 text-slate-300 transition cursor-pointer"
+                  title="Nghiêng (Ctrl+I)"
+                >I</button>
+                <button
+                  id="btnFloatAlign"
+                  class="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-slate-800 text-slate-300 transition cursor-pointer"
+                  title="Căn lề"
+                >
+                  <i data-lucide="align-left" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+
+              <!-- Nhóm Shape Tools -->
+              <div id="floatShapeGroup" class="hidden items-center gap-1.5">
+                <label class="flex items-center gap-1 text-[11px] text-slate-300 cursor-pointer">
+                  <span>Tô:</span>
+                  <input id="floatShapeFillPicker" type="color" value="#3b82f6" class="w-6 h-6 rounded border-0 bg-transparent cursor-pointer" />
+                </label>
+                <label class="flex items-center gap-1 text-[11px] text-slate-300 cursor-pointer">
+                  <span>Viền:</span>
+                  <input id="floatShapeStrokePicker" type="color" value="#000000" class="w-6 h-6 rounded border-0 bg-transparent cursor-pointer" />
+                </label>
+              </div>
+
+              <!-- Divider -->
+              <div class="w-[1px] h-4 bg-slate-700/80 mx-0.5"></div>
+
+              <!-- Universal Action Buttons (Duplicate, Delete) -->
+              <div class="flex items-center gap-1">
+                <button
+                  id="btnFloatDuplicate"
+                  class="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-slate-800 text-slate-300 hover:text-white transition cursor-pointer"
+                  title="Nhân bản (Ctrl+D)"
+                >
+                  <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                </button>
+                <button
+                  id="btnFloatDelete"
+                  class="w-6 h-6 flex items-center justify-center rounded-lg hover:bg-red-950/80 text-red-400 hover:text-red-300 transition cursor-pointer"
+                  title="Xóa đối tượng"
+                >
+                  <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+            </div>
+
             <div
               id="canvasWrapper"
               class="relative rounded overflow-hidden canva-shadow border border-slate-800 transition-transform duration-100"
@@ -1209,12 +1316,38 @@
             </div>
           </div>
 
+          <!-- CANVA BOTTOM FILMSTRIP THUMBNAILS (Dải trang thu nhỏ chuẩn Canva) -->
+          <div
+            id="bottomFilmstripBar"
+            class="h-24 bg-[#0c101c] border-t border-slate-800/90 px-4 py-2.5 flex items-center gap-3 overflow-x-auto select-none transition-all duration-200 z-20"
+          >
+            <div id="bottomFilmstripTrack" class="flex items-center gap-3 h-full">
+              <!-- Render danh sách slide card 16:9 thu nhỏ -->
+            </div>
+            <button
+              id="btnAddSlideFilmstrip"
+              class="h-16 w-28 shrink-0 rounded-xl border-2 border-dashed border-slate-700/80 hover:border-cyan-400 hover:bg-slate-800/40 flex flex-col items-center justify-center gap-1 text-slate-400 hover:text-cyan-300 transition cursor-pointer text-xs font-semibold"
+              title="Thêm trang mới"
+            >
+              <i data-lucide="plus" class="w-4 h-4"></i>
+              <span>Thêm trang</span>
+            </button>
+          </div>
+
           <!-- CANVA BOTTOM FOOTER BAR -->
           <footer
             class="h-9 bg-[#0c101c] border-t border-slate-800/80 px-4 flex items-center justify-between text-xs text-slate-400 z-20"
           >
-            <!-- Left: Notes & Timer -->
+            <!-- Left: Notes & Filmstrip Toggle -->
             <div class="flex items-center gap-4">
+              <button
+                id="btnToggleFilmstrip"
+                class="hover:text-white flex items-center gap-1 text-[11px] text-cyan-400 font-medium cursor-pointer transition"
+                title="Ẩn / Hiện dải trang thu nhỏ"
+              >
+                <i data-lucide="panels-top-left" class="w-3.5 h-3.5"></i>
+                <span id="btnToggleFilmstripText">Thu gọn trang</span>
+              </button>
               <button
                 class="hover:text-white flex items-center gap-1 text-[11px]"
               >
@@ -2356,6 +2489,6 @@
       <span id="toastMsg">Thành công!</span>
     </div>
 
-    <script src="/app.js?v=20261031_global_loader_modal_v5"></script>
+    <script src="/app.js?v=20261101_canva_editor_v1"></script>
   </body>
 </html>
