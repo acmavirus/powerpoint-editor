@@ -1795,6 +1795,52 @@ function loadCustomFonts(customFonts) {
   });
 }
 
+// Biến theo dõi trạng thái kéo thả slide
+let draggedSlideIndex = null;
+let isDraggingSlide = false;
+
+// Hàm hoán đổi / di chuyển thứ tự trang trong bài thuyết trình
+function reorderSlides(fromIndex, toIndex) {
+  if (!currentDeck || !currentDeck.slides) return;
+  if (fromIndex < 0 || fromIndex >= currentDeck.slides.length) return;
+  if (toIndex < 0 || toIndex >= currentDeck.slides.length) return;
+  if (fromIndex === toIndex) return;
+
+  const user = getCurrentUser();
+  const perms = getDesignPermissions(currentDeck, user);
+  if (!perms.canEdit) {
+    showToast("Bạn chỉ có quyền xem, không thể thay đổi thứ tự trang", true);
+    return;
+  }
+
+  // 1. Lưu lại trạng thái slide hiện tại trên Canvas
+  saveCurrentSlideState();
+
+  // 2. Ghi nhớ slide đang active
+  const activeSlide = currentDeck.slides[currentSlideIndex];
+
+  // 3. Di chuyển phần tử trong mảng
+  const [movedSlide] = currentDeck.slides.splice(fromIndex, 1);
+  currentDeck.slides.splice(toIndex, 0, movedSlide);
+
+  // 4. Đồng bộ lại index
+  currentDeck.slides.forEach((s, i) => {
+    s.index = i;
+  });
+
+  // 5. Cập nhật currentSlideIndex theo slide active
+  const newActiveIndex = currentDeck.slides.indexOf(activeSlide);
+  currentSlideIndex = newActiveIndex !== -1 ? newActiveIndex : toIndex;
+
+  // 6. Cập nhật giao diện
+  renderSlideThumbnails();
+  loadSlideToCanvas(currentSlideIndex);
+
+  // 7. Tự động lưu
+  saveDeck(currentDeck, true);
+  showToast(`Đã chuyển Trang ${fromIndex + 1} sang vị trí Trang ${toIndex + 1}`);
+}
+
 // --- 5. CANVA-STYLE SLIDE THUMBNAILS (2-COLUMN GRID) ---
 function renderSlideThumbnails() {
   thumbnailContainer.innerHTML = '';
@@ -1805,9 +1851,10 @@ function renderSlideThumbnails() {
   currentDeck.slides.forEach((slide, idx) => {
     const card = document.createElement('div');
     card.id = `slide-thumb-${idx}`;
-    card.className = `p-1.5 rounded-lg border border-slate-700/60 bg-slate-900/90 cursor-pointer flex flex-col gap-1 relative group transition-all ${
+    card.className = `p-1.5 rounded-lg border border-slate-700/60 bg-slate-900/90 flex flex-col gap-1 relative group transition-all select-none ${
       idx === currentSlideIndex ? 'border-cyan-400 bg-cyan-950/40 ring-1 ring-cyan-400' : 'hover:border-slate-500'
-    }`;
+    } ${perms.canEdit ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}`;
+    card.title = perms.canEdit ? `Kéo thả để đổi thứ tự hoặc bấm để mở Trang ${idx + 1}: ${slide.title || ''}` : `Trang ${idx + 1}`;
 
     // Thumbnail Preview Frame
     const frame = document.createElement('div');
@@ -1817,10 +1864,10 @@ function renderSlideThumbnails() {
     img.id = `thumb-img-${idx}`;
     img.src = (slide.isEdited && slide.thumbnailUrl) ? slide.thumbnailUrl : (slide.renderPngUrl || slide.thumbnailUrl || '');
     img.alt = `Slide ${idx + 1}`;
-    img.className = 'w-full h-full object-contain';
+    img.className = 'w-full h-full object-contain pointer-events-none';
 
     const badge = document.createElement('span');
-    badge.className = 'absolute bottom-1 left-1 bg-black/80 text-[9px] text-white font-bold px-1 py-0.5 rounded';
+    badge.className = 'absolute bottom-1 left-1 bg-black/80 text-[9px] text-white font-bold px-1 py-0.5 rounded pointer-events-none';
     badge.textContent = idx + 1;
 
     frame.appendChild(img);
@@ -1828,7 +1875,7 @@ function renderSlideThumbnails() {
 
     // Title
     const titleP = document.createElement('p');
-    titleP.className = 'text-[10px] font-medium text-slate-300 truncate px-0.5';
+    titleP.className = 'text-[10px] font-medium text-slate-300 truncate px-0.5 pointer-events-none';
     titleP.textContent = slide.title || `Trang ${idx + 1}`;
 
     // Hover Action Buttons (Duplicate, Delete)
@@ -1837,7 +1884,7 @@ function renderSlideThumbnails() {
 
     const btnDup = document.createElement('button');
     btnDup.title = 'Nhân bản slide';
-    btnDup.className = 'p-1 hover:text-cyan-400 text-slate-300';
+    btnDup.className = 'p-1 hover:text-cyan-400 text-slate-300 cursor-pointer';
     btnDup.innerHTML = '<i data-lucide="copy" class="w-3 h-3"></i>';
     btnDup.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1846,7 +1893,7 @@ function renderSlideThumbnails() {
 
     const btnDel = document.createElement('button');
     btnDel.title = 'Xóa slide';
-    btnDel.className = 'p-1 hover:text-red-400 text-slate-300';
+    btnDel.className = 'p-1 hover:text-red-400 text-slate-300 cursor-pointer';
     btnDel.innerHTML = '<i data-lucide="trash-2" class="w-3 h-3"></i>';
     btnDel.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1862,7 +1909,61 @@ function renderSlideThumbnails() {
       card.appendChild(hoverActions);
     }
 
+    // Gắn sự kiện Kéo Thả (HTML5 Drag and Drop)
+    if (perms.canEdit) {
+      card.draggable = true;
+
+      card.addEventListener('dragstart', (e) => {
+        isDraggingSlide = true;
+        draggedSlideIndex = idx;
+        e.dataTransfer.setData('text/plain', idx.toString());
+        e.dataTransfer.effectAllowed = 'move';
+        card.classList.add('opacity-40', 'scale-95', 'border-dashed', 'border-cyan-400');
+      });
+
+      card.addEventListener('dragend', () => {
+        card.classList.remove('opacity-40', 'scale-95', 'border-dashed', 'border-cyan-400');
+        if (thumbnailContainer) {
+          thumbnailContainer.querySelectorAll('[id^="slide-thumb-"]').forEach(el => {
+            el.classList.remove('ring-2', 'ring-cyan-400', 'bg-cyan-950/50', 'scale-[1.02]');
+          });
+        }
+        draggedSlideIndex = null;
+        setTimeout(() => {
+          isDraggingSlide = false;
+        }, 100);
+      });
+
+      card.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+      });
+
+      card.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        if (draggedSlideIndex !== null && draggedSlideIndex !== idx) {
+          card.classList.add('ring-2', 'ring-cyan-400', 'bg-cyan-950/50', 'scale-[1.02]');
+        }
+      });
+
+      card.addEventListener('dragleave', (e) => {
+        if (!card.contains(e.relatedTarget)) {
+          card.classList.remove('ring-2', 'ring-cyan-400', 'bg-cyan-950/50', 'scale-[1.02]');
+        }
+      });
+
+      card.addEventListener('drop', (e) => {
+        e.preventDefault();
+        card.classList.remove('ring-2', 'ring-cyan-400', 'bg-cyan-950/50', 'scale-[1.02]');
+        const fromIdx = draggedSlideIndex !== null ? draggedSlideIndex : parseInt(e.dataTransfer.getData('text/plain'));
+        if (fromIdx !== null && !isNaN(fromIdx) && fromIdx !== idx) {
+          reorderSlides(fromIdx, idx);
+        }
+      });
+    }
+
     card.addEventListener('click', () => {
+      if (isDraggingSlide) return;
       if (currentSlideIndex !== idx) {
         saveCurrentSlideState();
         loadSlideToCanvas(idx);
