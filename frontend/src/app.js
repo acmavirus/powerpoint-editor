@@ -1763,9 +1763,9 @@ function setupDeck(deck, updateUrl = true, toastMsgText = null) {
   saveDeck(currentDeck, true);
   applyPermissionsToUI(currentDeck);
 
-  deckTitleInput.value = (deck.filename || "Thiết kế không tên - Bài thuyết trình").replace(/\.(pptx|ppt)$/i, '');
-  slideTotalBadge.textContent = deck.slideCount || deck.slides.length;
-  bottomSlideCounter.textContent = `1 / ${deck.slideCount || deck.slides.length}`;
+  if (deckTitleInput) deckTitleInput.value = (deck.filename || "Thiết kế không tên - Bài thuyết trình").replace(/\.(pptx|ppt)$/i, '');
+  if (slideTotalBadge) slideTotalBadge.textContent = deck.slideCount || deck.slides.length;
+  if (bottomSlideCounter) bottomSlideCounter.textContent = `1 / ${deck.slideCount || deck.slides.length}`;
 
   if (!fabricCanvas) {
     initFabricCanvas();
@@ -2472,7 +2472,7 @@ function addNewSlide() {
     isEdited: true,
   };
   currentDeck.slides.push(newSlide);
-  slideTotalBadge.textContent = currentDeck.slides.length;
+  if (slideTotalBadge) slideTotalBadge.textContent = currentDeck.slides.length;
   renderSlideThumbnails();
   renderBottomFilmstrip();
   loadSlideToCanvas(newIdx);
@@ -2491,7 +2491,7 @@ function duplicateSlide(idx) {
   currentDeck.slides.splice(idx + 1, 0, duplicated);
   
   currentDeck.slides.forEach((s, i) => s.index = i);
-  slideTotalBadge.textContent = currentDeck.slides.length;
+  if (slideTotalBadge) slideTotalBadge.textContent = currentDeck.slides.length;
   renderSlideThumbnails();
   renderBottomFilmstrip();
   loadSlideToCanvas(idx + 1);
@@ -2506,7 +2506,7 @@ function deleteSlide(idx) {
   }
   currentDeck.slides.splice(idx, 1);
   currentDeck.slides.forEach((s, i) => s.index = i);
-  slideTotalBadge.textContent = currentDeck.slides.length;
+  if (slideTotalBadge) slideTotalBadge.textContent = currentDeck.slides.length;
   renderSlideThumbnails();
   renderBottomFilmstrip();
   const targetIdx = Math.min(idx, currentDeck.slides.length - 1);
